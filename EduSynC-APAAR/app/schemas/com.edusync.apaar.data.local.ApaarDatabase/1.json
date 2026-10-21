@@ -1,0 +1,471 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "f28e00771903ae1b56c9e4d39d76e5b5",
+    "entities": [
+      {
+        "tableName": "institutions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`institutionId` TEXT NOT NULL, `name` TEXT NOT NULL, `institutionType` TEXT NOT NULL, `state` TEXT NOT NULL, `city` TEXT NOT NULL, `affiliationUniversity` TEXT NOT NULL, `approvalYear` INTEGER NOT NULL, `naacGrade` TEXT NOT NULL, PRIMARY KEY(`institutionId`))",
+        "fields": [
+          {
+            "fieldPath": "institutionId",
+            "columnName": "institutionId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "institutionType",
+            "columnName": "institutionType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "city",
+            "columnName": "city",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "affiliationUniversity",
+            "columnName": "affiliationUniversity",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "approvalYear",
+            "columnName": "approvalYear",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "naacGrade",
+            "columnName": "naacGrade",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "institutionId"
+          ]
+        }
+      },
+      {
+        "tableName": "program_intakes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`institutionId` TEXT NOT NULL, `programId` TEXT NOT NULL, `programName` TEXT NOT NULL, `programLevel` TEXT NOT NULL, `approvedIntake` INTEGER NOT NULL, `maxSupernumeraryNri` INTEGER NOT NULL, `maxSupernumeraryFnOci` INTEGER NOT NULL, `maxSupernumeraryTfw` INTEGER NOT NULL, `maxPmsss` INTEGER NOT NULL, PRIMARY KEY(`institutionId`, `programId`))",
+        "fields": [
+          {
+            "fieldPath": "institutionId",
+            "columnName": "institutionId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "programId",
+            "columnName": "programId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "programName",
+            "columnName": "programName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "programLevel",
+            "columnName": "programLevel",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "approvedIntake",
+            "columnName": "approvedIntake",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maxSupernumeraryNri",
+            "columnName": "maxSupernumeraryNri",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maxSupernumeraryFnOci",
+            "columnName": "maxSupernumeraryFnOci",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maxSupernumeraryTfw",
+            "columnName": "maxSupernumeraryTfw",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maxPmsss",
+            "columnName": "maxPmsss",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "institutionId",
+            "programId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_program_intakes_institutionId",
+            "unique": false,
+            "columnNames": [
+              "institutionId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_program_intakes_institutionId` ON `${TABLE_NAME}` (`institutionId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "students",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`recordId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `apaarId` TEXT NOT NULL, `studentName` TEXT NOT NULL, `dateOfBirth` TEXT NOT NULL, `gender` TEXT NOT NULL, `institutionId` TEXT NOT NULL, `programId` TEXT NOT NULL, `academicYear` TEXT NOT NULL, `admissionQuota` TEXT NOT NULL, `enrollmentDate` TEXT NOT NULL, `studentInstituteRollNo` TEXT NOT NULL, `nationality` TEXT NOT NULL, `passportNumber` TEXT, `visaValidity` TEXT, `countryOfOrigin` TEXT, `abcAccountId` TEXT, `verificationStatus` TEXT NOT NULL, `isActive` INTEGER NOT NULL, `photoSeed` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "recordId",
+            "columnName": "recordId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "apaarId",
+            "columnName": "apaarId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "studentName",
+            "columnName": "studentName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dateOfBirth",
+            "columnName": "dateOfBirth",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gender",
+            "columnName": "gender",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "institutionId",
+            "columnName": "institutionId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "programId",
+            "columnName": "programId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "academicYear",
+            "columnName": "academicYear",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "admissionQuota",
+            "columnName": "admissionQuota",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enrollmentDate",
+            "columnName": "enrollmentDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "studentInstituteRollNo",
+            "columnName": "studentInstituteRollNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nationality",
+            "columnName": "nationality",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "passportNumber",
+            "columnName": "passportNumber",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "visaValidity",
+            "columnName": "visaValidity",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "countryOfOrigin",
+            "columnName": "countryOfOrigin",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "abcAccountId",
+            "columnName": "abcAccountId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "verificationStatus",
+            "columnName": "verificationStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "isActive",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "photoSeed",
+            "columnName": "photoSeed",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "recordId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_students_apaarId",
+            "unique": false,
+            "columnNames": [
+              "apaarId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_students_apaarId` ON `${TABLE_NAME}` (`apaarId`)"
+          },
+          {
+            "name": "index_students_institutionId",
+            "unique": false,
+            "columnNames": [
+              "institutionId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_students_institutionId` ON `${TABLE_NAME}` (`institutionId`)"
+          },
+          {
+            "name": "index_students_programId",
+            "unique": false,
+            "columnNames": [
+              "programId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_students_programId` ON `${TABLE_NAME}` (`programId`)"
+          },
+          {
+            "name": "index_students_institutionId_programId",
+            "unique": false,
+            "columnNames": [
+              "institutionId",
+              "programId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_students_institutionId_programId` ON `${TABLE_NAME}` (`institutionId`, `programId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "anomaly_records",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`anomalyId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `studentApaarId` TEXT NOT NULL, `institutionId` TEXT NOT NULL, `programId` TEXT, `anomalyType` TEXT NOT NULL, `severity` TEXT NOT NULL, `details` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `resolved` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "anomalyId",
+            "columnName": "anomalyId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "studentApaarId",
+            "columnName": "studentApaarId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "institutionId",
+            "columnName": "institutionId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "programId",
+            "columnName": "programId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "anomalyType",
+            "columnName": "anomalyType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "severity",
+            "columnName": "severity",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "details",
+            "columnName": "details",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "resolved",
+            "columnName": "resolved",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "anomalyId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_anomaly_records_studentApaarId",
+            "unique": false,
+            "columnNames": [
+              "studentApaarId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_anomaly_records_studentApaarId` ON `${TABLE_NAME}` (`studentApaarId`)"
+          },
+          {
+            "name": "index_anomaly_records_institutionId",
+            "unique": false,
+            "columnNames": [
+              "institutionId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_anomaly_records_institutionId` ON `${TABLE_NAME}` (`institutionId`)"
+          },
+          {
+            "name": "index_anomaly_records_anomalyType",
+            "unique": false,
+            "columnNames": [
+              "anomalyType"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_anomaly_records_anomalyType` ON `${TABLE_NAME}` (`anomalyType`)"
+          }
+        ]
+      },
+      {
+        "tableName": "audit_logs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`logId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `timestamp` INTEGER NOT NULL, `actor` TEXT NOT NULL, `action` TEXT NOT NULL, `subject` TEXT NOT NULL, `details` TEXT NOT NULL, `category` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "logId",
+            "columnName": "logId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actor",
+            "columnName": "actor",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "action",
+            "columnName": "action",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subject",
+            "columnName": "subject",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "details",
+            "columnName": "details",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "logId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_audit_logs_timestamp",
+            "unique": false,
+            "columnNames": [
+              "timestamp"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_audit_logs_timestamp` ON `${TABLE_NAME}` (`timestamp`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f28e00771903ae1b56c9e4d39d76e5b5')"
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+# Normalise everything to LF in the repository, then check out with the
+# line endings each file format actually needs. This overrides the local
+# core.autocrlf setting so that a clone on Linux/macOS never receives a
+# CRLF `gradlew` (which would break the build) and a clone on Windows still
+# gets CRLF for its batch scripts.
+* text=auto eol=lf
+
+# Windows shell scripts need CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# The POSIX launcher must stay LF or it will not execute on Linux/macOS.
+gradlew text eol=lf
+
+# Binary assets.
+*.apk binary
+*.aab binary
+*.jar binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.ttf binary
+*.otf binary
