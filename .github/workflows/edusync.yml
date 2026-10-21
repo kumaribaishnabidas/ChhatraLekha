@@ -118,31 +118,25 @@ jobs:
       - name: Start MongoDB and the API
         run: |
           docker compose up -d mongodb
-          docker run -d --name edusync \
-            --network "${PWD}/default" \
-            -e MONGODB_URL=mongodb://mongodb:27017 \
-            -e ENVIRONMENT=dev \
-            -p 8000:8000 \
-            edusync:${{ github.sha }}
+          # The image is built above, so compose is pointed at it.
+          docker compose up -d --no-build api || true
           for attempt in $(seq 1 40); do
-            if curl -fsS http://localhost:8000/api/health; then
+            if curl -fsS http://localhost:8000/health; then
               echo ""
               echo "health check passed"
               break
             fi
             sleep 3
           done
-          curl -fsS http://localhost:8000/api/health
+          curl -fsS http://localhost:8000/health
           echo ""
           echo "the React frontend is served from the same origin:"
           curl -fsS http://localhost:8000/ | head -c 200
 
       - name: Show the logs on failure
         if: failure()
-        run: docker logs edusync || true
+        run: docker compose logs api || true
 
       - name: Tear down
         if: always()
-        run: |
-          docker rm -f edusync || true
-          docker compose down -v || true
+        run: docker compose down -v || true

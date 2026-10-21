@@ -7,10 +7,11 @@ the unit tests fast and lets the CLI scripts run without a server.
 Two drivers are supported:
 
 * ``motor`` against a real MongoDB server (production and development);
-* ``mongomock_motor``, an in-memory asynchronous MongoDB, used automatically
-  when ``MONGODB_URL`` is empty. It implements the query, projection,
-  aggregation and index APIs that the application relies on, so the whole
-  test-suite runs with no external service.
+* ``mongomock_motor``, an in-memory asynchronous MongoDB, used only when
+  ``ALLOW_IN_MEMORY_DB=true`` **and** ``MONGODB_URL`` is empty. It is a demo
+  and test facility: the data is not persisted, and it is refused outright in
+  production. A missing or unreachable ``MONGODB_URL`` is an error, never a
+  silent downgrade to an in-memory database.
 """
 
 from __future__ import annotations
@@ -37,7 +38,33 @@ COLLECTIONS = {
     "revoked_credentials": "revoked_credentials",
     "submissions": "submissions",
     "policy_rules": "policy_rules",
+    "record_versions": "record_versions",
+    "impact_assessments": "impact_assessments",
+    "review_tasks": "review_tasks",
+    "verification_tokens": "verification_tokens",
+    "operation_status": "operation_status",
 }
+
+
+class MongoConnectionError(RuntimeError):
+    """Raised when the configured MongoDB server cannot be reached."""
+
+
+def redact_url(url: str) -> str:
+    """A connection string with its credentials removed.
+
+    A MongoDB connection string carries the database user's password. It must
+    never reach a log, an error message or a health response, so it is
+    stripped down to the host and the database before it is shown.
+    """
+    if not url:
+        return ""
+    if "@" in url:
+        scheme, _, rest = url.partition("://")
+        credentials, _, host = rest.rpartition("@")
+        user = credentials.split(":", 1)[0]
+        return f"{scheme}://{user}:***@{host}"
+    return url
 
 
 class Mongo:
@@ -47,6 +74,7 @@ class Mongo:
         self._client: Any = None
         self._db: Any = None
         self._in_memory = False
+        self._supports_transactions = False
 
     # ------------------------------------------------------------ lifecycle
 
@@ -57,7 +85,26 @@ class Mongo:
 
         url = settings.mongodb_url.strip()
         if not url:
-            logger.info("MONGODB_URL is not set - using the in-memory MongoDB.")
+            if settings.is_production:
+                raise MongoConnectionError(
+                    "The in-memory database is a demo facility and is never used in "
+                    "production. Set MONGODB_URL to a real MongoDB server."
+                )
+            if not settings.allow_in_memory_db:
+                raise MongoConnectionError(
+                    "MONGODB_URL is not set. Configure it to a real MongoDB server, "
+                    "or set ALLOW_IN_MEMORY_DB=true to run the throwaway demo "
+                    "database. The in-memory database is never used in production."
+                )
+            logger.warning(
+                "=" * 74
+                + "\n"
+                + "  EduSynC is running on the IN-MEMORY DEMO DATABASE.\n"
+                + "  Nothing is persisted, and the data disappears when the process\n"
+                + "  stops. This mode is for demos and tests only - set MONGODB_URL\n"
+                + "  to a real MongoDB server for anything real.\n"
+                + "=" * 74
+            )
             from mongomock_motor import AsyncMongoMockClient
 
             self._client = AsyncMongoMockClient()
@@ -72,15 +119,37 @@ class Mongo:
                 tz_aware=True,
             )
             self._in_memory = False
+            try:
+                await self._client.admin.command("ping")
+            except Exception as exc:  # noqa: BLE001
+                raise MongoConnectionError(
+                    "Could not reach the MongoDB server at "
+                    f"{redact_url(url)!r}: {exc}"
+                ) from exc
 
         self._db = self._client[settings.mongodb_database]
+        self._supports_transactions = await self._detect_transaction_support()
         await self.ensure_indexes()
         logger.info(
             "Connected to MongoDB database '%s'%s",
             settings.mongodb_database,
-            " (in-memory)" if self._in_memory else "",
+            " (in-memory demo data, not persisted)" if self._in_memory else "",
         )
         return self._db
+
+    async def _detect_transaction_support(self) -> bool:
+        """Whether the server can run multi-document transactions.
+
+        Transactions need a replica set. MongoDB Atlas provides one, so a
+        deployed instance gets them; a standalone development server does not.
+        """
+        if self._in_memory:
+            return False
+        try:
+            info = await self._client.admin.command("hello")
+        except Exception:  # noqa: BLE001
+            return False
+        return bool(info.get("setName") or info.get("msg") == "isdbgrid")
 
     async def disconnect(self) -> None:
         """Close the connection."""
@@ -96,6 +165,18 @@ class Mongo:
     @property
     def is_in_memory(self) -> bool:
         return self._in_memory
+
+    @property
+    def supports_transactions(self) -> bool:
+        """True when the server can run multi-document transactions."""
+        return self._supports_transactions
+
+    @property
+    def client(self) -> Any:
+        """The underlying client, for starting a transaction session."""
+        if self._client is None:
+            raise RuntimeError("The MongoDB connection has not been established.")
+        return self._client
 
     def db(self) -> Any:
         """The database handle, connecting on first use."""
@@ -191,6 +272,42 @@ class Mongo:
             (
                 "submissions",
                 [("created_at", -1), ("status", 1)],
+            ),
+            (
+                "policy_rules",
+                [("policy_id", 1), ("active", 1)],
+            ),
+            (
+                "record_versions",
+                [("student_record_id", 1), ("version_no", -1)],
+            ),
+            (
+                "impact_assessments",
+                [("assessment_id", 1)],
+            ),
+            (
+                "impact_assessments",
+                [("student_record_id", 1), ("created_at", -1)],
+            ),
+            (
+                "review_tasks",
+                [("assessment_id", 1)],
+            ),
+            (
+                "review_tasks",
+                [("institution_id", 1), ("status", 1), ("severity", 1)],
+            ),
+            (
+                "verification_tokens",
+                [("token_hash", 1)],
+            ),
+            (
+                "verification_tokens",
+                [("student_record_id", 1), ("revoked", 1)],
+            ),
+            (
+                "operation_status",
+                [("operation_id", 1)],
             ),
         ]
 

@@ -11,7 +11,7 @@ import secrets
 from functools import lru_cache
 from typing import Annotated, List
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -28,20 +28,31 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------- identity
     app_name: str = "EduSynC"
     environment: str = "dev"
+    #: ``ENV`` is accepted as an alias of ``ENVIRONMENT`` because the hosting
+    #: platforms set ``ENV`` by convention. ``ENVIRONMENT`` still wins when
+    #: both are present.
+    env: str = ""
     debug: bool = False
     api_prefix: str = "/api"
+    #: The public origin of the web frontend, used for CORS and for the
+    #: links printed on a QR badge.
+    frontend_origin: str = "http://localhost:5173"
 
     # ------------------------------------------------------------- database
-    mongodb_url: str = "mongodb://localhost:27017"
+    mongodb_url: str = ""
     mongodb_database: str = "edusync"
     mongodb_timeout_ms: int = 5000
     #: Key used to derive the privacy-preserving match token of an APAAR ID.
     #: An empty value falls back to the seal key.
     match_key: str = ""
+    #: The in-memory MongoDB is a **demo and test facility only**. It has to be
+    #: switched on explicitly; a missing or unreachable ``MONGODB_URL`` is an
+    #: error, never a silent downgrade.
+    allow_in_memory_db: bool = False
 
     @property
     def is_in_memory_mongo(self) -> bool:
-        """True when the in-memory MongoDB is used (no server configured)."""
+        """True when the in-memory MongoDB is used."""
         return not self.mongodb_url.strip()
 
     @property
@@ -59,7 +70,7 @@ class Settings(BaseSettings):
     seal_hmac_key: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
     seal_ecdsa_private_key_pem: str = ""
     seal_ecdsa_public_key_pem: str = ""
-    seal_key_id: str = "edusync-2024-01"
+    seal_key_id: str = "apaar-verify-2024-01"
 
     # ------------------------------------------------------------- security
     #: ``NoDecode`` stops pydantic-settings from trying to JSON-parse the
@@ -77,6 +88,25 @@ class Settings(BaseSettings):
     session_cookie_name: str = "edusync_session"
     session_max_age: int = 60 * 60 * 8
 
+    # ----------------------------------------------------------- demo data
+    #: The password given to the seeded demo accounts. When it is empty the
+    #: seed script generates one and prints it once.
+    demo_password: str = ""
+    #: Seeding a production database is refused unless this is switched on.
+    allow_production_seed: bool = False
+    #: The lifetime of a verification token, in minutes.
+    verification_token_minutes: int = 60
+
+    @model_validator(mode="before")
+    @classmethod
+    def _env_alias(cls, values):
+        """Accept ``ENV`` as an alias of ``ENVIRONMENT``."""
+        if isinstance(values, dict):
+            alias = values.get("env")
+            if alias and not values.get("environment"):
+                values = {**values, "environment": alias}
+        return values
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_origins(cls, value):
@@ -84,12 +114,40 @@ class Settings(BaseSettings):
             return [item.strip() for item in value.split(",") if item.strip()]
         return value
 
+    @model_validator(mode="after")
+    def _cors_is_derived_from_the_frontend_origin(self) -> "Settings":
+        """Keep the CORS list in step with ``FRONTEND_ORIGIN``.
+
+        A wildcard is never allowed: the API sends credentials, and a
+        wildcard origin is not compatible with credentialed requests. The
+        trailing slash is stripped from every origin, so that
+        ``https://app.vercel.app/`` and ``https://app.vercel.app`` are the
+        same origin.
+        """
+        origins = [
+            origin.strip().rstrip("/")
+            for origin in self.cors_origins
+            if origin.strip() and origin.strip() != "*"
+        ]
+        frontend = self.frontend_origin.strip().rstrip("/")
+        if frontend and frontend not in origins:
+            origins.append(frontend)
+        if not origins:
+            origins = ["http://localhost:5173"]
+        object.__setattr__(self, "cors_origins", origins)
+        return self
+
     @property
     def is_production(self) -> bool:
         return self.environment.lower() in {"prod", "production"}
 
     def assert_production_safe(self) -> None:
-        """Refuse to start in production with development secrets."""
+        """Refuse to start in production with development settings.
+
+        Outside production this is a no-op: the in-memory demo database is
+        explicitly opt-in there, and the secret-length rules are a
+        production concern.
+        """
         if not self.is_production:
             return
         if len(self.secret_key) < 32:
@@ -98,7 +156,10 @@ class Settings(BaseSettings):
             raise RuntimeError("SEAL_HMAC_KEY must be at least 16 characters in production.")
         if self.is_in_memory_mongo:
             raise RuntimeError(
-                "MONGODB_URL must point at a real MongoDB server in production."
+                "MONGODB_URL is not set, so the application would fall back to the "
+                "in-memory demo database, which is never used in production. Set "
+                "MONGODB_URL to a real MongoDB server (a mongodb+srv:// Atlas "
+                "connection string, for example)."
             )
 
 

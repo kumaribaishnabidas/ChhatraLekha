@@ -14,9 +14,13 @@
 
 ---
 
-An offline-first Android application that turns the **Academic Performance Assessment and Accreditation
-Registry (APAAR)** identifier into a verifiable, tamper-evident credential for every student enrolled
-in an AICTE-approved programme.
+An offline-first Android application that turns the **Automated Permanent Academic Account
+Registry (APAAR)** identifier into a verifiable, tamper-evident credential for every student
+enrolled in an AICTE-approved programme.
+
+APAAR is the student identity issued under the Ministry of Education's *One Nation, One
+Student ID* initiative. It is not an AICTE registry, and this application is not an official
+APAAR or AICTE verification service.
 
 | | |
 | --- | --- |

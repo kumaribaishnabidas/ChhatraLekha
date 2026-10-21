@@ -30,6 +30,10 @@ class Permission(str, Enum):
     VERIFY_CREDENTIAL = "verify_credential"
     GENERATE_CERTIFICATE = "generate_certificate"
     EXPORT_REPORTS = "export_reports"
+    PREVIEW_CORRECTION = "preview_correction"
+    APPLY_CORRECTION = "apply_correction"
+    VIEW_IMPACTS = "view_impacts"
+    REVIEW_TASKS = "review_tasks"
 
 
 _DIRECTORATE = frozenset(
@@ -39,6 +43,10 @@ _DIRECTORATE = frozenset(
         Permission.VIEW_AUDIT_TRAIL,
         Permission.VIEW_COMPLIANCE_MATRIX,
         Permission.EXPORT_REPORTS,
+        Permission.PREVIEW_CORRECTION,
+        Permission.APPLY_CORRECTION,
+        Permission.VIEW_IMPACTS,
+        Permission.REVIEW_TASKS,
     }
 )
 
@@ -52,6 +60,10 @@ _INSTITUTION = frozenset(
         Permission.GENERATE_CERTIFICATE,
         Permission.EXPORT_REPORTS,
         Permission.VIEW_AUDIT_TRAIL,
+        Permission.PREVIEW_CORRECTION,
+        Permission.APPLY_CORRECTION,
+        Permission.VIEW_IMPACTS,
+        Permission.REVIEW_TASKS,
     }
 )
 

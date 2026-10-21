@@ -2,8 +2,9 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../../hooks/useAuth'
-import { PERMISSIONS } from '../../utils/permissions'
-import { ROLE_LABELS } from '../../utils/permissions'
+import { useApi } from '../../hooks/useApi'
+import { api } from '../../services/api'
+import { PERMISSIONS, ROLE_LABELS } from '../../utils/permissions'
 
 const NAVIGATION = [
   { to: '/dashboard', label: 'Dashboard', permission: PERMISSIONS.VIEW_NATIONAL_DASHBOARD },
@@ -11,6 +12,7 @@ const NAVIGATION = [
   { to: '/students', label: 'Students', permission: PERMISSIONS.VIEW_STUDENT_REGISTER },
   { to: '/upload', label: 'Upload CSV', permission: PERMISSIONS.IMPORT_CSV },
   { to: '/anomalies', label: 'Anomalies', permission: PERMISSIONS.REVIEW_ANOMALIES },
+  { to: '/impact', label: 'Change Impact', permission: PERMISSIONS.PREVIEW_CORRECTION },
   { to: '/verify', label: 'Verify', permission: PERMISSIONS.VERIFY_CREDENTIAL },
   { to: '/reports', label: 'Reports', permission: PERMISSIONS.EXPORT_REPORTS },
 ]
@@ -18,6 +20,7 @@ const NAVIGATION = [
 export default function AppLayout() {
   const { user, role, can, logout } = useAuth()
   const navigate = useNavigate()
+  const health = useApi(() => api.get('/health').then((r) => r.data), [])
 
   const handleLogout = () => {
     logout()
@@ -74,13 +77,24 @@ export default function AppLayout() {
         </div>
       </header>
 
+      {health.data?.in_memory_demo_data && (
+        <div
+          role="status"
+          className="bg-[#FEF3DC] border-b border-[#E8C97A] px-5 py-2 text-center text-sm text-[#96650A]"
+        >
+          <strong>Demo mode.</strong> {health.data.notice}
+        </div>
+      )}
+
       <main className="mx-auto max-w-[1240px] px-5 py-7">
         <Outlet />
       </main>
 
       <footer className="border-t border-line bg-white py-5 text-center text-xs text-muted">
-        EduSynC &mdash; APAAR ID Student Data Management &amp; Verification Platform.
-        Synthetic demonstration data only.
+        <strong>EduSynC</strong> &mdash; the APAAR ID Student Data Management &amp;
+        Verification Platform. Synthetic demonstration data only. Verification is
+        against this prototype&apos;s database, not official APAAR or AICTE
+        verification.
       </footer>
     </div>
   )

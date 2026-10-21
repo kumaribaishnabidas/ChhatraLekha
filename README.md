@@ -2,25 +2,50 @@
 
 <img src="docs/assets/brand/edusync-lockup.png" alt="EduSynC" height="220" />
 
-# Acadentrix
+# EduSynC
 
 **The APAAR ID Student Data Management &amp; Verification Platform**
 
-*A product of **EduSynC** · Smart India Hackathon · AICTE — Academic Performance Assessment and Accreditation Registry*
+*Built by the **Sentinals** team for Smart India Hackathon 2026 (problem statement SIH26263)*
 
-[Website &amp; landing page →](https://kumaribaishnabidas.github.io/EduSynC/) · [Source code](https://github.com/kumaribaishnabidas/EduSynC) · [App documentation](Acadentrix/README.md)
+[Website &amp; landing page →](https://kumaribaishnabidas.github.io/EduSynC/) · [Source code](https://github.com/kumaribaishnabidas/EduSynC) · [Backend documentation](edusync/README.md) · [App documentation](Acadentrix/README.md)
 
 </div>
 
 ---
 
-An offline-first Android application that turns the **APAAR** identifier into a verifiable,
-tamper-evident academic credential for every student enrolled in an AICTE-approved programme.
+> **A note on the names.** The product is **EduSynC**, built by the
+> **Sentinals** team. The code base keeps its earlier internal identifiers -
+> the `edusync/` Python package and the `com.acadentrix.app` Android package -
+> because renaming them would be a large, risky change with no functional
+> benefit. The user-facing text is consistent everywhere.
 
-> **APAAR** — the Academic Performance Assessment and Accreditation Registry is AICTE's student
-> academic passport. Every enrolled student is issued a 12-digit APAAR ID that is supposed to travel
-> with them across institutions, employers and degree-awarding bodies. In practice it is issued and
-> reconciled by hand, which is where the fraud starts.
+> **APAAR** — the **Automated Permanent Academic Account Registry**, issued under the
+> Ministry of Education's *One Nation, One Student ID* initiative. It is the student's
+> academic passport: every enrolled student is issued a 12-digit APAAR ID that is
+> supposed to travel with them across institutions, employers and degree-awarding
+> bodies. In practice it is issued and reconciled by hand, which is where the
+> fraud starts.
+>
+> APAAR is **not** an AICTE registry, and nothing in this prototype is an official
+> APAAR or AICTE verification.
+
+---
+
+## What this repository is
+
+A three-part implementation of the APAAR ID platform for AICTE-approved
+institutions:
+
+| Part | Directory | Stack |
+|---|---|---|
+| Web frontend | `frontend/` | React 19, Vite 6, Tailwind CSS 4, Recharts 3, React Router 7 |
+| Python backend | `edusync/` | FastAPI, Motor (async MongoDB), Pydantic v2, `cryptography` |
+| Android client | `Acadentrix/` | Kotlin 2.2, Jetpack Compose, Material 3, Room |
+
+The **Academic Record Change Impact Detector** is the headline feature: preview a
+correction, see exactly which linked records it would affect, and apply it
+without ever silently changing an official academic record.
 
 ---
 
@@ -28,10 +53,12 @@ tamper-evident academic credential for every student enrolled in an AICTE-approv
 
 | | |
 | --- | --- |
-| **Product / app / project name** | **Acadentrix** |
+| **Product / project name** | **EduSynC** |
+| **Team** | **Sentinals** (Smart India Hackathon 2026, SIH26263) |
 | **Brand name and logo** | **EduSynC** |
 | **Package / application id** | `com.acadentrix.app` |
 | **Gradle project name** | `Acadentrix` |
+| **Backend package** | `edusync/` |
 
 The EduSynC logo is the artwork the team supplied, shipped verbatim — as the launcher icon
 (adaptive, with a themed-monochrome layer), in the app's header, on the degree certificate and
@@ -51,6 +78,7 @@ EduSynC/
 ├── .gitattributes
 ├── .github/workflows/        ← CI: pytest + vitest + container build
 ├── docker-compose.yml        ← MongoDB + the API in one command
+├── render.yaml               ← the Render deployment of the backend
 ├── docs/                     ← the website & landing page (GitHub Pages)
 │   ├── index.html
 │   └── assets/brand/         ← EduSynC logo artwork
@@ -62,6 +90,7 @@ EduSynC/
 ├── frontend/                 ← the React web application
 │   ├── src/                  ← pages, components, hooks, services, utils
 │   ├── public/brand/         ← EduSynC logo artwork
+│   ├── vercel.json           ← the Vercel deployment of the frontend
 │   └── vite.config.js
 └── Acadentrix/               ← the Android application
     ├── app/                  ← Kotlin + Jetpack Compose source, unit tests, Room schema
@@ -101,7 +130,7 @@ npm run build    # production bundle, served by the backend from the same origin
 Eight pages: sign-in, the AICTE Directorate dashboard, institutions and their
 sanctioned capacity, the student register, the CSV batch uploader with a
 row-by-row validation preview, the anomaly inspector with a review workflow,
-the credential verifier, and the report centre.
+the **change impact** page, the credential verifier, and the report centre.
 
 ### 2. The Python backend (`edusync/`)
 
@@ -116,19 +145,23 @@ uvicorn app.main:app --reload
 
 * Portal: <http://localhost:8000>
 * OpenAPI: <http://localhost:8000/docs>
-* Sign in with `aicte.admin@edusync.gov.in` / `EduSync@2024`
+* Health: <http://localhost:8000/health>
 
-MongoDB is the store. Leave `MONGODB_URL` empty and the application falls back
-to a built-in in-memory MongoDB that is seeded automatically, so the platform is
-demonstrable with no external service at all.
+MongoDB is the store. Point `MONGODB_URL` at a real server; the demo
+alternative (`ALLOW_IN_MEMORY_DB=true` with an empty URL) has to be asked for
+explicitly, is never used in production, and says so in `/health` and in the
+UI. The demo accounts are created by the seed script, and their password comes
+from `DEMO_PASSWORD` or is generated and printed once.
 
 What it does: multi-role JWT authentication, RBAC on every endpoint, the
-ten-layer anomaly engine, batch CSV ingestion with row-level validation and
-seat-impact preview, consent-aware signed verification, APAAR QR badges,
-PDF certificates carrying the APAAR ID, CSV/PDF regulatory reports, an
-explainable per-institution risk score, and a hash-chained audit trail.
+ten-layer anomaly engine, the **academic record change impact detector**,
+batch CSV ingestion with row-level validation and seat-impact preview,
+consent-aware verification, **opaque expiring revocable verification tokens**,
+APAAR QR badges, PDF certificates carrying the APAAR ID, CSV/PDF regulatory
+reports, an explainable per-institution risk score, versioned seat policy, and
+a hash-chained audit trail.
 
-**159 pytest tests, all passing.** See [`edusync/README.md`](edusync/README.md)
+**217 pytest tests, all passing.** See [`edusync/README.md`](edusync/README.md)
 and [`edusync/docs/architecture.md`](edusync/docs/architecture.md).
 
 ### 3. The Android client (`Acadentrix/`)
@@ -178,13 +211,214 @@ docker compose up --build     # MongoDB + the API + the React frontend
 
 ---
 
+## Deployment
+
+### Architecture
+
+| Part | Platform | Notes |
+|---|---|---|
+| Frontend (React 19 + Vite + Tailwind 4) | **Vercel** | Root directory `frontend/`, output `dist` |
+| Backend (FastAPI + Motor) | **Render** (web service) | `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, health check `/health` |
+| Database (MongoDB) | **MongoDB Atlas** | An Atlas cluster is a replica set, so multi-document transactions are available |
+| Android client (`Acadentrix/`) | Direct APK / Play Internal Testing | Offline-first; no API call yet (see below) |
+
+The configuration files are [`render.yaml`](render.yaml) and
+[`frontend/vercel.json`](frontend/vercel.json).
+
+### 1. MongoDB Atlas
+
+1. Create an Atlas project and a cluster. **M0 (free) is enough for the demo** —
+   check the current free-tier limits on the Atlas site, because the storage
+   cap and the connection limit are both low.
+2. Create a **dedicated database user** with read/write on the app database
+   only. Do **not** use an admin user.
+3. **Network Access.** Render's free tier has no fixed outbound IP, so the
+   allowlist will probably have to be `0.0.0.0/0`. That is a real trade-off:
+   anybody who learns the connection string and the password can reach the
+   cluster. Compensate with a long random password, a least-privilege user,
+   and TLS (the `mongodb+srv://` scheme enforces it). If you move to a paid
+   Render plan with static outbound IPs, restrict the allowlist to those
+   instead.
+4. Copy the `mongodb+srv://...` connection string. **URL-encode any special
+   characters in the password** (`@` becomes `%40`, and so on) — this is the
+   single most common reason a connection string fails.
+5. No manual index step: the application creates every index at start-up, and
+   the creation is idempotent, so it is safe on every deploy.
+
+### 2. Render (the backend)
+
+1. Push the repository to GitHub and create a **Web Service** from it. Render
+   reads [`render.yaml`](render.yaml) automatically; the build is
+   `pip install -r requirements.txt` and the start command is
+   `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
+2. Set the environment variables in the Render dashboard (the secrets are
+   declared with `sync: false`, so they are never in the file).
+3. The health check is `/health`.
+
+### 3. Vercel (the frontend)
+
+1. Import the repository into Vercel with **the `frontend` directory as the
+   root directory**.
+2. Framework **Vite**, build command `npm run build`, output directory
+   `dist`. [`frontend/vercel.json`](frontend/vercel.json) adds the SPA
+   rewrite, so a deep link such as `/impact` resolves instead of 404ing.
+3. Set `VITE_API_URL` to the Render URL of the backend.
+
+> **`VITE_*` variables are baked in at build time.** Changing `VITE_API_URL`
+> needs a **redeploy**, not just a restart.
+
+### 4. Set `FRONTEND_ORIGIN` and redeploy the backend
+
+`FRONTEND_ORIGIN` is the Vercel URL of the frontend, e.g.
+`https://edusync.vercel.app`. It is what the API uses for CORS, and it is
+the origin printed on a QR badge. Set it on Render and **redeploy the
+backend** — the CORS list is read at start-up.
+
+### 5. Seed the demo data (an explicit, manual step)
+
+Seeding never runs automatically against a real database. Run it from a
+machine that can reach Atlas:
+
+```bash
+cd edusync
+MONGODB_URL='mongodb+srv://...' \
+MONGODB_DATABASE=edusync \
+DEMO_PASSWORD='choose-a-demo-password' \
+python -m app.scripts.seed
+```
+
+The script refuses to touch a production database unless
+`ALLOW_PRODUCTION_SEED=true` is set, so a stray call cannot wipe the live
+registry. When `DEMO_PASSWORD` is empty, a password is generated and printed
+**once**.
+
+### Environment variables
+
+**Backend** (set on Render, or in `edusync/.env` locally):
+
+| Name | Required | Placeholder | Where |
+|---|---|---|---|
+| `MONGODB_URL` | yes | `mongodb+srv://user:pass@cluster.mongodb.net` | Render (secret) |
+| `MONGODB_DATABASE` | no | `edusync` | Render |
+| `SECRET_KEY` | yes | `python -c "import secrets; print(secrets.token_urlsafe(48))"` | Render (secret) |
+| `SEAL_HMAC_KEY` | yes | `python -c "import secrets; print(secrets.token_urlsafe(32))"` | Render (secret) |
+| `MATCH_KEY` | no | falls back to `SEAL_HMAC_KEY` | Render |
+| `FRONTEND_ORIGIN` | yes | `https://edusync.vercel.app` | Render |
+| `CORS_ORIGINS` | no | extra origins, comma separated | Render |
+| `ENVIRONMENT` | yes | `production` | Render (`ENV` also works) |
+| `ALLOW_IN_MEMORY_DB` | no | `false` — never `true` in production | Render |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | no | `60` | Render |
+| `REFRESH_TOKEN_EXPIRE_DAYS` | no | `7` | Render |
+| `VERIFICATION_TOKEN_MINUTES` | no | `60` | Render |
+| `RATE_LIMIT_PER_MINUTE` | no | `120` | Render |
+| `UPLOAD_MAX_SIZE_MB` | no | `10` | Render |
+| `BCRYPT_ROUNDS` | no | `12` | Render |
+| `DEMO_PASSWORD` | no | the seeded demo accounts' password | Render (secret) |
+| `ALLOW_PRODUCTION_SEED` | no | `false` — only for a deliberate seed | local only |
+
+**Frontend** (set on Vercel, or in `frontend/.env.local` locally):
+
+| Name | Required | Placeholder | Where |
+|---|---|---|---|
+| `VITE_API_URL` | no | `https://edusync-api.onrender.com` | Vercel (build time) |
+
+### Smoke test checklist
+
+```bash
+# 1. The backend is up and the database is connected.
+curl -s https://<service>.onrender.com/health
+# expect: {"status":"ok", ..., "database":"up", "in_memory_demo_data":false, "notice":""}
+```
+
+2. Open the Vercel URL and sign in with a seeded account.
+3. Go to **Change Impact**, pick a student, change a field and press
+   **Preview the impact**.
+4. Confirm the banner **"Preview only: nothing has been saved"** appears,
+   with the findings listed underneath.
+5. Press **Apply the correction**, then open **Review checklist** and resolve
+   a task.
+6. Open the anomaly inspector — the change should not have created a
+   duplicate.
+
+### Free-tier caveats
+
+* **Render free web services spin down** after a period of inactivity, and the
+  first request afterwards can take roughly a minute while the service starts.
+  Check Render's current policy. For a demo week, either use a paid
+  instance, or put an uptime pinger on `/health`, and open the site a few
+  minutes before you present.
+* **Atlas M0** has a small storage cap and a low connection limit. It is
+  ample for the synthetic demo dataset, but check the current numbers on the
+  Atlas site before you rely on it.
+* **Vercel Hobby** is fine for a static SPA.
+
+### Security notes
+
+* Rotate `SECRET_KEY` and the database password **if they are ever exposed**.
+  Rotating `SECRET_KEY` invalidates every issued token.
+* Never reuse the demo credentials in a real deployment, and never put a
+  real password in `render.yaml`, `.env.example` or a commit.
+* The in-memory database is **refused in production** — the service refuses
+  to start with `ENVIRONMENT=production` and an empty `MONGODB_URL`.
+* A missing or unreachable `MONGODB_URL` is a **clear startup error**; there
+  is no silent fallback to an in-memory database.
+* The connection string is never written to a log: it is redacted to
+  `user:***@host` before it appears in an error message.
+* Verification in this prototype is **against this prototype's database, not
+  official APAAR or AICTE verification**.
+
+### The Android client
+
+The client is offline-first and currently makes **no API call at all**, so
+there is **no backend base URL to configure**. The only URL in the code is
+`BASE_URL` in
+`Acadentrix/core/src/main/kotlin/com/acadentrix/core/qr/ApaarQrPayload.kt`
+— the verification deep link that is embedded in a QR badge.
+
+When server synchronisation is added, note that:
+
+* `buildConfig = true` is already enabled in `Acadentrix/app/build.gradle.kts`,
+  so a `buildConfigField("API_BASE_URL", ...)` per build type is a small
+  change. **It has not been made here.**
+* The URL must be the **HTTPS** Render URL. Android blocks cleartext HTTP by
+  default.
+* CORS does not apply to a native client, so `FRONTEND_ORIGIN` does not need
+  the APK.
+
+**Distribution**
+
+* *Hackathon demo* — a signed release APK shared by link or QR code.
+* *Wider testing* — Firebase App Distribution, or Google Play Internal
+  Testing (Play needs a one-time developer registration fee; check the
+  current amount on the Play Console).
+
+The React site can also be made installable as a PWA (a manifest and a
+service worker). The manifest is already in place; the service worker is not.
+
+### Not yet verified
+
+The following could **not** be tested from this repository, because they need
+accounts and credentials that are deliberately not committed:
+
+* a live Render deployment;
+* a live MongoDB Atlas connection, and therefore the transaction path of the
+  correction workflow against a real replica set;
+* a live Vercel deployment;
+* the Android APK talking to a live backend (it does not make API calls yet).
+
+What **was** run: the whole pytest suite, the whole Vitest suite, the
+production build of the frontend, the Docker image build, and the backend
+served locally against the in-memory database.
+
+---
+
 ## The problem, in one paragraph
 
 APAAR is issued, stored and reconciled manually. That produces four recurring failure modes — garbage
 identifiers, intakes filled beyond the sanctioned ceiling, supernumerary quota abuse, and the same
 APAAR enrolled at two institutions or at a programme the institution was never approved to run.
 Verifiers, employers and universities have **no offline way to check any of it**. The platform closes
-all four loops with a four-layer anomaly engine, a tamper-evident cryptographic seal and a scannable
+all four loops with a ten-layer anomaly engine, a tamper-evident cryptographic seal and a scannable
 QR credential.
 
 ---
@@ -195,8 +429,27 @@ QR credential.
 | --- | --- |
 | **AICTE Central Directorate** | Pan-India dashboard, anomaly inspector, compliance matrix, audit trail |
 | **AICTE-Approved Institution** | Student register, CSV bulk intake, intake tracking, manual admission |
-| **Third-Party Verifier / Employer** | Single-APAAR lookup producing a signed verification dossier + QR card |
+| **Third-Party Verifier / Employer** | An opaque verification token producing a signed, expiring verdict |
 | **Student / Degree-Awarding Body** | Personal APAAR credential card, QR badge, degree certificate |
+
+### The Academic Record Change Impact Detector
+
+The headline feature. A correction to a record can leave another institution's
+copy inconsistent. The detector answers that **before** anything is written:
+
+| Rule | Fires when |
+| --- | --- |
+| `CIA-A` | The APAAR identifier changes — validity, duplicates, stale findings, revocations |
+| `CIA-B` | The institution or programme changes — sanction, seat recalculation, roll-number clash |
+| `CIA-C` | The academic year or enrolment date changes — both years recalculated, date sanity |
+| `CIA-D` | The quota bucket or nationality changes — the supernumerary ceilings, category consistency |
+| `CIA-E` | A seat count moves — enrolment against the sanctioned intake, per programme, year and category |
+| `CIA-F` | A sealed field changes — the issued tokens and credentials are out of date |
+
+A cross-institution identifier collision is reported as a **potential conflict
+for review** — never as a conclusion, and never as "fraud". A linked record is
+never modified: the dependent work becomes a checklist for an authorised
+reviewer, and the previous version of the record is always preserved.
 
 ### Ten-layer anomaly engine
 
@@ -212,6 +465,9 @@ QR credential.
 | 8. Impossible dates | Unparseable, future, or enrolment before birth |
 | 9. Missing mandatory fields | Name, DOB, roll number, programme, year, enrolment date, nationality |
 | 10. Unsanctioned programme | Enrolment in a course the institute is not approved to run |
+
+The ceilings are **versioned policy configuration**, stored in the
+`policy_rules` collection, not hard-coded in the engine.
 
 ### Tamper-evident verification
 
@@ -231,6 +487,15 @@ badges already in circulation. The Android client renders the QR matrix with a
 correction included) on a Compose `Canvas`; the server uses the `qrcode`
 library and `reportlab` for the printed certificates.
 
+### Opaque verification tokens
+
+A public check must not put the APAAR ID in a URL, so a badge carries a
+**token**: high-entropy, expiring, revocable, and stored only as a SHA-256
+hash. The public answer is an allowlist — the record status, the institution,
+the programme, the academic year, the issue date and the verdict. It never
+contains the APAAR ID, the date of birth, contact details or the underlying
+document.
+
 ---
 
 ## Build & verify
@@ -240,10 +505,19 @@ library and `reportlab` for the printed certificates.
 ```bash
 cd edusync
 pip install -r requirements.txt
-alembic upgrade head
+cp .env.example .env            # then edit the secrets
 python -m app.scripts.seed
 uvicorn app.main:app --reload
-pytest -q          # 161 tests
+pytest -q                       # 217 tests
+```
+
+### The web frontend
+
+```bash
+cd frontend
+npm install
+npm test                        # 31 tests
+npm run build
 ```
 
 ### The Android client

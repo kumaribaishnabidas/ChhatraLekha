@@ -1,17 +1,24 @@
-# EduSynC - APAAR ID Student Data Management & Verification Platform
+# EduSynC - the Python backend
 
-EduSynC is a student data management and verification platform for AICTE-approved
-institutions. It validates every enrolment as it is uploaded, detects regulatory
-breaches before they reach the national registry, and issues credentials that any
-employer can verify offline.
+The server of the **EduSynC** platform. It holds
+the registry, runs the validation and the anomaly rules, and issues the
+credentials that the web frontend and the Android client consume.
 
-## Components
+| Layer | Package |
+|---|---|
+| Configuration | `app.core.config` |
+| Persistence | `app.core.database` (Motor, async MongoDB) |
+| Security | `app.core.security` (bcrypt, PBKDF2, JWT, API keys) |
+| Access control | `app.core.rbac` |
+| Documents | `app.models.documents` |
+| Rules | `app.services` |
+| API | `app.api` |
+| Audit | `app.audit.writer` |
 
-| Component | Directory | Stack |
-|---|---|---|
-| Web frontend | `../frontend/` | React 19, Vite 6, Tailwind CSS 4, Recharts 3, React Router 7, Vitest |
-| Python backend | `app/` | FastAPI, Motor (async MongoDB), Pydantic v2, `cryptography`, `qrcode`, ReportLab |
-| Android client | `../Acadentrix/` | Kotlin 2.2, Jetpack Compose, Material 3, Room |
+> **Verification is against this prototype's database. It is not official APAAR
+> or AICTE verification.**
+
+---
 
 ## Quick start
 
@@ -33,14 +40,41 @@ Copy `.env.example` to `.env` and set the secrets:
 MONGODB_URL=mongodb://localhost:27017
 SECRET_KEY=<at least 32 random characters>
 SEAL_HMAC_KEY=<a random key>
+FRONTEND_ORIGIN=http://localhost:5173
 ```
 
-> **No MongoDB server?** Leave `MONGODB_URL=` empty. The application then uses a
-> built-in **in-memory MongoDB**, which is seeded automatically on start-up, so
-> the whole platform is demonstrable with a single command and no external
-> service.
+> **No MongoDB server?** Leave `MONGODB_URL` empty **and** set
+> `ALLOW_IN_MEMORY_DB=true`. The application then uses a throwaway in-memory
+> database, logs a loud warning, shows a "demo data, not persisted" notice in
+> `/health` and in the UI, and refuses to start in production. A missing or
+> unreachable `MONGODB_URL` is otherwise a **clear error**, never a silent
+> downgrade.
 
-### 2. Run it
+### 2. Seed the demo data
+
+```bash
+python -m app.scripts.seed
+```
+
+The dataset is **entirely synthetic** - no real student, institution or APAAR
+identifier is used. It contains one instance of every anomaly the engine can
+detect, plus the four walk-through scenarios of the change impact detector.
+
+The demo accounts are:
+
+| E-mail | Role |
+|---|---|
+| `aicte.admin@edusync.gov.in` | AICTE Directorate |
+| `principal@vidyavikas.edu.in` | Institution admin (INST-0421) |
+| `principal@bhartiya.edu.in` | Institution admin (INST-0422) |
+| `verifier@acme-corp.com` | Verifier |
+| `student@vidyavikas.edu.in` | Student |
+
+Their password comes from `DEMO_PASSWORD`. When that is empty, the seed script
+generates one and **prints it once** - it is never stored in the repository and
+never written to a log.
+
+### 3. Run it
 
 ```bash
 uvicorn app.main:app --reload
@@ -48,48 +82,71 @@ uvicorn app.main:app --reload
 
 * Portal: <http://localhost:8000>
 * OpenAPI: <http://localhost:8000/docs>
-* Health: <http://localhost:8000/api/health>
+* Health: <http://localhost:8000/health>
 
-Sign in with `aicte.admin@edusync.gov.in` / `EduSync@2024` (development only).
+---
 
-### 3. The frontend
+## The headline feature: the change impact detector
 
-```bash
-cd frontend
-npm install
-npm run dev      # http://localhost:5173, proxies /api to the backend
-npm run build    # production bundle in dist/, served by the backend
+A correction to a student record can make other records inconsistent. The
+detector answers that question **before** anything is written.
+
+```
+POST /api/students/{record_id}/correction-preview   ->  nothing is written
+POST /api/students/{record_id}/corrections          ->  the correction, with a checklist
+GET  /api/impacts                                     ->  the assessments
+GET  /api/review-tasks                                ->  the checklist
+PATCH /api/review-tasks/{task_id}                     ->  the reviewer's decision
+GET  /api/students/{record_id}/versions               ->  the version timeline
 ```
 
-The backend serves `frontend/dist` from the same origin, so a production
-deployment is a single container.
+The rules are deterministic. No model decides whether a record is valid.
 
-### 4. Everything at once
+| Rule | Fires when |
+|---|---|
+| `CIA-A` | The APAAR identifier changes - validity, duplicates, stale findings, revocations |
+| `CIA-B` | The institution or programme changes - sanction, seat recalculation, roll-number clash |
+| `CIA-C` | The academic year or enrolment date changes - both years recalculated, date sanity |
+| `CIA-D` | The quota bucket or nationality changes - the supernumerary ceilings, category consistency |
+| `CIA-E` | A seat count moves - enrolment against the sanctioned intake, per programme, year and category |
+| `CIA-F` | A sealed field changes - the issued tokens and credentials are out of date |
 
-```bash
-docker compose up --build
+Two invariants hold throughout:
+
+* **A linked record is never modified.** A dependent fix is a separate
+  authorised action that writes its own audit entry.
+* **A half-applied correction is never left silently.** The operation is
+  recorded in `operation_status` before it starts, so a crash leaves a visible,
+  recoverable state.
+
+The preview requires `expected_version` when it is applied. If the record moved
+in the meantime, the correction is refused with **409** rather than
+overwriting a change the reviewer did not see.
+
+---
+
+## Opaque verification tokens
+
+A public check must not put the APAAR ID in a URL. A token is a
+high-entropy, expiring, revocable handle:
+
+```
+POST /api/verification-tokens            ->  the plaintext, shown exactly once
+GET  /api/verify/token/{token}           ->  public, allowlist only
+POST /api/verification-tokens/{id}/revoke
 ```
 
-## Seeding the demo dataset
+Only the SHA-256 hash of the token is stored, so a dump of the collection
+cannot be replayed. The public answer contains the record status, the
+institution, the programme, the academic year, the issue date and the
+verdict - **never** the APAAR ID, the date of birth, contact details or the
+underlying document. The QR badges and the PDF certificates carry the token
+URL, not the APAAR ID.
 
-```bash
-python -m app.scripts.seed --students 2219
-```
+The older `GET /api/verify/{apaar_id}` route still exists, but it requires the
+`verify_credential` permission and every call is audited.
 
-The dataset is **entirely synthetic** - no real student, institution or APAAR
-identifier is used. It deliberately contains one instance of every anomaly the
-engine can detect, so the dashboards show a live breach rather than an empty
-state.
-
-## Tests
-
-```bash
-cd edusync && pytest -q      # 159 backend tests
-cd frontend && npm test      # 25 frontend tests
-```
-
-The backend suite runs against the in-memory MongoDB, so it needs no server and
-no fixtures on disk.
+---
 
 ## The rules
 
@@ -97,6 +154,8 @@ no fixtures on disk.
 |---|---|
 | APAAR identifier validation | `app/services/apaar_validator.py` |
 | The ten-layer anomaly engine | `app/services/anomaly_engine.py` |
+| The change impact engine | `app/services/impact_engine.py` |
+| The versioned seat policy | `app/services/policy.py` |
 | Signed seals (legacy / HMAC / Ed25519) | `app/services/seal.py` |
 | Batch CSV ingestion and validation | `app/services/csv_ingestion.py` |
 | CSV and PDF reports | `app/services/csv_export.py`, `app/services/pdf.py` |
@@ -107,6 +166,13 @@ no fixtures on disk.
 These modules are storage-agnostic: they work on plain objects, so the same
 code runs against MongoDB, against the seed script and against the Android
 client's Kotlin twin.
+
+The supernumerary ceilings are **policy, not code**. The active document in
+the `policy_rules` collection describes one version of the rules; the built-in
+fallback is used when no document is published, and a category the policy does
+not define is reported as `review_only` rather than guessed at.
+
+---
 
 ## API highlights
 
@@ -119,36 +185,98 @@ client's Kotlin twin.
 | `GET` | `/api/students` | Search the authorised student register |
 | `POST` | `/api/students/bulk/preview` | Validate a batch CSV without writing |
 | `POST` | `/api/students/bulk/commit` | Commit the accepted rows of a batch |
-| `GET` | `/api/students/{apaar_id}/qr` | The APAAR QR badge |
+| `GET` | `/api/students/{apaar_id}/qr` | The APAAR QR badge (carries a token) |
 | `GET` | `/api/students/{apaar_id}/certificate.pdf` | A certificate carrying the APAAR ID |
 | `GET` | `/api/anomalies` | The findings available to the caller |
 | `GET` | `/api/dashboard/national` | The pan-India headline numbers |
 | `GET` | `/api/dashboard/intake` | Live intake utilisation |
 | `GET` | `/api/dashboard/compliance` | The institution compliance matrix |
-| `GET` | `/api/dashboard/risk` | The explainable risk scores |
-| `GET` | `/api/verify/{apaar_id}` | Verify a credential |
-| `POST` | `/api/verify/scan` | Verify a credential from a scanned QR payload |
-| `POST` | `/api/consent` | Grant or revoke a consent |
+| `POST` | `/api/students/{id}/correction-preview` | Assess a correction without writing |
+| `POST` | `/api/students/{id}/corrections` | Apply a reviewed correction |
+| `GET` | `/api/review-tasks` | The review checklist |
+| `GET` | `/api/verification-tokens` | The tokens issued for a record |
+| `GET` | `/api/verify/token/{token}` | The public, allowlist-only verification |
 | `GET` | `/api/reports/students.csv` | Export an authorised student report |
-| `GET` | `/api/reports/anomalies.pdf` | Export the anomaly register as PDF |
 
-Every endpoint is documented at `/docs`, and every protected endpoint enforces
-its permission **on the server** - hiding a button in React is not a security
-control.
+Every protected endpoint enforces its permission **on the server** - hiding a
+button in React is not a security control.
 
-## Security
+---
 
-- Passwords are hashed with bcrypt; PINs use PBKDF2-HMAC-SHA256.
-- JWT access and refresh tokens with role claims; API keys for machine-to-machine
-  integrations.
-- The APAAR ID is never used as a lookup key: equality lookups use a keyed
-  HMAC token, so an index dump does not disclose the identifiers.
-- The audit trail is hash-chained, and audit entries store a masked APAAR ID.
-- Rate limiting on every request; a sliding window per client.
-- Secrets come from the environment; production start-up refuses development
-  secrets and refuses the in-memory database.
-- The data model never imposes a global unique index on the APAAR ID, because
-  that would prevent the registry from holding - and therefore detecting - a
-  cross-institution duplicate.
+## Environment variables
+
+| Variable | Purpose |
+|---|---|
+| `MONGODB_URL` | The MongoDB connection string. **Required** outside the demo mode. |
+| `MONGODB_DATABASE` | The database name. Default `edusync`. |
+| `ALLOW_IN_MEMORY_DB` | `true` to run the throwaway demo database. Never in production. |
+| `SECRET_KEY` | The JWT signing key. At least 32 characters. |
+| `SEAL_HMAC_KEY` | The HMAC sealing key. |
+| `MATCH_KEY` | Optional separate key for the keyed APAAR match token. |
+| `FRONTEND_ORIGIN` | The public origin of the web frontend. Used for CORS and for badge links. |
+| `CORS_ORIGINS` | Extra allowed origins. A wildcard is never allowed. |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | The access-token lifetime. Default 60. |
+| `REFRESH_TOKEN_EXPIRE_DAYS` | The refresh-token lifetime. Default 7. |
+| `VERIFICATION_TOKEN_MINUTES` | The verification-token lifetime. Default 60. |
+| `RATE_LIMIT_PER_MINUTE` | The request budget per client. Default 60. |
+| `UPLOAD_MAX_SIZE_MB` | The largest accepted CSV. Default 10. |
+| `BCRYPT_ROUNDS` | The password hashing cost. Default 12. |
+| `DEMO_PASSWORD` | The password of the seeded demo accounts. |
+| `ENVIRONMENT` | `dev`, `test` or `production`. |
+
+---
+
+## Tests
+
+```bash
+cd edusync && pytest -q
+```
+
+The suite runs against the in-memory MongoDB, so it needs no server and no
+fixtures on disk. It covers the APAAR validator, all ten anomaly layers, the
+six impact rules, the correction workflow (including the no-mutation
+assertion, the 409 on a stale version and the review-task lifecycle), the
+verification tokens (including the allowlist-only public answer), the consent
+policy, the audit chain, the RBAC matrix and the HTTP API end to end.
+
+---
+
+## Deployment
+
+### Render (the backend)
+
+`render.yaml` at the repository root describes the service. The steps are:
+
+1. Create a **MongoDB Atlas** cluster and a database user.
+2. In Render, create a **Web Service** from the repository - the file is
+   picked up automatically. The build is `pip install -r requirements.txt`
+   and the start command is
+   `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
+3. Add the environment variables: `MONGODB_URL` (the Atlas string),
+   `SECRET_KEY`, `SEAL_HMAC_KEY` and `FRONTEND_ORIGIN`.
+4. The health check is `/health`.
+
+> **Atlas and transactions.** MongoDB Atlas clusters are replica sets, so
+> multi-document transactions are available. A standalone development server
+> is not a replica set, and the correction workflow falls back to the explicit
+> `operation_status` recovery there.
+
+### Vercel (the frontend)
+
+1. Import the repository into Vercel with **the `frontend` directory as the
+   root**.
+2. The build is `npm run build` and the output directory is `dist`.
+   `frontend/vercel.json` adds the SPA rewrite.
+3. Set `VITE_API_URL` to the Render URL of the backend.
+
+> The deployment configuration is provided and documented, but **it was not
+> exercised against a live Atlas, Render or Vercel account** in this
+> repository - only the local Docker Compose path was run.
+
+### Locally
+
+```bash
+docker compose up --build     # MongoDB + the API + the React frontend
+```
 
 See [`docs/architecture.md`](docs/architecture.md) for the full design.

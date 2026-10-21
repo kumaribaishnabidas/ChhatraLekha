@@ -16,10 +16,16 @@ class AuditRepository:
     # ---------------------------------------------------------------- reads
 
     async def recent(self, limit: int = 200) -> list[Doc]:
-        """The most recent entries, newest first."""
+        """The most recent entries, newest first.
+
+        The order is the MongoDB ``_id`` order, which is the true insertion
+        order. A timestamp is not precise enough to order entries that were
+        written in the same millisecond, and the chain has to be verified in
+        exactly the order it was written.
+        """
         rows = (
             await self._collection.find({})
-            .sort("timestamp", -1)
+            .sort("_id", -1)
             .limit(limit)
             .to_list(length=None)
         )
@@ -29,7 +35,7 @@ class AuditRepository:
         """The oldest entries first - the order the chain is verified in."""
         rows = (
             await self._collection.find({})
-            .sort("timestamp", 1)
+            .sort("_id", 1)
             .limit(limit)
             .to_list(length=None)
         )
@@ -39,23 +45,25 @@ class AuditRepository:
         """The hash of the most recent entry (or the genesis hash)."""
         from app.services import audit_chain
 
-        row = await self._collection.find_one(sort=[("timestamp", -1)])
-        if not row:
+        rows = (
+            await self._collection.find({}).sort("_id", -1).limit(1).to_list(length=None)
+        )
+        if not rows:
             return audit_chain.GENESIS_HASH
-        return row.get("hash") or audit_chain.GENESIS_HASH
+        return rows[0].get("hash") or audit_chain.GENESIS_HASH
 
     async def count(self) -> int:
         return await self._collection.count_documents({})
 
     # --------------------------------------------------------------- writes
 
-    async def insert(self, document: dict[str, Any]) -> Doc:
+    async def insert(self, document: dict[str, Any], session: Any = None) -> Doc:
         """Append one chained entry."""
         now = utcnow()
         document = dict(document)
         document.setdefault("timestamp", now)
         document.setdefault("created_at", now)
-        await self._collection.insert_one(document)
+        await self._collection.insert_one(document, session=session)
         return Doc(document)
 
     async def delete_all(self) -> int:

@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Acadentrix — APAAR ID Student Data Management &amp; Verification Platform | EduSynC</title>
-<meta name="description" content="Acadentrix by EduSynC: an offline-first Android platform that turns the APAAR identifier into a verifiable, tamper-evident academic credential for AICTE-approved institutions, verifiers, employers and students." />
+<title>EduSynC — APAAR ID Student Data Management &amp; Verification Platform</title>
+<meta name="description" content="EduSynC: a web and Android platform that turns the APAAR identifier into a verifiable, tamper-evident academic credential for AICTE-approved institutions, verifiers, employers and students." />
 <link rel="icon" type="image/png" href="assets/brand/favicon.png" />
-<meta property="og:title" content="Acadentrix — APAAR ID Student Data Management &amp; Verification Platform" />
-<meta property="og:description" content="A product of EduSynC. Four-layer anomaly engine, dependency-free QR credentialing and tamper-evident seals. Built for Smart India Hackathon." />
+<meta property="og:title" content="EduSynC — APAAR ID Student Data Management &amp; Verification Platform" />
+<meta property="og:description" content="A product of EduSynC. A ten-layer anomaly engine, change impact detection, opaque verification tokens and tamper-evident seals. Built for Smart India Hackathon." />
 <meta property="og:image" content="assets/brand/edusync-lockup.png" />
 <meta property="og:type" content="website" />
 <style>
@@ -243,7 +243,7 @@
       <div class="brand">
         <img src="assets/brand/edusync-mark-on-white.png" alt="EduSynC logo" />
         <div class="word">
-          <div class="product">Acadentrix</div>
+          <div class="product">EduSynC</div>
           <div class="owner">by EduSynC</div>
         </div>
       </div>
@@ -258,15 +258,16 @@
       <div class="hero-grid">
         <div>
           <span class="eyebrow"><span class="dot"></span>Smart India Hackathon · AICTE</span>
-          <h1>Acadentrix<br /><span class="accent">One ID. One Truth.</span></h1>
+          <h1>EduSynC<br /><span class="accent">One ID. One Truth.</span></h1>
           <p class="lede">
-            The APAAR ID Student Data Management &amp; Verification Platform — an offline-first
-            Android app that turns AICTE&rsquo;s academic passport into a
+            The APAAR ID Student Data Management &amp; Verification Platform — a web portal, a
+            Python backend and an offline-first Android app that turn AICTE&rsquo;s academic
+            passport into a
             <strong>verifiable, tamper-evident credential</strong> for institutions,
             verifiers, employers and students.
           </p>
           <p class="subline">
-            <strong>Acadentrix</strong> is the product. <strong>EduSynC</strong> is the brand.
+            <strong>EduSynC</strong> is the product. <strong>Sentinals</strong> is the team.
           </p>
           <div class="btnrow">
             <a class="btn btn-primary" href="https://github.com/kumaribaishnabidas/EduSynC" target="_blank" rel="noopener">View the source ↗</a>
@@ -339,10 +340,12 @@
 <section id="engine" class="band">
   <div class="wrap">
     <div class="kicker">Solution</div>
-    <h2>A four-layer anomaly engine</h2>
+    <h2>A ten-layer anomaly engine, and a correction that never surprises you</h2>
     <p class="section-intro">
-      Every record is checked against four independent layers. A single failure is a warning; a
+      Every record is checked against ten independent layers. A single failure is a warning; a
       pattern across records is a finding — and both are surfaced with the evidence attached.
+      When a record does have to be corrected, the change impact detector shows exactly what
+      else would be affected <em>before</em> anything is written.
     </p>
     <div class="layers">
       <div class="layer">
@@ -358,28 +361,40 @@
       <div class="layer">
         <div class="lnum">02</div>
         <div>
-          <h3>Intake breach</h3>
-          <p>Enrolled count compared against the programme&rsquo;s sanctioned intake for the
-             academic year. The dashboard animates the utilisation gauge so a breach is visible
-             before it becomes a finding.</p>
+          <h3>Identity: the same student, twice</h3>
+          <p>One APAAR active at two institutions, twice inside one institution, or two students
+             sharing one institute roll number. A cross-institution collision is reported as a
+             <strong>potential conflict for review</strong> — never as a conclusion.</p>
         </div>
       </div>
       <div class="layer">
         <div class="lnum">03</div>
         <div>
-          <h3>Supernumerary quota ceilings</h3>
-          <p><code>NRI ≤ 5%</code> · <code>OCI / FN ≤ 15%</code> · <code>TFW ≤ 5%</code> ·
-             <code>PMSSS</code> capped per course and institute. Computed against live enrolment,
-             with the offending rows listed by name.</p>
+          <h3>Capacity: intake and the supernumerary ceilings</h3>
+          <p>Enrolled count against the programme&rsquo;s sanctioned intake, and
+             <code>NRI ≤ 5%</code> · <code>OCI / FN ≤ 15%</code> · <code>TFW ≤ 5%</code> ·
+             <code>PMSSS</code> capped per course. The ceilings are
+             <strong>versioned policy configuration</strong>, not code, so a rule change is a
+             reviewable data change.</p>
         </div>
       </div>
       <div class="layer">
         <div class="lnum">04</div>
         <div>
-          <h3>Cross-institution multi-enrolment</h3>
-          <p>The same APAAR appearing at two institutions is flagged as
-             <code>DUPLICATE_CROSS_COLLEGE</code>; enrolment at a programme the institution was
-             never approved to run is flagged as <code>UNSANCTIONED_PROGRAM</code>.</p>
+          <h3>Integrity: consistency, dates, fields, programmes</h3>
+          <p>Missing foreign-national documents, a quota bucket that contradicts the declared
+             nationality, impossible dates, missing mandatory fields, and enrolment in a course
+             the institution was never approved to run.</p>
+        </div>
+      </div>
+      <div class="layer">
+        <div class="lnum">05</div>
+        <div>
+          <h3>Change impact detection</h3>
+          <p>Preview a correction and see the six deterministic rules that apply — the seat
+             counts to recalculate, the findings to revisit, the credentials to re-seal. The
+             previous version is kept, and a linked record is <strong>never</strong> changed
+             silently.</p>
         </div>
       </div>
     </div>
@@ -396,7 +411,7 @@
     </p>
     <table>
       <thead>
-        <tr><th>Role</th><th>What Acadentrix gives them</th></tr>
+        <tr><th>Role</th><th>What EduSynC gives them</th></tr>
       </thead>
       <tbody>
         <tr>
@@ -427,16 +442,21 @@
     <div class="grid-2" style="align-items:center">
       <div>
         <p class="section-intro" style="margin-bottom:18px">
-          Each enrolment is sealed with a 32-character digest over the facts the APAAR was issued
-          against. Change any bound field and the seal changes with it.
+          Each enrolment is sealed with a digest over the facts the APAAR was issued against.
+          Change any bound field and the seal changes with it. The badge carries an
+          <strong>opaque, expiring, revocable token</strong> rather than the raw APAAR ID, so
+          a scanned link discloses nothing on its own.
         </p>
-        <pre><span class="cm"># seal = first 32 hex chars of the digest</span>
-SHA-256(<span class="cm">"APAAR|{id}|{institution}|{program}|{year}|{date}"</span>)
-  .hexdigest()[:32]</pre>
+        <pre><span class="cm"># HMAC-SHA256 or Ed25519 over the bound fields</span>
+<span class="cm">"APAAR|{id}|{institution}|{program}|{year}|{date}|</span>
+<span class="cm"> {name}|{dob}|{gender}|{quota}|{nationality}|{roll}|{version}"</span></pre>
         <p style="margin-top:20px;color:var(--ink-soft);font-size:.95rem">
-          The QR matrix itself is produced by a <strong>dependency-free ISO/IEC 18004 encoder</strong>
-          — Reed–Solomon error correction included — and rendered directly on a Compose
-          <span class="mono">Canvas</span>. No third-party QR library is used anywhere in the app.
+          The wire format is <span class="mono">&lt;ALG&gt;.&lt;keyId&gt;.&lt;signature&gt;</span>,
+          so a legacy unkeyed digest, an HMAC seal and an offline-verifiable Ed25519 signature
+          all coexist without breaking the badges already in circulation. The private key never
+          leaves the server; the Android client renders the QR matrix with a
+          <strong>dependency-free ISO/IEC 18004 encoder</strong> — Reed–Solomon error
+          correction included — directly on a Compose <span class="mono">Canvas</span>.
         </p>
       </div>
       <div class="card">
@@ -462,29 +482,35 @@ SHA-256(<span class="cm">"APAAR|{id}|{institution}|{program}|{year}|{date}"</spa
 <section class="band">
   <div class="wrap">
     <div class="kicker">Under the hood</div>
-    <h2>Modern Android, deliberately offline</h2>
+    <h2>Three parts, one set of rules</h2>
     <p class="section-intro">
-      Clean architecture with a Room-backed repository and a single state holder. The app ships
-      with a deterministic seeded pan-India dataset so every screen, anomaly and failure mode is
-      demonstrable with no network at all.
+      A React web application, a Python backend on MongoDB, and an offline-first
+      Android client. The APAAR validator, the anomaly engine, the seal format
+      and the QR payload are specified identically in the Kotlin and Python
+      implementations, so the phone and the server can never disagree about
+      whether a record is valid.
     </p>
     <div class="stack" style="margin-bottom:28px">
+      <span class="pill">React 19</span>
+      <span class="pill">Vite 6</span>
+      <span class="pill">Tailwind CSS 4</span>
+      <span class="pill">Recharts 3</span>
+      <span class="pill">FastAPI</span>
+      <span class="pill">Motor / MongoDB</span>
+      <span class="pill">Pydantic v2</span>
       <span class="pill">Kotlin 2.2.21</span>
       <span class="pill">Jetpack Compose</span>
       <span class="pill">Material 3</span>
       <span class="pill">Room 2.8.5 + KSP</span>
-      <span class="pill">Coroutines &amp; Flow</span>
-      <span class="pill">Navigation Compose</span>
       <span class="pill">AGP 8.13.2</span>
-      <span class="pill">Gradle 8.14.6</span>
       <span class="pill">minSdk 24</span>
       <span class="pill">targetSdk 36</span>
     </div>
     <div class="grid-4">
-      <div class="card"><h3>Clean architecture</h3><p>Domain, data and UI layers with a single <span class="mono">ApaarRepository</span> and one <span class="mono">ApaarViewModel</span> exposing immutable state through <span class="mono">StateFlow</span>.</p></div>
-      <div class="card"><h3>Deterministic data</h3><p>12 institutions, 30 programmes and 2,219 students seeded with crafted anomalies — the same every launch.</p></div>
+      <div class="card"><h3>Change impact detection</h3><p>Six deterministic rules preview what a correction would affect. The previous version is kept and a linked record is never changed silently.</p></div>
+      <div class="card"><h3>Opaque tokens</h3><p>A badge carries an expiring, revocable token, stored only as a hash. The public answer is an allowlist and never an APAAR ID.</p></div>
+      <div class="card"><h3>Deterministic data</h3><p>12 institutions, 60 programme seats and ~1,900 students seeded with crafted anomalies — the same every launch, on the server and on the phone.</p></div>
       <div class="card"><h3>Proven QR</h3><p>The round-trip suite decodes the encoder output with an independently written ISO 18004 reference decoder and asserts zero Reed–Solomon syndromes.</p></div>
-      <div class="card"><h3>Room schema shipped</h3><p>Every schema version is committed to the repository, so migrations are reviewable in the pull request.</p></div>
     </div>
   </div>
 </section>
@@ -494,24 +520,36 @@ SHA-256(<span class="cm">"APAAR|{id}|{institution}|{program}|{year}|{date}"</spa
     <div class="kicker">Build it</div>
     <h2>Clone, build, verify</h2>
     <p class="section-intro">
-      Requires JDK 17+ and an Android SDK with <span class="mono">compileSdk 36</span>. Add a
-      <span class="mono">local.properties</span> pointing at your SDK, then:
+      The backend needs Python 3.11+ and a MongoDB server; the frontend needs Node 20+; the
+      Android client needs JDK 17+ and an Android SDK with
+      <span class="mono">compileSdk 36</span>. Add a <span class="mono">local.properties</span>
+      pointing at your SDK, then:
     </p>
     <pre><span class="cm"># clone</span>
 git clone https://github.com/kumaribaishnabidas/EduSynC.git
-cd EduSynC/Acadentrix
 
-<span class="cm"># run the 78 unit tests and assemble the debug APK</span>
-./gradlew testDebugUnitTest assembleDebug
+<span class="cm"># the backend</span>
+cd EduSynC/edusync
+pip install -r requirements.txt
+cp .env.example .env            <span class="cm"># then edit the secrets</span>
+python -m app.scripts.seed      <span class="cm"># synthetic demo dataset</span>
+uvicorn app.main:app --reload
+pytest -q                       <span class="cm"># 217 tests</span>
 
-<span class="cm"># artifacts</span>
-app/build/outputs/apk/debug/app-debug.apk
-app/build/reports/tests/testDebugUnitTest/index.html</pre>
+<span class="cm"># the web frontend</span>
+cd ../frontend
+npm install
+npm test                        <span class="cm"># 31 tests</span>
+npm run build
+
+<span class="cm"># the Android client</span>
+cd ../Acadentrix
+./gradlew testDebugUnitTest assembleDebug</pre>
     <div class="grid-4" style="margin-top:34px">
-      <div class="card"><h3>CsvIngestionTest</h3><p>21 tests</p></div>
-      <div class="card"><h3>AnomalyEngineTest</h3><p>16 tests</p></div>
-      <div class="card"><h3>ApaarIdValidatorTest</h3><p>15 tests</p></div>
-      <div class="card"><h3>SealGeneratorTest</h3><p>11 tests</p></div>
+      <div class="card"><h3>Backend</h3><p>217 pytest tests, 0 failures</p></div>
+      <div class="card"><h3>Frontend</h3><p>31 Vitest tests, 0 failures</p></div>
+      <div class="card"><h3>Android</h3><p>185 JUnit tests, 0 failures</p></div>
+      <div class="card"><h3>Everything at once</h3><p><span class="mono">docker compose up --build</span></p></div>
     </div>
   </div>
 </section>
@@ -521,13 +559,14 @@ app/build/reports/tests/testDebugUnitTest/index.html</pre>
     <div class="brandblock">
       <img src="assets/brand/edusync-lockup.png" alt="EduSynC brand lockup" />
       <div class="copy">
-        <h3>Acadentrix is a product of EduSynC</h3>
+        <h3>EduSynC</h3>
         <p>
-          The application, its name and its engineering belong to <strong>Acadentrix</strong>.
-          The brand, the identity and the logo you see throughout this site and inside the app
-          belong to <strong>EduSynC</strong>. Built for Smart India Hackathon, on behalf of the
+          The product, its engineering, the brand, the identity and the logo you see
+          throughout this site and inside the app all belong to <strong>EduSynC</strong>. Built by the
+          <strong>Sentinals</strong> team for Smart India Hackathon 2026, on behalf of the
           AICTE Central Directorate and every approved institution that has to live with the
-          APAAR ID.
+          APAAR ID. Verification in this prototype is against its own database — it is not
+          official APAAR or AICTE verification.
         </p>
         <div class="btnrow">
           <a class="btn btn-primary" href="https://github.com/kumaribaishnabidas/EduSynC" target="_blank" rel="noopener">Open the repository ↗</a>
@@ -547,7 +586,7 @@ app/build/reports/tests/testDebugUnitTest/index.html</pre>
       </div>
     </div>
     <div>
-      <div>Acadentrix v1.0.0 · MIT-style prototype build</div>
+      <div>EduSynC v2.0.0 · MIT-style prototype build</div>
       <div><a href="https://github.com/kumaribaishnabidas/EduSynC" target="_blank" rel="noopener">github.com/kumaribaishnabidas/EduSynC</a></div>
     </div>
   </div>

@@ -38,6 +38,12 @@ class ParsedApaarPayload:
     program_id: Optional[str] = None
     seal: Optional[str] = None
     timestamp: Optional[int] = None
+    token: Optional[str] = None
+
+    @property
+    def is_token_payload(self) -> bool:
+        """Whether the payload carries an opaque verification token."""
+        return bool(self.token)
 
 
 def build_payload(
@@ -48,7 +54,12 @@ def build_payload(
     timestamp: int,
     base_url: str = BASE_URL,
 ) -> str:
-    """Build the deep-link payload carried by the APAAR QR badge."""
+    """Build the deep-link payload carried by the APAAR QR badge.
+
+    This is the original format, which puts the APAAR ID in the URL. It is
+    kept for badges that were already printed; new badges carry an opaque
+    token instead - see [build_token_payload].
+    """
     return (
         f"{base_url}?apaar={apaar_id}"
         f"&inst={institution_id}"
@@ -58,11 +69,22 @@ def build_payload(
     )
 
 
+def build_token_payload(token: str, base_url: str = BASE_URL) -> str:
+    """Build the deep-link payload of a badge that carries a token.
+
+    The token is opaque, expiring and revocable, so the URL discloses
+    nothing about the student.
+    """
+    return f"{base_url}?token={token}"
+
+
 def parse_payload(raw: str | None) -> ParsedApaarPayload | None:
-    """Extract the APAAR identifier from a scanned payload.
+    """Extract the APAAR identifier or the token from a scanned payload.
 
     Accepts the canonical verification URL as well as a bare 12-digit
-    identifier.
+    identifier. A payload that carries ``token=`` is the current format; one
+    that carries ``apaar=`` is the original format, which is only readable by
+    an authenticated verifier.
     """
     value = (raw or "").strip()
     if not value:
@@ -73,6 +95,11 @@ def parse_payload(raw: str | None) -> ParsedApaarPayload | None:
         query = parse_qs(urlparse(value).query)
     except ValueError:
         return None
+
+    token = (query.get("token") or [None])[0]
+    if token:
+        return ParsedApaarPayload(apaar_id="", token=token)
+
     apaar = (query.get("apaar") or [None])[0]
     if not apaar:
         return None

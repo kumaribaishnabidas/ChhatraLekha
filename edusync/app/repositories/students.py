@@ -61,6 +61,45 @@ class StudentRepository:
         rows = await self._collection.find({"apaar_id": apaar_id}).to_list(length=None)
         return Doc(rows[0]) if rows else None
 
+    async def get_by_record_id(self, record_id: str) -> Doc | None:
+        """One enrolment record by its internal identifier.
+
+        The internal identifier is the MongoDB ``_id``; the APAAR ID is
+        deliberately not usable here, because several records may claim the
+        same APAAR ID.
+        """
+        from bson import ObjectId
+
+        if not record_id:
+            return None
+        row = None
+        try:
+            row = await self._collection.find_one({"_id": ObjectId(record_id)})
+        except Exception:  # noqa: BLE001 - not an ObjectId, fall through
+            row = None
+        if row is None:
+            row = await self._collection.find_one({"record_id": record_id})
+        return Doc(row) if row else None
+
+    async def set_version(
+        self, record_id: str, version: int, session: Any = None
+    ) -> None:
+        """Set the optimistic-concurrency version of one record."""
+        from bson import ObjectId
+
+        try:
+            await self._collection.update_one(
+                {"_id": ObjectId(record_id)},
+                {"$set": {"version": version}},
+                session=session,
+            )
+            return
+        except Exception:  # noqa: BLE001
+            pass
+        await self._collection.update_one(
+            {"record_id": record_id}, {"$set": {"version": version}}, session=session
+        )
+
     async def all_for_apaar_id(self, apaar_id: str) -> list[Doc]:
         """Every enrolment record that claims this APAAR ID."""
         rows = await self._collection.find({"apaar_id": apaar_id}).to_list(length=None)
@@ -126,6 +165,7 @@ class StudentRepository:
         document = dict(document)
         document.setdefault("record_status", "ACTIVE")
         document.setdefault("is_active", True)
+        document.setdefault("version", 1)
         document.setdefault("created_at", now)
         document["updated_at"] = now
         if "apaar_id" in document:
@@ -142,6 +182,7 @@ class StudentRepository:
             item = dict(document)
             item.setdefault("record_status", "ACTIVE")
             item.setdefault("is_active", True)
+            item.setdefault("version", 1)
             item.setdefault("created_at", now)
             item.setdefault("updated_at", now)
             if "apaar_id" in item:
@@ -160,6 +201,30 @@ class StudentRepository:
             changes["apaar_id_hmac"] = match_token(changes["apaar_id"])
         await self._collection.update_many({"apaar_id": apaar_id}, {"$set": changes})
         return await self.get(apaar_id)
+
+    async def update_by_record_id(
+        self, record_id: str, changes: dict[str, Any], session: Any = None
+    ) -> Doc | None:
+        """Apply a partial update to **one** record, by its internal id.
+
+        A correction has to touch exactly the record the reviewer looked at,
+        even when several records claim the same APAAR ID.
+        """
+        from bson import ObjectId
+
+        changes = dict(changes)
+        changes["updated_at"] = utcnow()
+        if "apaar_id" in changes:
+            changes["apaar_id_hmac"] = match_token(changes["apaar_id"])
+        try:
+            await self._collection.update_one(
+                {"_id": ObjectId(record_id)}, {"$set": changes}, session=session
+            )
+        except Exception:  # noqa: BLE001 - not an ObjectId, fall through
+            await self._collection.update_one(
+                {"record_id": record_id}, {"$set": changes}, session=session
+            )
+        return await self.get_by_record_id(record_id)
 
     async def set_record_status(self, apaar_id: str, status: str) -> int:
         """Deactivate or reactivate every record that claims this APAAR ID."""

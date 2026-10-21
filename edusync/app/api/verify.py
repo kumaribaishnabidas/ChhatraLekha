@@ -223,7 +223,7 @@ async def _verify(
 @router.get(
     "/{apaar_id}",
     response_model=VerificationResult,
-    summary="Verify an APAAR credential",
+    summary="Verify an APAAR credential (authenticated verifiers only)",
 )
 async def verify_credential(
     apaar_id: str,
@@ -232,7 +232,13 @@ async def verify_credential(
     principal: Principal = Depends(require_permission(rbac.Permission.VERIFY_CREDENTIAL)),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> VerificationResult:
-    """Verify a credential by APAAR ID, optionally against a presented seal."""
+    """Verify a credential by APAAR ID, optionally against a presented seal.
+
+    This route puts the raw APAAR ID in the URL, so it is **not** public: it
+    requires the ``verify_credential`` permission, and every call is written
+    to the audit trail. For a public check, use an opaque verification token
+    (``GET /api/verify/token/{token}``) instead.
+    """
     try:
         return await _verify(apaar_id, seal_value, request, principal, db)
     except ValueError as exc:
@@ -268,10 +274,11 @@ async def verify_scanned(
     summary="Public deep-link target of the APAAR QR badge",
 )
 async def verify_redirect(apaar_id: str) -> RedirectResponse:
-    """The public landing target of a scanned badge.
+    """The deep-link target of a badge printed before the token flow existed.
 
     It redirects to the web portal's verification page rather than exposing
-    the record to an unauthenticated API caller.
+    the record to an unauthenticated API caller. The page asks for a token, or
+    asks the verifier to sign in.
     """
     return RedirectResponse(
         url=f"/verify?apaar={apaar_id}", status_code=status.HTTP_307_REDIRECT

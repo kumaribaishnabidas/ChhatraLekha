@@ -41,16 +41,22 @@ async def lifespan(app: FastAPI):
     logger.info(
         "EduSynC is ready (MongoDB database '%s')", settings.mongodb_database
     )
+    logger.info(
+        "Correction mode: %s",
+        "multi-document transactions"
+        if mongo.supports_transactions
+        else "explicit operation_status recovery (the server is not a replica set)",
+    )
 
-    # A developer running without a MongoDB server gets the in-memory
-    # database, which starts empty. Seeding it here means the portal is
-    # demonstrable with a single command and no external service.
-    if mongo.is_in_memory:
+    # The in-memory database is a demo facility. It starts empty, so it is
+    # seeded here - but only when it was explicitly asked for, and never in
+    # production. Seeding a real database is always a manual step.
+    if mongo.is_in_memory and not settings.is_production:
         empty = await mongo.db()["students"].count_documents({}) == 0
         if empty:
             from app.scripts.seed import seed
 
-            logger.info("Seeding the in-memory MongoDB with the demo dataset...")
+            logger.info("Seeding the in-memory demo database...")
             summary = await seed()
             logger.info(
                 "Seeded %s institutions, %s programmes, %s students and %s anomalies.",
@@ -97,6 +103,7 @@ for router in ALL_ROUTERS:
 async def health() -> dict:
     """Report the health of the service and its database connection."""
     database = "down"
+    error = ""
     try:
         if not mongo.is_connected:
             await mongo.connect()
@@ -104,14 +111,31 @@ async def health() -> dict:
         database = "up"
     except Exception as exc:  # noqa: BLE001
         logger.warning("Database health check failed: %s", exc)
+        error = str(exc)
+
+    in_memory = mongo.is_in_memory
     return {
         "status": "ok" if database == "up" else "degraded",
         "app": settings.app_name,
         "environment": settings.environment,
         "database": database,
         "database_engine": "mongodb",
+        "in_memory_demo_data": in_memory,
+        "notice": (
+            "In-memory demo data - not persisted. This is a demo and test facility "
+            "only."
+            if in_memory
+            else ""
+        ),
+        "error": error,
         "version": app.version,
     }
+
+
+@app.get("/health", include_in_schema=False)
+async def health_alias() -> dict:
+    """The health check used by the Render deployment."""
+    return await health()
 
 
 # ------------------------------------------------------- the React frontend

@@ -21,20 +21,31 @@ async def log(
     actor_role: str = "",
     ip_address: Optional[str] = None,
     timestamp: Optional[datetime] = None,
+    session: Any = None,
 ) -> Any:
     """Append a chained entry to the audit trail.
 
     The subject is stored redacted when it looks like an APAAR ID, so the
     trail never holds a raw identifier in the clear.
     """
-    moment = timestamp or datetime.now(timezone.utc)
+    # MongoDB keeps dates with millisecond precision, so the timestamp is
+    # truncated before it is hashed. Otherwise the value that comes back out
+    # of the database would not be the value that was hashed, and the chain
+    # would never verify.
+    moment = audit_chain.truncate(timestamp or datetime.now(timezone.utc))
+
+    # The subject is redacted **before** it is hashed, so that the value the
+    # chain commits to is exactly the value that is stored. Hashing the
+    # unredacted subject would break the chain the moment the two diverged.
+    redacted_subject = redact_apaar(subject) if subject.isdigit() else subject
+
     prev = await repository.last_hash()
     digest = audit_chain.compute_hash(
         prev_hash=prev,
         timestamp=moment,
         actor=actor,
         action=action,
-        subject=subject,
+        subject=redacted_subject,
         details=details,
         category=category,
     )
@@ -44,14 +55,15 @@ async def log(
             "actor": actor,
             "actor_role": actor_role,
             "action": action,
-            "subject": redact_apaar(subject) if subject.isdigit() else subject,
+            "subject": redacted_subject,
             "details": details,
             "category": category,
             "ip_address": ip_address,
             "prev_hash": prev,
             "hash": digest,
             "integrity": "sha256-chained",
-        }
+        },
+        session=session,
     )
 
 

@@ -24,6 +24,7 @@ from app.api.deps import (
     client_ip,
     get_db,
     get_principal,
+    require_any_permission,
     require_permission,
 )
 from app.audit import writer
@@ -559,10 +560,20 @@ def _social_or_general(raw: str) -> str:
 @router.get("/{apaar_id}/qr", summary="The APAAR QR badge of a student")
 async def student_qr(
     apaar_id: str,
-    principal: Principal = Depends(get_principal),
+    principal: Principal = Depends(
+        require_any_permission(
+            rbac.Permission.ONBOARD_STUDENTS,
+            rbac.Permission.GENERATE_CERTIFICATE,
+            rbac.Permission.VERIFY_CREDENTIAL,
+        )
+    ),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> StreamingResponse:
-    """Render the APAAR QR badge of a student as a PNG image."""
+    """Render the APAAR QR badge of a student as a PNG image.
+
+    The badge carries an **opaque verification token**, not the APAAR ID: the
+    token discloses nothing, expires, and can be revoked.
+    """
     students = StudentRepository(db["students"])
     student = await students.get(apaar_id)
     if student is None:
@@ -576,18 +587,36 @@ async def student_qr(
                 detail="You are not allowed to access another institution's records.",
             )
 
-    payload = _payload_for(student)
-    signed = seal.sign(payload)
-    link = qr.build_payload(
-        apaar_id=student.get("apaar_id", ""),
-        institution_id=student.get("institution_id", ""),
-        program_id=student.get("program_id", ""),
-        seal=signed,
-        timestamp=int(datetime.now(timezone.utc).timestamp()),
-    )
+    document, raw = await _issue_badge_token(db, student, principal.subject)
+    link = qr.build_token_payload(raw, base_url=_verification_base_url())
     png = qr.render_png(link)
     return StreamingResponse(
         iter([png]), media_type="image/png", headers={"Content-Disposition": "inline"}
+    )
+
+
+def _verification_base_url() -> str:
+    """The public URL a scanned badge resolves to."""
+    from app.core.config import get_settings
+
+    return f"{get_settings().frontend_origin.rstrip('/')}/verify"
+
+
+async def _issue_badge_token(db, student: Doc, issued_by: str) -> tuple[Doc, str]:
+    """Issue the opaque token that a badge or a certificate carries."""
+    from app.repositories.tokens import VerificationTokenRepository
+
+    claims = {
+        "institution_id": student.get("institution_id", ""),
+        "program_id": student.get("program_id", ""),
+        "academic_year": student.get("academic_year", ""),
+        "record_status": student.get("record_status", "ACTIVE"),
+    }
+    return await VerificationTokenRepository(db["verification_tokens"]).issue(
+        str(student.get("_id", "")),
+        claims,
+        issued_by=issued_by,
+        minutes=settings.verification_token_minutes,
     )
 
 
@@ -628,13 +657,8 @@ async def student_certificate(
 
     payload = _payload_for(student)
     signed = seal.sign(payload)
-    link = qr.build_payload(
-        apaar_id=student.get("apaar_id", ""),
-        institution_id=student.get("institution_id", ""),
-        program_id=student.get("program_id", ""),
-        seal=signed,
-        timestamp=int(datetime.now(timezone.utc).timestamp()),
-    )
+    _, raw = await _issue_badge_token(db, student, principal.subject)
+    link = qr.build_token_payload(raw, base_url=_verification_base_url())
     png = qr.render_png(link)
 
     body = pdf.build_certificate_pdf(

@@ -13,6 +13,9 @@ import pytest
 # The in-memory MongoDB is selected by leaving MONGODB_URL empty. It has to
 # be set before ``app.core.database`` is imported.
 os.environ["MONGODB_URL"] = ""
+# The test-suite runs on the in-memory database, which has to be asked for
+# explicitly - the application never falls back to it silently.
+os.environ["ALLOW_IN_MEMORY_DB"] = "true"
 os.environ.setdefault(
     "SECRET_KEY", "test-secret-key-that-is-long-enough-for-tests"
 )

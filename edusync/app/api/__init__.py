@@ -4,10 +4,12 @@ from app.api import (
     anomalies,
     auth,
     consent,
+    corrections,
     dashboard,
     institutions,
     reports,
     students,
+    tokens,
     verify,
 )
 
@@ -20,4 +22,6 @@ ALL_ROUTERS = [
     consent.router,
     reports.router,
     dashboard.router,
+    corrections.router,
+    tokens.router,
 ]

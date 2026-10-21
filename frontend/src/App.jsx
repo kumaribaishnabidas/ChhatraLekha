@@ -4,6 +4,7 @@ import AppLayout from './components/layout/AppLayout'
 import { useAuth } from './hooks/useAuth'
 import AnomaliesPage from './pages/AnomaliesPage'
 import DashboardPage from './pages/DashboardPage'
+import ImpactPage from './pages/ImpactPage'
 import InstitutionsPage from './pages/InstitutionsPage'
 import LoginPage from './pages/LoginPage'
 import ReportsPage from './pages/ReportsPage'
@@ -87,6 +88,14 @@ export default function App() {
           element={
             <Guarded permission={PERMISSIONS.REVIEW_ANOMALIES}>
               <AnomaliesPage />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/impact"
+          element={
+            <Guarded permission={PERMISSIONS.PREVIEW_CORRECTION}>
+              <ImpactPage />
             </Guarded>
           }
         />

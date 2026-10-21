@@ -42,17 +42,18 @@ export default function LoginPage() {
           <p className="mt-4 text-white/85 leading-relaxed">
             EduSynC validates every enrolment as it is uploaded, detects the regulatory
             breaches before they reach the national registry, and issues credentials that
-            any employer can verify offline.
+            any employer can check with a signed, expiring, revocable token.
           </p>
           <ul className="mt-6 pl-5 text-white/80 leading-loose">
             <li>Ten-layer automated anomaly detection</li>
-            <li>Signed, offline-verifiable APAAR credentials</li>
+            <li>Change impact detection before a correction is applied</li>
+            <li>Opaque verification tokens - no raw APAAR ID in a URL</li>
             <li>Purpose-wise, revocable student consent</li>
-            <li>A tamper-evident, hash-chained audit trail</li>
           </ul>
         </div>
         <p className="m-0 text-xs text-white/60">
-          Synthetic demonstration data only. &copy; EduSynC.
+          Synthetic demonstration data only. Verification is against this
+          prototype&apos;s database, not official APAAR or AICTE verification.
         </p>
       </section>
 
@@ -112,10 +113,9 @@ export default function LoginPage() {
 
           <div className="mt-6 pt-5 border-t border-line">
             <p className="m-0 text-xs text-muted">
-              Demo accounts (development only): <strong>aicte.admin@edusync.gov.in</strong>,
-              <strong> principal@vidyavikas.edu.in</strong>,{' '}
-              <strong>verifier@acme-corp.com</strong> &mdash; password{' '}
-              <strong>EduSync@2024</strong>.
+              The demo accounts are created by the seed script
+              (<code>python -m app.scripts.seed</code>). Their password is read from
+              <code> DEMO_PASSWORD</code>, or generated and printed once at seed time.
             </p>
           </div>
         </div>

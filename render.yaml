@@ -1,0 +1,61 @@
+# EduSynC - Render deployment
+#
+# The backend is a FastAPI application backed by MongoDB. Point MONGODB_URL at
+# a MongoDB Atlas cluster: Atlas clusters are replica sets, so the correction
+# workflow can run its writes as a multi-document transaction.
+#
+#   1. Create an Atlas cluster and a dedicated database user.
+#   2. Add the connection string as MONGODB_URL in Render's dashboard.
+#   3. Set SECRET_KEY and SEAL_HMAC_KEY to fresh random values.
+#   4. Set FRONTEND_ORIGIN to the Vercel URL of the frontend.
+#   5. Deploy. Render reads this file automatically.
+#
+# The variable names below are the real ones in app/core/config.py.
+
+services:
+  - type: web
+    name: edusync-api
+    runtime: python
+    plan: free
+    # The backend lives in edusync/: requirements.txt and app/main.py are there.
+    rootDir: edusync
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: ENVIRONMENT
+        value: production
+      # The Atlas connection string. Set it in the Render dashboard.
+      - key: MONGODB_URL
+        sync: false
+      - key: MONGODB_DATABASE
+        value: edusync
+      # The in-memory demo database is never used in production.
+      - key: ALLOW_IN_MEMORY_DB
+        value: "false"
+      # The JWT signing key. Generate with:
+      #   python -c "import secrets; print(secrets.token_urlsafe(48))"
+      - key: SECRET_KEY
+        sync: false
+      # The HMAC sealing key. Generate with:
+      #   python -c "import secrets; print(secrets.token_urlsafe(32))"
+      - key: SEAL_HMAC_KEY
+        sync: false
+      # The public origin of the Vercel frontend, e.g. https://edusync.vercel.app
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "60"
+      - key: VERIFICATION_TOKEN_MINUTES
+        value: "60"
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "120"
+      # The password of the seeded demo accounts. Only needed if demo data is
+      # seeded into the deployment.
+      - key: DEMO_PASSWORD
+        sync: false

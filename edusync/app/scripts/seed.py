@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import random
+import secrets
 from datetime import date, timedelta
 from typing import Any
 
@@ -98,7 +99,39 @@ DEMO_USERS = [
     ("student@vidyavikas.edu.in", "Aakash Verma", "student", None),
 ]
 
-DEMO_PASSWORD = "EduSync@2024"
+#: The published AICTE Approval Process Handbook ceilings, stored as a
+#: versioned policy document rather than hard-coded in the engine.
+DEFAULT_POLICY_RULE = {
+    "policy_id": "aph-2024-01",
+    "version": "2024-01",
+    "active": True,
+    "effective_from": "2024-06-01",
+    "description": (
+        "The AICTE Approval Process Handbook ceilings: NRI 5% of the sanctioned "
+        "intake, OCI and foreign nationals 15% together, tuition fee waiver 5%, and "
+        "a per-programme PMSSS cap."
+    ),
+    "seats": {
+        "NRI": {"rule": "percentage_of_approved_intake", "value": 5},
+        "FN_OCI": {"rule": "percentage_of_approved_intake", "value": 15},
+        "TFW": {"rule": "percentage_of_approved_intake", "value": 5},
+        "PMSSS": {"rule": "absolute_per_programme", "value": 6},
+    },
+    "supported_categories": ["NRI", "FN_OCI", "TFW", "PMSSS"],
+}
+
+
+def _demo_password() -> str:
+    """The password of the seeded demo accounts.
+
+    It is read from ``DEMO_PASSWORD``. When that is not set, a password is
+    generated and printed **once** - it is never stored in the repository and
+    never written to a log.
+    """
+    configured = settings.demo_password.strip()
+    if configured:
+        return configured
+    return secrets.token_urlsafe(12)
 
 
 def _apaar_id(rng: random.Random) -> str:
@@ -148,6 +181,12 @@ async def seed(student_count: int = 2219, reset: bool = True) -> dict:
             "api_keys",
             "revoked_credentials",
             "submissions",
+            "policy_rules",
+            "record_versions",
+            "impact_assessments",
+            "review_tasks",
+            "verification_tokens",
+            "operation_status",
         ):
             await db[name].delete_many({})
 
@@ -476,9 +515,14 @@ async def seed(student_count: int = 2219, reset: bool = True) -> dict:
 
     for student in students:
         student.setdefault("apaar_id_hmac", match_token(student.get("apaar_id")))
+        student.setdefault("version", 1)
     await db["students"].insert_many(students)
 
+    # ------------------------------------ the change-impact demo scenarios
+    scenarios = await _seed_impact_scenarios(db, institutions, programmes, rng)
+
     # ---------------------------------------------------------------- users
+    password = _demo_password()
     users = [
         {
             "user_id": f"USR-{index:02d}-{role.upper().replace('_', '-')}",
@@ -486,7 +530,7 @@ async def seed(student_count: int = 2219, reset: bool = True) -> dict:
             "full_name": full_name,
             "role": role,
             "institution_id": institution_id,
-            "password_hash": hash_password(DEMO_PASSWORD),
+            "password_hash": hash_password(password),
             "is_active": True,
         }
         for index, (email, full_name, role, institution_id) in enumerate(
@@ -494,6 +538,13 @@ async def seed(student_count: int = 2219, reset: bool = True) -> dict:
         )
     ]
     await db["users"].insert_many(users)
+
+    # ------------------------------------------------------------- policy
+    await db["policy_rules"].replace_one(
+        {"policy_id": DEFAULT_POLICY_RULE["policy_id"]},
+        DEFAULT_POLICY_RULE,
+        upsert=True,
+    )
 
     # -------------------------------------------- recompute the anomalies
     anomalies = await recompute_anomalies(db)
@@ -517,9 +568,173 @@ async def seed(student_count: int = 2219, reset: bool = True) -> dict:
         "students": len(students),
         "anomalies": len(anomalies),
         "users": len(users),
-        "demo_password": DEMO_PASSWORD,
+        "scenarios": scenarios,
+        "demo_password": password,
         "api_key": api_key_plain,
     }
+
+
+async def _seed_impact_scenarios(
+    db,
+    institutions: list[dict[str, Any]],
+    programmes: list[dict[str, Any]],
+    rng: random.Random,
+) -> dict[str, str]:
+    """Create the four walk-through scenarios of the change impact detector.
+
+    Each scenario is a synthetic student whose record is in the state that
+    makes one of the rules fire, so the demo can be run end to end without
+    editing data by hand.
+    """
+    from app.repositories.tokens import VerificationTokenRepository
+
+    scenarios: dict[str, str] = {}
+
+    def _base(apaar_id: str, institution_id: str, program_id: str, **overrides) -> dict[str, Any]:
+        document = {
+            "apaar_id": apaar_id,
+            "apaar_id_hmac": match_token(apaar_id),
+            "student_name": "Scenario Student",
+            "date_of_birth": "2004-06-15",
+            "gender": "M",
+            "institution_id": institution_id,
+            "program_id": program_id,
+            "academic_year": "2024-25",
+            "admission_quota": "REGULAR_MERIT",
+            "enrollment_date": "2024-07-01",
+            "student_institute_roll_no": "SCN-00001",
+            "nationality": "Indian",
+            "social_category": "GENERAL",
+            "admission_date": "2024-07-01",
+            "contact_email": "scenario@example.in",
+            "contact_phone": "+91 90000 00000",
+            "state_of_domicile": "Karnataka",
+            "verification_status": "VERIFIED",
+            "is_active": True,
+            "record_status": "ACTIVE",
+            "submission_source": "SEED_SCENARIO",
+            "version": 1,
+        }
+        document.update(overrides)
+        return document
+
+    first = institutions[0]["institution_id"]
+    second = institutions[1]["institution_id"]
+    at_first = [p for p in programmes if p["institution_id"] == first]
+    at_second = [p for p in programmes if p["institution_id"] == second]
+
+    # 1. An admission-year correction. The student is enrolled in 2025-26 and
+    #    has a live verification token, so changing the year triggers CIA-C
+    #    (both years have to be recalculated) and CIA-F (the token now
+    #    describes outdated data). A linked record at another institution
+    #    still carries the old year, so a task is raised for it.
+    scenario_one_id = "771200000001"
+    scenario_one_linked_id = "771200000002"
+    await db["students"].insert_many(
+        [
+            _base(
+                scenario_one_id,
+                first,
+                at_first[0]["program_id"],
+                student_name="Rohit Kumar Sharma",
+                academic_year="2025-26",
+                enrollment_date="2025-07-01",
+                student_institute_roll_no="SCN-10001",
+            ),
+            _base(
+                scenario_one_linked_id,
+                second,
+                at_second[0]["program_id"],
+                student_name="Rohit K. Sharma",
+                academic_year="2025-26",
+                enrollment_date="2025-07-01",
+                student_institute_roll_no="SCN-20001",
+            ),
+        ]
+    )
+    # The linked record carries the same APAAR ID, so the cross-institution
+    # duplicate rule fires as well - which is exactly the point of the
+    # scenario.
+    await db["students"].update_one(
+        {"apaar_id": scenario_one_linked_id},
+        {"$set": {"apaar_id": scenario_one_id}},
+    )
+    scenario_one = await db["students"].find_one({"apaar_id": scenario_one_id})
+    await VerificationTokenRepository(db["verification_tokens"]).issue(
+        str(scenario_one["_id"]),
+        {
+            "institution_id": first,
+            "program_id": at_first[0]["program_id"],
+            "academic_year": "2025-26",
+            "record_status": "ACTIVE",
+        },
+        issued_by="seed",
+        minutes=60,
+    )
+    scenarios["1_academic_year_correction"] = (
+        f"APAAR {scenario_one_id} is enrolled in 2025-26 with a live verification "
+        "token and a linked record at another institution. Correcting the academic "
+        "year to 2026-27 triggers CIA-C and CIA-F."
+    )
+
+    # 2. A programme change that pushes the destination over its sanctioned
+    #    intake. The destination programme is filled to its cap by the bulk
+    #    dataset, so moving one more enrolment into it breaches CIA-E.
+    scenario_two_id = "772200000001"
+    await db["students"].insert_one(
+        _base(
+            scenario_two_id,
+            first,
+            at_first[0]["program_id"],
+            student_name="Priya Nair",
+            academic_year="2024-25",
+            student_institute_roll_no="SCN-10002",
+        )
+    )
+    scenarios["2_programme_change_over_intake"] = (
+        f"APAAR {scenario_two_id} can be moved into a programme that is already at "
+        "its sanctioned intake, which triggers CIA-B and CIA-E."
+    )
+
+    # 3. An identifier change that collides with another institution. The
+    #    target identifier belongs to a student of a different institution, so
+    #    the finding is a potential conflict for review - never a conclusion.
+    scenario_three_id = "773200000001"
+    await db["students"].insert_one(
+        _base(
+            scenario_three_id,
+            first,
+            at_first[0]["program_id"],
+            student_name="Arjun Menon",
+            student_institute_roll_no="SCN-10003",
+        )
+    )
+    other = await db["students"].find_one(
+        {"institution_id": second, "record_status": "ACTIVE"}
+    )
+    scenarios["3_identifier_collision"] = (
+        f"APAAR {scenario_three_id} can be given the identifier of a student at "
+        f"{second}, which triggers CIA-A as a potential conflict for review."
+        + (f" The colliding identifier is {other.get('apaar_id')}." if other else "")
+    )
+
+    # 4. A harmless correction. The contact e-mail is not bound into the seal,
+    #    so changing it produces no downstream task at all.
+    scenario_four_id = "774200000001"
+    await db["students"].insert_one(
+        _base(
+            scenario_four_id,
+            first,
+            at_first[0]["program_id"],
+            student_name="Sneha Kulkarni",
+            student_institute_roll_no="SCN-10004",
+        )
+    )
+    scenarios["4_harmless_correction"] = (
+        f"APAAR {scenario_four_id} can have its contact e-mail corrected without "
+        "any downstream task, because that field is not bound into the seal."
+    )
+    return scenarios
 
 
 async def main() -> None:
@@ -528,10 +743,27 @@ async def main() -> None:
     parser.add_argument("--no-reset", action="store_true")
     args = parser.parse_args()
 
+    # Seeding a real database is always a manual step. The script refuses to
+    # touch a production database unless it is asked to, so a stray call can
+    # never wipe the live registry.
+    if settings.is_production and not settings.allow_production_seed:
+        raise SystemExit(
+            "Refusing to seed a production database. Set ALLOW_PRODUCTION_SEED=true "
+            "if you really mean to overwrite the live registry."
+        )
+
     summary = await seed(student_count=args.students, reset=not args.no_reset)
     print("EduSynC demo data seeded:")
     for key, value in summary.items():
-        print(f"  {key:>16}: {value}")
+        if key == "scenarios":
+            print("  scenarios:")
+            for name, detail in value.items():
+                print(f"    {name}: {detail}")
+        else:
+            print(f"  {key:>16}: {value}")
+    print()
+    print("  The demo password is shown above. It is not stored in the repository;")
+    print("  set DEMO_PASSWORD to choose your own before seeding.")
 
 
 if __name__ == "__main__":

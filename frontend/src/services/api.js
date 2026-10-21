@@ -8,6 +8,15 @@
  */
 import axios from 'axios'
 
+/**
+ * The base URL of the EduSynC API.
+ *
+ * `VITE_API_URL` is read at BUILD time, so changing it needs a new
+ * deployment, not just a restart. When it is unset the frontend talks to
+ * `/api` on its own origin, which is the same-origin deployment (the API
+ * serves the built bundle) and the local development setup (the Vite dev
+ * server proxies `/api` to the backend).
+ */
 const BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
 const TOKEN_KEY = 'edusync.token'

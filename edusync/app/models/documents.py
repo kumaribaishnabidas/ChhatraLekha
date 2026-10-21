@@ -25,8 +25,34 @@ settings = get_settings()
 
 
 def utcnow() -> datetime:
-    """Timezone-aware current time."""
-    return datetime.now(timezone.utc)
+    """Timezone-aware current time, truncated to milliseconds.
+
+    MongoDB stores a date with millisecond precision. A value that carries
+    microseconds is therefore **not** the value that comes back out, which
+    matters for anything that hashes the timestamp - the audit chain, for
+    one. Truncating on the way in keeps the stored value and the hashed
+    value identical.
+    """
+    return _truncate(datetime.now(timezone.utc))
+
+
+def _truncate(moment: datetime) -> datetime:
+    """Floor a datetime to whole milliseconds."""
+    return moment.replace(microsecond=(moment.microsecond // 1000) * 1000)
+
+
+def as_utc(moment: datetime | None) -> datetime | None:
+    """Return a datetime as an aware UTC value.
+
+    MongoDB returns naive datetimes unless the client was told otherwise, so
+    a stored timestamp has to be made aware before it can be compared with
+    "now".
+    """
+    if moment is None:
+        return None
+    if moment.tzinfo is None:
+        return moment.replace(tzinfo=timezone.utc)
+    return moment.astimezone(timezone.utc)
 
 
 class Doc:
@@ -55,8 +81,12 @@ class Doc:
         MongoDB documents are schemaless, so a field that was never written
         reads as ``None`` rather than raising. Use [Doc.has] when the
         difference matters.
+
+        A name that is not a document field - a dunder in particular - raises
+        ``AttributeError``, so that ``hasattr`` and the copy and pickle
+        protocols keep working.
         """
-        if name.startswith("_"):
+        if name.startswith("_") or name in {"keys", "values", "items"}:
             raise AttributeError(name)
         value = self._data.get(name)
         converter = self._types.get(name)
@@ -99,6 +129,16 @@ class Doc:
 
     def get(self, key: str, default: Any = None) -> Any:
         return self._data.get(key, default)
+
+    def keys(self) -> list[str]:
+        """The stored field names, so that ``dict(document)`` works."""
+        return list(self._data)
+
+    def values(self) -> list[Any]:
+        return list(self._data.values())
+
+    def items(self) -> list[tuple[str, Any]]:
+        return list(self._data.items())
 
     def has(self, key: str) -> bool:
         """Whether the field is actually stored on the document."""

@@ -247,6 +247,11 @@ matrix.
 
 ## 13. Deployment
 
+* `render.yaml` - the Render web service: `rootDir: edusync`,
+  `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, health check `/health`.
+  The secrets are declared with `sync: false`, so they are set in the Render
+  dashboard and never in the file.
+* `frontend/vercel.json` - the SPA rewrite and the safe security headers.
 * `edusync/Dockerfile` - a three-stage build: the React bundle, the Python
   dependencies, and a slim runtime image that runs as a non-root user.
 * `docker-compose.yml` - MongoDB 7 plus the API, with a health check.
@@ -255,3 +260,23 @@ matrix.
   health-check smoke test.
 * `SECRET_KEY`, `SEAL_HMAC_KEY` and the database URL come from the
   environment; nothing sensitive is committed.
+
+### The transaction mode
+
+A correction writes to six collections. On a replica set - and a MongoDB
+Atlas cluster always is - the whole correction runs inside one
+**multi-document transaction**, so a failure half way through leaves nothing
+behind. On a standalone server there are no transactions, so the operation is
+recorded in `operation_status` first, and an interrupted correction stays
+visible and recoverable rather than silently half-applied. The mode is
+detected at start-up and logged once.
+
+### The in-memory database
+
+`MONGODB_URL` empty would silently fall back to an in-memory database. It
+does not any more: the fallback has to be asked for with
+`ALLOW_IN_MEMORY_DB=true`, it is refused outright in production, it logs a
+loud warning, and it shows a "demo data, not persisted" notice in `/health`
+and in the UI. A missing or unreachable `MONGODB_URL` is a **clear startup
+error**, and the connection string is redacted (`user:***@host`) before it
+appears in any message.

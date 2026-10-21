@@ -6,7 +6,7 @@ Every entry stores the hash of the previous entry and its own hash::
 
 Deleting, reordering or editing any row invalidates every hash after it, so
 an auditor can prove that the trail has not been rewritten. The chain is
-self-contained — no server, no key — which means it can be re-verified
+self-contained - no server, no key - which means it can be re-verified
 offline.
 """
 
@@ -15,6 +15,8 @@ from __future__ import annotations
 import hashlib
 from datetime import datetime, timezone
 from typing import Iterable
+
+from app.models.documents import field
 
 GENESIS_HASH = "0" * 64
 
@@ -25,6 +27,18 @@ def _iso(moment: datetime | None) -> str:
     if moment.tzinfo is None:
         moment = moment.replace(tzinfo=timezone.utc)
     return moment.astimezone(timezone.utc).isoformat()
+
+
+def truncate(moment: datetime) -> datetime:
+    """Floor a datetime to whole milliseconds.
+
+    MongoDB stores a date with millisecond precision, so a timestamp that
+    carries microseconds is not the value that comes back out. The audit
+    chain hashes the timestamp, so it has to be truncated before it is
+    written - otherwise the stored value and the hashed value differ and the
+    chain never verifies.
+    """
+    return moment.replace(microsecond=(moment.microsecond // 1000) * 1000)
 
 
 def compute_hash(
@@ -54,13 +68,13 @@ def compute_hash(
 def hash_of(entry) -> str:
     """Compute the chain hash of an entry that has no hash yet."""
     return compute_hash(
-        prev_hash=entry.prev_hash,
-        timestamp=entry.timestamp,
-        actor=entry.actor,
-        action=entry.action,
-        subject=entry.subject,
-        details=entry.details,
-        category=entry.category,
+        prev_hash=field(entry, "prev_hash", "") or "",
+        timestamp=field(entry, "timestamp"),
+        actor=field(entry, "actor", "") or "",
+        action=field(entry, "action", "") or "",
+        subject=field(entry, "subject", "") or "",
+        details=field(entry, "details", "") or "",
+        category=field(entry, "category", "") or "",
     )
 
 
@@ -71,14 +85,16 @@ def chain(entries: Iterable) -> list:
     for entry in entries:
         digest = compute_hash(
             prev_hash=prev,
-            timestamp=entry.timestamp,
-            actor=entry.actor,
-            action=entry.action,
-            subject=entry.subject,
-            details=entry.details,
-            category=entry.category,
+            timestamp=field(entry, "timestamp"),
+            actor=field(entry, "actor", "") or "",
+            action=field(entry, "action", "") or "",
+            subject=field(entry, "subject", "") or "",
+            details=field(entry, "details", "") or "",
+            category=field(entry, "category", "") or "",
         )
-        chained.append(_replace(entry, prev_hash=prev, hash=digest))
+        entry.prev_hash = prev
+        entry.hash = digest
+        chained.append(entry)
         prev = digest
     return chained
 
@@ -87,19 +103,19 @@ def verify(entries: Iterable) -> bool:
     """Verify a chain of entries supplied oldest-first."""
     prev = GENESIS_HASH
     for entry in entries:
-        if (entry.prev_hash or "") != prev:
+        if (field(entry, "prev_hash", "") or "") != prev:
             return False
-        if entry.hash != compute_hash(
-            prev_hash=entry.prev_hash,
-            timestamp=entry.timestamp,
-            actor=entry.actor,
-            action=entry.action,
-            subject=entry.subject,
-            details=entry.details,
-            category=entry.category,
+        if (field(entry, "hash", "") or "") != compute_hash(
+            prev_hash=field(entry, "prev_hash", "") or "",
+            timestamp=field(entry, "timestamp"),
+            actor=field(entry, "actor", "") or "",
+            action=field(entry, "action", "") or "",
+            subject=field(entry, "subject", "") or "",
+            details=field(entry, "details", "") or "",
+            category=field(entry, "category", "") or "",
         ):
             return False
-        prev = entry.hash
+        prev = field(entry, "hash", "") or ""
     return True
 
 
@@ -107,24 +123,17 @@ def first_break(entries: Iterable) -> str | None:
     """Describe the first broken link of a chain, or ``None`` when intact."""
     prev = GENESIS_HASH
     for index, entry in enumerate(entries, start=1):
-        if (entry.prev_hash or "") != prev:
+        if (field(entry, "prev_hash", "") or "") != prev:
             return f"Entry {index} does not link to the previous entry."
-        if entry.hash != compute_hash(
-            prev_hash=entry.prev_hash,
-            timestamp=entry.timestamp,
-            actor=entry.actor,
-            action=entry.action,
-            subject=entry.subject,
-            details=entry.details,
-            category=entry.category,
+        if (field(entry, "hash", "") or "") != compute_hash(
+            prev_hash=field(entry, "prev_hash", "") or "",
+            timestamp=field(entry, "timestamp"),
+            actor=field(entry, "actor", "") or "",
+            action=field(entry, "action", "") or "",
+            subject=field(entry, "subject", "") or "",
+            details=field(entry, "details", "") or "",
+            category=field(entry, "category", "") or "",
         ):
             return f"Entry {index} has been altered after it was written."
-        prev = entry.hash
+        prev = field(entry, "hash", "") or ""
     return None
-
-
-def _replace(entry, **changes):
-    """Replace attributes on either a SQLAlchemy model or a dataclass."""
-    for key, value in changes.items():
-        setattr(entry, key, value)
-    return entry
