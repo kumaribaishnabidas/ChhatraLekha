@@ -77,14 +77,14 @@ class ApaarQrPayloadTest {
     @Test
     fun theCredentialLinkSurvivesAQrRoundTrip() {
         val matrix = QrEncoder.encode(payload())
-        val decoded = ReferenceQrDecoder.decode(matrix)
+        val decoded = QrDecoder.decode(matrix)
         assertEquals(payload(), decoded)
     }
 
     @Test
     fun theSealSurvivesAQrRoundTripAndStillVerifies() {
         val matrix = QrEncoder.encode(payload())
-        val decoded = ReferenceQrDecoder.decode(matrix)
+        val decoded = QrDecoder.decode(matrix)
         val parsed = ApaarQrPayload.parse(decoded)
         assertNotNull(parsed)
         assertEquals(apaarId, parsed?.apaarId)
