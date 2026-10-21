@@ -9,10 +9,10 @@ from __future__ import annotations
 
 import secrets
 from functools import lru_cache
-from typing import List
+from typing import Annotated, List
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -32,10 +32,22 @@ class Settings(BaseSettings):
     api_prefix: str = "/api"
 
     # ------------------------------------------------------------- database
-    database_url: str = "sqlite+aiosqlite:///./edusync.db"
-    db_echo: bool = False
-    db_pool_size: int = 5
-    db_max_overflow: int = 10
+    mongodb_url: str = "mongodb://localhost:27017"
+    mongodb_database: str = "edusync"
+    mongodb_timeout_ms: int = 5000
+    #: Key used to derive the privacy-preserving match token of an APAAR ID.
+    #: An empty value falls back to the seal key.
+    match_key: str = ""
+
+    @property
+    def is_in_memory_mongo(self) -> bool:
+        """True when the in-memory MongoDB is used (no server configured)."""
+        return not self.mongodb_url.strip()
+
+    @property
+    def match_secret(self) -> bytes:
+        """The secret used for the keyed match token."""
+        return (self.match_key or self.seal_hmac_key).encode("utf-8")
 
     # ---------------------------------------------------------------- auth
     secret_key: str = Field(default_factory=lambda: secrets.token_urlsafe(48))
@@ -50,7 +62,13 @@ class Settings(BaseSettings):
     seal_key_id: str = "edusync-2024-01"
 
     # ------------------------------------------------------------- security
-    cors_origins: List[str] = ["http://localhost:8000", "http://127.0.0.1:8000"]
+    #: ``NoDecode`` stops pydantic-settings from trying to JSON-parse the
+    #: environment variable, so a plain comma-separated list works.
+    cors_origins: Annotated[List[str], NoDecode] = [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:5173",
+    ]
     rate_limit_per_minute: int = 60
     upload_max_size_mb: int = 10
     bcrypt_rounds: int = 12
@@ -70,10 +88,6 @@ class Settings(BaseSettings):
     def is_production(self) -> bool:
         return self.environment.lower() in {"prod", "production"}
 
-    @property
-    def is_sqlite(self) -> bool:
-        return self.database_url.startswith("sqlite")
-
     def assert_production_safe(self) -> None:
         """Refuse to start in production with development secrets."""
         if not self.is_production:
@@ -82,6 +96,10 @@ class Settings(BaseSettings):
             raise RuntimeError("SECRET_KEY must be at least 32 characters in production.")
         if len(self.seal_hmac_key) < 16:
             raise RuntimeError("SEAL_HMAC_KEY must be at least 16 characters in production.")
+        if self.is_in_memory_mongo:
+            raise RuntimeError(
+                "MONGODB_URL must point at a real MongoDB server in production."
+            )
 
 
 @lru_cache

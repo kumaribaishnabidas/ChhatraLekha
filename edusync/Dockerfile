@@ -1,7 +1,25 @@
 # EduSynC - APAAR ID Student Data Management & Verification Platform
 #
-# Build stage: install the dependencies into a virtual environment.
-FROM python:3.12-slim AS builder
+# Two stages:
+#   1. build the React frontend with Vite;
+#   2. install the Python dependencies into a virtual environment.
+# The runtime stage carries the API and the built frontend together, so the
+# whole platform ships as one image.
+
+# --------------------------------------------------------------- frontend
+FROM node:22-alpine AS frontend
+
+WORKDIR /build
+
+COPY frontend/package.json frontend/package-lock.json* ./
+RUN npm install --no-audit --no-fund
+
+COPY frontend/ ./
+RUN npm run build
+
+
+# --------------------------------------------------------------- backend
+FROM python:3.12-slim AS backend
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -13,40 +31,37 @@ RUN apt-get update \
     && apt-get install --no-install-recommends -y build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY edusync/requirements.txt .
 RUN python -m venv /opt/venv \
     && /opt/venv/bin/pip install --upgrade pip \
-    && /opt/venv/bin/pip install "sqlalchemy[asyncio]" greenlet \
     && /opt/venv/bin/pip install -r requirements.txt
 
 
-# Runtime stage: a slim image with only the application and the venv.
+# --------------------------------------------------------------- runtime
 FROM python:3.12-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/opt/venv/bin:$PATH" \
     ENVIRONMENT=dev \
-    DATABASE_URL=sqlite+aiosqlite:////data/edusync.db
+    MONGODB_URL=mongodb://mongodb:27017 \
+    MONGODB_DATABASE=edusync
 
 RUN apt-get update \
     && apt-get install --no-install-recommends -y libpq5 curl \
     && rm -rf /var/lib/apt/lists/* \
-    && useradd --create-home --uid 10001 edusync \
-    && mkdir -p /data \
-    && chown edusync:edusync /data
+    && useradd --create-home --uid 10001 edusync
 
-COPY --from=builder /opt/venv /opt/venv
+COPY --from=backend /opt/venv /opt/venv
 
 WORKDIR /app
-COPY --chown=edusync:edusync app ./app
-COPY --chown=edusync:edusync alembic.ini ./
-COPY --chown=edusync:edusync alembic ./alembic
+COPY --chown=edusync:edusync edusync/app ./app
+COPY --from=frontend --chown=edusync:edusync /build/dist /app/frontend/dist
 
 USER edusync
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD curl -fsS http://localhost:8000/api/health || exit 1
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

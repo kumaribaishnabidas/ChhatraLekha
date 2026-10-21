@@ -24,6 +24,8 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+from app.models.documents import enum_value, field
+
 # EduSynC brand palette.
 NAVY = colors.HexColor("#14246B")
 MID_BLUE = colors.HexColor("#0F3A8A")
@@ -148,12 +150,12 @@ def build_students_report_pdf(
     for row in rows:
         data.append(
             [
-                row.apaar_id,
-                row.student_name,
-                row.institution_id,
-                row.program_id,
-                getattr(row.admission_quota, "value", row.admission_quota),
-                getattr(row.verification_status, "value", row.verification_status),
+                field(row, "apaar_id", ""),
+                field(row, "student_name", ""),
+                field(row, "institution_id", ""),
+                field(row, "program_id", ""),
+                enum_value(field(row, "admission_quota", "")),
+                enum_value(field(row, "verification_status", "")),
             ]
         )
 
@@ -218,12 +220,12 @@ def build_anomaly_report_pdf(
     for row in rows:
         data.append(
             [
-                row.student_apaar_id,
-                row.institution_id,
-                row.program_id or "-",
-                getattr(row.anomaly_type, "value", row.anomaly_type),
-                getattr(row.severity, "value", row.severity),
-                row.details,
+                field(row, "student_apaar_id", ""),
+                field(row, "institution_id", ""),
+                field(row, "program_id", "") or "-",
+                enum_value(field(row, "anomaly_type", "")),
+                enum_value(field(row, "severity", "")),
+                field(row, "details", ""),
             ]
         )
 
@@ -251,9 +253,7 @@ def build_anomaly_report_pdf(
         ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
     ]
     for index, row in enumerate(rows, start=1):
-        colour = severity_colours.get(
-            getattr(row.severity, "value", row.severity), GREY
-        )
+        colour = severity_colours.get(enum_value(field(row, "severity", "")), GREY)
         style.append(("TEXTCOLOR", (4, index), (4, index), colour))
         style.append(("FONTNAME", (4, index), (4, index), "Helvetica-Bold"))
     table.setStyle(TableStyle(style))
@@ -300,13 +300,13 @@ def build_compliance_report_pdf(
     for row in rows:
         data.append(
             [
-                row.institution_name or row.institution_id,
-                row.state,
-                row.total_approved,
-                row.total_enrolled,
-                f"{row.utilisation * 100:.1f}",
-                row.breaches,
-                row.risk_band,
+                field(row, "institution_name", "") or field(row, "institution_id", ""),
+                field(row, "state", ""),
+                field(row, "total_approved", 0),
+                field(row, "total_enrolled", 0),
+                f"{float(field(row, 'utilisation', 0.0) or 0.0) * 100:.1f}",
+                field(row, "breaches", 0),
+                field(row, "risk_band", "LOW"),
             ]
         )
 
@@ -382,7 +382,7 @@ def build_certificate_pdf(
     story.append(Spacer(1, 4 * mm))
     story.append(
         Paragraph(
-            f"This is to certify that <b>{student.student_name}</b>, bearing APAAR ID "
+            f"This is to certify that <b>{field(student, 'student_name', '')}</b>, bearing APAAR ID "
             f"<b>{apaar_id}</b>, is duly enrolled in the programme "
             f"<b>{program_name}</b> at <b>{institution_name}</b> for the academic year "
             f"<b>{academic_year}</b>.",
@@ -393,15 +393,15 @@ def build_certificate_pdf(
 
     details = [
         ["APAAR ID", apaar_id],
-        ["Student name", student.student_name],
-        ["Date of birth", student.date_of_birth or "-"],
+        ["Student name", field(student, "student_name", "")],
+        ["Date of birth", field(student, "date_of_birth", "") or "-"],
         ["Institution", institution_name],
         ["Programme", program_name],
         ["Academic year", academic_year],
-        ["Institute roll no.", student.student_institute_roll_no or "-"],
-        ["Quota category", getattr(student.admission_quota, "label", student.admission_quota)],
-        ["Enrolment date", student.enrollment_date or "-"],
-        ["Verification status", getattr(student.verification_status, "label", student.verification_status)],
+        ["Institute roll no.", field(student, "student_institute_roll_no", "") or "-"],
+        ["Quota category", enum_value(field(student, "admission_quota", ""))],
+        ["Enrolment date", field(student, "enrollment_date", "") or "-"],
+        ["Verification status", enum_value(field(student, "verification_status", ""))],
     ]
     table = Table(details, colWidths=[48 * mm, 92 * mm])
     table.setStyle(

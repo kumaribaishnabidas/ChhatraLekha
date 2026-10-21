@@ -1,4 +1,4 @@
-"""Regulatory reporting endpoints: CSV and PDF exports (requirement 9)."""
+"""Regulatory reporting endpoints: CSV and PDF exports (requirement 7.10)."""
 
 from __future__ import annotations
 
@@ -6,17 +6,15 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, Request, Response
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.api.deps import Principal, client_ip, require_permission
+from app.api.deps import Principal, client_ip, get_db, require_permission
 from app.audit import writer
 from app.core import rbac
-from app.core.database import get_db
-from app.models import Anomaly, AuditLog, ProgramIntake, Student
-from app.models.enums import AnomalySeverity, AnomalyType
+from app.repositories.audit import AuditRepository
 from app.services import csv_export, pdf
-from app.services.anomaly_engine import RegistrySnapshot, engine
+from app.services.anomaly_engine import engine
+from app.services.registry import build_snapshot
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -29,27 +27,30 @@ def _filename(prefix: str, extension: str) -> str:
     return f"edusync-{prefix}-{_stamp()}.{extension}"
 
 
-async def _students(session: AsyncSession, institution_id: Optional[str]) -> list[Student]:
-    statement = select(Student).order_by(Student.student_name)
+async def _students(db, institution_id: Optional[str], limit: int = 100000) -> list:
+    query = {"record_status": "ACTIVE"}
     if institution_id:
-        statement = statement.where(Student.institution_id == institution_id)
-    return list((await session.execute(statement)).scalars().all())
+        query["institution_id"] = institution_id
+    rows = await db["students"].find(query).sort("student_name", 1).to_list(length=limit)
+    return rows
 
 
 async def _anomalies(
-    session: AsyncSession,
+    db,
     institution_id: Optional[str],
-    severity: Optional[AnomalySeverity],
-    anomaly_type: Optional[AnomalyType],
-) -> list[Anomaly]:
-    statement = select(Anomaly).order_by(Anomaly.detected_at.desc())
+    severity: Optional[str],
+    anomaly_type: Optional[str],
+    limit: int = 5000,
+) -> list:
+    query: dict = {}
     if institution_id:
-        statement = statement.where(Anomaly.institution_id == institution_id)
+        query["institution_id"] = institution_id
     if severity:
-        statement = statement.where(Anomaly.severity == severity)
+        query["severity"] = severity
     if anomaly_type:
-        statement = statement.where(Anomaly.anomaly_type == anomaly_type)
-    return list((await session.execute(statement)).scalars().all())
+        query["anomaly_type"] = anomaly_type
+    rows = await db["anomalies"].find(query).sort("detected_at", -1).to_list(length=limit)
+    return rows
 
 
 @router.get("/students.csv", summary="Export the student register as CSV")
@@ -57,15 +58,15 @@ async def students_csv(
     request: Request,
     institution_id: Optional[str] = Query(None),
     principal: Principal = Depends(require_permission(rbac.Permission.EXPORT_REPORTS)),
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> Response:
     """Download the student register as a CSV file."""
     if principal.role != "aicte_admin":
         institution_id = principal.institution_id
-    rows = await _students(session, institution_id)
+    rows = await _students(db, institution_id)
     body = csv_export.students(rows)
     await writer.log(
-        session,
+        AuditRepository(db["audit_events"]),
         actor=principal.subject,
         actor_role=principal.role,
         action="EXPORT_REPORT",
@@ -74,7 +75,6 @@ async def students_csv(
         category="REPORTING",
         ip_address=client_ip(request),
     )
-    await session.commit()
     return Response(
         content=body,
         media_type="text/csv; charset=utf-8",
@@ -87,15 +87,15 @@ async def students_pdf(
     request: Request,
     institution_id: Optional[str] = Query(None),
     principal: Principal = Depends(require_permission(rbac.Permission.EXPORT_REPORTS)),
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> Response:
     """Download the student register as a PDF report."""
     if principal.role != "aicte_admin":
         institution_id = principal.institution_id
-    rows = await _students(session, institution_id)
+    rows = await _students(db, institution_id)
     body = pdf.build_students_report_pdf(rows, subtitle=f"{len(rows)} record(s)")
     await writer.log(
-        session,
+        AuditRepository(db["audit_events"]),
         actor=principal.subject,
         actor_role=principal.role,
         action="EXPORT_REPORT",
@@ -104,7 +104,6 @@ async def students_pdf(
         category="REPORTING",
         ip_address=client_ip(request),
     )
-    await session.commit()
     return Response(
         content=body,
         media_type="application/pdf",
@@ -116,18 +115,18 @@ async def students_pdf(
 async def anomalies_csv(
     request: Request,
     institution_id: Optional[str] = Query(None),
-    severity: Optional[AnomalySeverity] = Query(None),
-    anomaly_type: Optional[AnomalyType] = Query(None),
+    severity: Optional[str] = Query(None),
+    anomaly_type: Optional[str] = Query(None),
     principal: Principal = Depends(require_permission(rbac.Permission.EXPORT_REPORTS)),
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> Response:
     """Download the anomaly register as a CSV file."""
     if principal.role != "aicte_admin":
         institution_id = principal.institution_id
-    rows = await _anomalies(session, institution_id, severity, anomaly_type)
+    rows = await _anomalies(db, institution_id, severity, anomaly_type)
     body = csv_export.anomalies(rows)
     await writer.log(
-        session,
+        AuditRepository(db["audit_events"]),
         actor=principal.subject,
         actor_role=principal.role,
         action="EXPORT_REPORT",
@@ -136,7 +135,6 @@ async def anomalies_csv(
         category="REPORTING",
         ip_address=client_ip(request),
     )
-    await session.commit()
     return Response(
         content=body,
         media_type="text/csv; charset=utf-8",
@@ -148,18 +146,18 @@ async def anomalies_csv(
 async def anomalies_pdf(
     request: Request,
     institution_id: Optional[str] = Query(None),
-    severity: Optional[AnomalySeverity] = Query(None),
-    anomaly_type: Optional[AnomalyType] = Query(None),
+    severity: Optional[str] = Query(None),
+    anomaly_type: Optional[str] = Query(None),
     principal: Principal = Depends(require_permission(rbac.Permission.EXPORT_REPORTS)),
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> Response:
     """Download the anomaly register as a PDF report."""
     if principal.role != "aicte_admin":
         institution_id = principal.institution_id
-    rows = await _anomalies(session, institution_id, severity, anomaly_type)
+    rows = await _anomalies(db, institution_id, severity, anomaly_type)
     body = pdf.build_anomaly_report_pdf(rows)
     await writer.log(
-        session,
+        AuditRepository(db["audit_events"]),
         actor=principal.subject,
         actor_role=principal.role,
         action="EXPORT_REPORT",
@@ -168,7 +166,6 @@ async def anomalies_pdf(
         category="REPORTING",
         ip_address=client_ip(request),
     )
-    await session.commit()
     return Response(
         content=body,
         media_type="application/pdf",
@@ -181,17 +178,13 @@ async def audit_csv(
     request: Request,
     limit: int = Query(1000, ge=1, le=10000),
     principal: Principal = Depends(require_permission(rbac.Permission.VIEW_AUDIT_TRAIL)),
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> Response:
     """Download the tamper-evident audit trail as a CSV file."""
-    rows = (
-        await session.execute(
-            select(AuditLog).order_by(AuditLog.log_id.desc()).limit(limit)
-        )
-    ).scalars().all()
-    body = csv_export.audit_trail(reversed(rows))
+    rows = await AuditRepository(db["audit_events"]).recent(limit=limit)
+    body = csv_export.audit_trail(rows)
     await writer.log(
-        session,
+        AuditRepository(db["audit_events"]),
         actor=principal.subject,
         actor_role=principal.role,
         action="EXPORT_REPORT",
@@ -200,7 +193,6 @@ async def audit_csv(
         category="REPORTING",
         ip_address=client_ip(request),
     )
-    await session.commit()
     return Response(
         content=body,
         media_type="text/csv; charset=utf-8",
@@ -213,25 +205,20 @@ async def utilisation_csv(
     request: Request,
     institution_id: Optional[str] = Query(None),
     principal: Principal = Depends(require_permission(rbac.Permission.EXPORT_REPORTS)),
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> Response:
     """Download the programme utilisation matrix as a CSV file."""
-    programs = (
-        await session.execute(select(ProgramIntake).order_by(ProgramIntake.program_name))
-    ).scalars().all()
-    students = (await session.execute(select(Student))).scalars().all()
-    snapshots = engine.build_snapshots(
-        RegistrySnapshot(programs=programs, students=students)
-    )
+    snapshot = await build_snapshot(db)
+    snapshots = engine.build_snapshots(snapshot)
     if institution_id:
         snapshots = [
-            snapshot
-            for snapshot in snapshots
-            if snapshot.program.institution_id == institution_id
+            item
+            for item in snapshots
+            if item.program.get("institution_id") == institution_id
         ]
     body = csv_export.programme_utilisation(snapshots)
     await writer.log(
-        session,
+        AuditRepository(db["audit_events"]),
         actor=principal.subject,
         actor_role=principal.role,
         action="EXPORT_REPORT",
@@ -240,7 +227,6 @@ async def utilisation_csv(
         category="REPORTING",
         ip_address=client_ip(request),
     )
-    await session.commit()
     return Response(
         content=body,
         media_type="text/csv; charset=utf-8",

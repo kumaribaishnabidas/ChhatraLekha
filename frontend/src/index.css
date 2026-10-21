@@ -1,0 +1,114 @@
+@import 'tailwindcss';
+
+/*
+ * EduSynC design tokens.
+ *
+ * The palette is sampled directly from the EduSynC brand artwork: navy
+ * #14246B, mid blue #0F3A8A, bright blue #1558B8, brand teal #12B886, plus
+ * saffron, emerald and crimson for the anomaly severities.
+ */
+@theme {
+  --color-navy: #14246b;
+  --color-navy-deep: #0f1a4a;
+  --color-mid-blue: #0f3a8a;
+  --color-bright-blue: #1558b8;
+  --color-brand-teal: #12b886;
+  --color-brand-teal-dark: #0d926b;
+  --color-saffron: #f2a413;
+  --color-emerald: #0f9d58;
+  --color-crimson: #c62828;
+  --color-ink: #1a1f2b;
+  --color-muted: #5a6472;
+  --color-line: #d6deea;
+  --color-canvas: #f4f7fc;
+
+  --font-sans: 'Segoe UI', Inter, system-ui, -apple-system, 'Helvetica Neue', Arial,
+    sans-serif;
+  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-canvas text-ink font-sans leading-relaxed antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply text-navy font-bold tracking-tight;
+  }
+
+  /* A visible, consistent focus ring on every interactive element. */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-bright-blue;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white border border-line rounded-2xl shadow-[0_1px_2px_rgba(20,36,107,0.06),0_8px_24px_rgba(20,36,107,0.08)];
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
+      transition-transform cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn:hover:not(:disabled) {
+    @apply -translate-y-px;
+  }
+
+  .btn-primary {
+    @apply bg-brand-teal text-emerald-950 hover:bg-brand-teal-dark;
+  }
+
+  .btn-navy {
+    @apply bg-navy text-white hover:bg-mid-blue;
+  }
+
+  .btn-outline {
+    @apply bg-white text-navy border border-line hover:border-mid-blue;
+  }
+
+  .btn-danger {
+    @apply bg-crimson text-white;
+  }
+
+  .btn-ghost {
+    @apply text-navy hover:bg-[#EEF2F8];
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm text-ink
+      placeholder:text-muted/70 focus:border-bright-blue focus:ring-4 focus:ring-bright-blue/10 focus:outline-none;
+  }
+
+  .label {
+    @apply block text-[11px] font-bold uppercase tracking-wider text-navy mb-1.5;
+  }
+
+  .table-wrap {
+    @apply overflow-x-auto rounded-2xl border border-line bg-white;
+  }
+
+  .data-table {
+    @apply w-full text-sm border-collapse;
+  }
+
+  .data-table th {
+    @apply bg-[#F7F9FD] text-navy text-[11px] uppercase tracking-wider text-left px-3 py-2.5 whitespace-nowrap;
+  }
+
+  .data-table td {
+    @apply px-3 py-2.5 border-t border-line align-top;
+  }
+
+  .data-table tbody tr:hover {
+    @apply bg-[#FAFCFF];
+  }
+}

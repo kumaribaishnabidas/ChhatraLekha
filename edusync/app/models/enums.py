@@ -189,6 +189,16 @@ class VerificationStatus(str, Enum):
             VerificationStatus.PENDING_REVIEW: "Pending Review",
         }[self]
 
+    @classmethod
+    def from_code(cls, raw: str | None) -> "VerificationStatus":
+        """Parse a stored status, defaulting to pending review."""
+        if not raw:
+            return cls.PENDING_REVIEW
+        for member in cls:
+            if member.value == str(raw).strip().upper() or member.name == str(raw).strip().upper():
+                return member
+        return cls.PENDING_REVIEW
+
 
 class AnomalyType(str, Enum):
     EXCESS_APPROVED_INTAKE = "EXCESS_APPROVED_INTAKE"

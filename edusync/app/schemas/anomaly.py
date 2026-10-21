@@ -14,14 +14,16 @@ class AnomalyOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    anomaly_id: int = 0
+    anomaly_id: str = ""
     student_apaar_id: str
     institution_id: str
     program_id: str | None = None
     anomaly_type: AnomalyType
     severity: AnomalySeverity
     details: str
+    recommended_action: str = ""
     detected_at: datetime | None = None
+    review_status: str = "PENDING"
     resolved: bool = False
 
 

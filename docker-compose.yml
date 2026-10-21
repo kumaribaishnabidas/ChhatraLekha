@@ -1,0 +1,43 @@
+# EduSynC - local deployment
+#
+#   docker compose up --build
+#
+# The API and the React frontend are served together on http://localhost:8000,
+# and MongoDB runs alongside them.
+
+services:
+  mongodb:
+    image: mongo:7
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: edusync
+    volumes:
+      - mongodb-data:/data/db
+    ports:
+      - '27017:27017'
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: edusync/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      MONGODB_URL: mongodb://mongodb:27017
+      MONGODB_DATABASE: edusync
+      SECRET_KEY: ${SECRET_KEY:-change-me-to-a-long-random-string-at-least-32-characters}
+      SEAL_HMAC_KEY: ${SEAL_HMAC_KEY:-change-me-to-a-random-hmac-key}
+      ENVIRONMENT: ${ENVIRONMENT:-dev}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8000}
+    ports:
+      - '8000:8000'
+
+volumes:
+  mongodb-data:

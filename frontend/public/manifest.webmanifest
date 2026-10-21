@@ -1,0 +1,22 @@
+{
+  "name": "EduSynC - APAAR ID Platform",
+  "short_name": "EduSynC",
+  "description": "APAAR ID student data management, validation and verification for AICTE-approved institutions.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#14246B",
+  "theme_color": "#14246B",
+  "icons": [
+    {
+      "src": "/brand/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/brand/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

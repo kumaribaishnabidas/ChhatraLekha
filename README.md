@@ -49,16 +49,20 @@ EduSynC/
 ├── README.md                 ← you are here
 ├── .gitignore
 ├── .gitattributes
-├── .github/workflows/        ← CI: pytest on 3.11/3.12/3.13 + container build
+├── .github/workflows/        ← CI: pytest + vitest + container build
+├── docker-compose.yml        ← MongoDB + the API in one command
 ├── docs/                     ← the website & landing page (GitHub Pages)
 │   ├── index.html
 │   └── assets/brand/         ← EduSynC logo artwork
-├── edusync/                  ← the Python platform (FastAPI + portal + PWA)
-│   ├── app/                  ← core, models, schemas, api, services, audit, web
+├── edusync/                  ← the Python backend (FastAPI + MongoDB)
+│   ├── app/                  ← core, models, schemas, api, repositories, services, audit
 │   ├── tests/                ← the pytest suite
-│   ├── alembic/              ← database migrations
 │   ├── Dockerfile
-│   └── README.md             ← run instructions
+│   └── docs/architecture.md  ← the full design
+├── frontend/                 ← the React web application
+│   ├── src/                  ← pages, components, hooks, services, utils
+│   ├── public/brand/         ← EduSynC logo artwork
+│   └── vite.config.js
 └── Acadentrix/               ← the Android application
     ├── app/                  ← Kotlin + Jetpack Compose source, unit tests, Room schema
     ├── core/                 ← the shared Kotlin module (validator, anomaly engine, seal, QR)
@@ -73,8 +77,7 @@ EduSynC/
 There are **two implementations of the same rules**, and that is deliberate:
 
 * **`Acadentrix/`** is the offline-first Android client (Kotlin, Compose, Room).
-* **`edusync/`** is the server (FastAPI, SQLAlchemy, PostgreSQL) and the web
-  portal / PWA.
+* **`edusync/`** is the server (FastAPI, MongoDB) and the web portal.
 
 The APAAR validator, the anomaly engine, the seal format and the QR payload
 are specified identically in both, so the phone and the server can never
@@ -82,17 +85,32 @@ disagree about whether a record is valid.
 
 ---
 
-## The two implementations
+## The three components
 
-### 1. The Python platform (`edusync/`)
+### 1. The web frontend (`frontend/`)
+
+React 19 + Vite + Tailwind CSS 4 + Recharts, served as a PWA.
+
+```bash
+cd frontend
+npm install
+npm run dev      # http://localhost:5173, proxies /api to the backend
+npm run build    # production bundle, served by the backend from the same origin
+```
+
+Eight pages: sign-in, the AICTE Directorate dashboard, institutions and their
+sanctioned capacity, the student register, the CSV batch uploader with a
+row-by-row validation preview, the anomaly inspector with a review workflow,
+the credential verifier, and the report centre.
+
+### 2. The Python backend (`edusync/`)
 
 ```bash
 cd edusync
-python -m venv .venv && .venv\Scripts\activate     # Windows
+python -m venv .venv && .venv\Scripts\activate   # Windows
 pip install -r requirements.txt
-cp .env.example .env                                # then edit the secrets
-alembic upgrade head
-python -m app.scripts.seed                          # synthetic demo dataset
+cp .env.example .env                              # then edit the secrets
+python -m app.scripts.seed                        # synthetic demo dataset
 uvicorn app.main:app --reload
 ```
 
@@ -100,16 +118,20 @@ uvicorn app.main:app --reload
 * OpenAPI: <http://localhost:8000/docs>
 * Sign in with `aicte.admin@edusync.gov.in` / `EduSync@2024`
 
+MongoDB is the store. Leave `MONGODB_URL` empty and the application falls back
+to a built-in in-memory MongoDB that is seeded automatically, so the platform is
+demonstrable with no external service at all.
+
 What it does: multi-role JWT authentication, RBAC on every endpoint, the
 ten-layer anomaly engine, batch CSV ingestion with row-level validation and
 seat-impact preview, consent-aware signed verification, APAAR QR badges,
 PDF certificates carrying the APAAR ID, CSV/PDF regulatory reports, an
 explainable per-institution risk score, and a hash-chained audit trail.
 
-**161 pytest tests, all passing.** See [`edusync/README.md`](edusync/README.md)
+**159 pytest tests, all passing.** See [`edusync/README.md`](edusync/README.md)
 and [`edusync/docs/architecture.md`](edusync/docs/architecture.md).
 
-### 2. The Android client (`Acadentrix/`)
+### 3. The Android client (`Acadentrix/`)
 
 Requirements: **JDK 17+**, Android SDK with **compileSdk 36**.
 
@@ -125,7 +147,7 @@ cd Acadentrix
 .\build.cmd testDebugUnitTest assembleDebug
 ```
 
-**Current status: 135 unit tests, 135 passing, 0 failing** — and the debug APK
+**Current status: 185 unit tests, 185 passing, 0 failing** — and the debug APK
 builds clean.
 
 | Suite | Tests |
@@ -142,11 +164,17 @@ builds clean.
 | `SealGeneratorTest` | 6 |
 | `ApaarQrPayloadTest` | 6 |
 | `CredentialsTest` | 6 |
-| *(core module total)* | **135** |
+| *(core module total)* | **185** |
 
 The `:core` Kotlin module holds the shared logic — the APAAR validator, the
 anomaly engine, the signed seal, the QR encoder/decoder and the CSV
 ingestion — so the app and the server cannot drift apart.
+
+### Running everything
+
+```bash
+docker compose up --build     # MongoDB + the API + the React frontend
+```
 
 ---
 
@@ -241,9 +269,11 @@ report at `Acadentrix/app/build/reports/tests/testDebugUnitTest/index.html`.
 
 ## Tech stack
 
-**Server** — Python 3.11+ · FastAPI · SQLAlchemy 2.0 (async) · Alembic · Pydantic v2 ·
-PostgreSQL (SQLite for local development) · `cryptography` (HMAC-SHA256, Ed25519) ·
-`qrcode` · `reportlab` · Jinja2 · pytest.
+**Web frontend** — React 19 · Vite 6 · Tailwind CSS 4 · Recharts 3 · React Router 7 ·
+Axios · Vitest + React Testing Library.
+
+**Server** — Python 3.11+ · FastAPI · Motor (async MongoDB driver) · Pydantic v2 ·
+`cryptography` (HMAC-SHA256, Ed25519) · `qrcode` · ReportLab · pytest.
 
 **Client** — Kotlin 2.2.21 · Jetpack Compose (BOM 2025.09.01) · Material 3 · Room 2.8.5 (KSP) ·
 Coroutines + Flow · Navigation Compose · AGP 8.13.2 / Gradle 8.14.6 · minSdk 24, targetSdk 36.
@@ -251,7 +281,7 @@ Coroutines + Flow · Navigation Compose · AGP 8.13.2 / Gradle 8.14.6 · minSdk 
 The Android app ships with a deterministic seeded dataset — 12 institutions,
 30 programmes and 2,219 students including crafted anomalies — so it is fully
 demonstrable offline. The server seeds the same shape of synthetic dataset
-(12 institutions, 60 programme seats, ~1,900 students and 26 live anomalies)
+(12 institutions, 60 programme seats, ~1,900 students and 24 live anomalies)
 so the portal is demonstrable on a laptop.
 
 ---

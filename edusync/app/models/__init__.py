@@ -1,18 +1,6 @@
-"""EduSynC database models."""
+"""EduSynC database models and enumerations."""
 
-from app.models.entities import (
-    Anomaly,
-    ApiKey,
-    AuditLog,
-    Consent,
-    Institution,
-    InstitutionRiskScore,
-    ProgramIntake,
-    RevokedCredential,
-    Student,
-    User,
-    utcnow,
-)
+from app.models.documents import Doc, docs, match_token, new_id, redact_apaar
 from app.models.enums import (
     AdmissionQuota,
     AnomalySeverity,
@@ -28,26 +16,20 @@ from app.models.enums import (
 )
 
 __all__ = [
-    "Anomaly",
+    "AdmissionQuota",
     "AnomalySeverity",
     "AnomalyType",
-    "ApiKey",
-    "AuditLog",
-    "Consent",
     "ConsentChannel",
     "ConsentPurpose",
     "ConsentStatus",
-    "AdmissionQuota",
+    "Doc",
     "Gender",
-    "Institution",
-    "InstitutionRiskScore",
     "InstitutionType",
-    "ProgramIntake",
     "QuotaBasis",
-    "RevokedCredential",
     "SocialCategory",
-    "Student",
-    "User",
     "VerificationStatus",
-    "utcnow",
+    "docs",
+    "match_token",
+    "new_id",
+    "redact_apaar",
 ]

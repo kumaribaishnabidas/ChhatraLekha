@@ -4,19 +4,25 @@ from __future__ import annotations
 
 import time
 from collections import defaultdict, deque
-from typing import Optional
+from typing import Any, Optional
 
 import jwt
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core import rbac
 from app.core.config import get_settings
-from app.core.database import get_db
+from app.core.database import mongo
 from app.core.security import decode_token, hash_api_key
-from app.models import ApiKey, User
+from app.repositories.anomalies import AnomalyRepository
+from app.repositories.audit import AuditRepository
+from app.repositories.consents import ConsentRepository
+from app.repositories.institutions import InstitutionRepository
+from app.repositories.programmes import ProgrammeRepository
+from app.repositories.students import StudentRepository
+from app.repositories.submissions import SubmissionRepository
+from app.repositories.users import UserRepository
 
 settings = get_settings()
 
@@ -42,7 +48,48 @@ def enforce_rate_limit(request: Request) -> None:
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Too many requests. Please slow down.",
         )
-    window.append(now)
+
+
+# --------------------------------------------------------------- collections
+
+
+async def get_db() -> AsyncIOMotorDatabase:
+    """The MongoDB database handle."""
+    if not mongo.is_connected:
+        await mongo.connect()
+    return mongo.db()
+
+
+def get_institution_repo(db: AsyncIOMotorDatabase = Depends(get_db)) -> InstitutionRepository:
+    return InstitutionRepository(db["institutions"])
+
+
+def get_programme_repo(db: AsyncIOMotorDatabase = Depends(get_db)) -> ProgrammeRepository:
+    return ProgrammeRepository(db["programmes"])
+
+
+def get_student_repo(db: AsyncIOMotorDatabase = Depends(get_db)) -> StudentRepository:
+    return StudentRepository(db["students"])
+
+
+def get_anomaly_repo(db: AsyncIOMotorDatabase = Depends(get_db)) -> AnomalyRepository:
+    return AnomalyRepository(db["anomalies"])
+
+
+def get_consent_repo(db: AsyncIOMotorDatabase = Depends(get_db)) -> ConsentRepository:
+    return ConsentRepository(db["consents"])
+
+
+def get_user_repo(db: AsyncIOMotorDatabase = Depends(get_db)) -> UserRepository:
+    return UserRepository(db["users"], db["api_keys"], db["revoked_credentials"])
+
+
+def get_audit_repo(db: AsyncIOMotorDatabase = Depends(get_db)) -> AuditRepository:
+    return AuditRepository(db["audit_events"])
+
+
+def get_submission_repo(db: AsyncIOMotorDatabase = Depends(get_db)) -> SubmissionRepository:
+    return SubmissionRepository(db["submissions"])
 
 
 # ------------------------------------------------------------ authentication
@@ -57,12 +104,14 @@ class Principal:
         role: str,
         institution_id: Optional[str] = None,
         display_name: str = "",
-        user: Optional[User] = None,
+        email: str = "",
+        user: Optional[Any] = None,
     ) -> None:
         self.subject = subject
         self.role = role
         self.institution_id = institution_id
         self.display_name = display_name
+        self.email = email
         self.user = user
 
     def require(self, permission: rbac.Permission) -> None:
@@ -88,39 +137,28 @@ class Principal:
         )
 
 
-async def _principal_from_api_key(
-    raw_key: str, session: AsyncSession
-) -> Optional[Principal]:
-    digest = hash_api_key(raw_key)
-    result = await session.execute(
-        select(ApiKey).where(ApiKey.key_hash == digest, ApiKey.is_active.is_(True))
-    )
-    api_key = result.scalar_one_or_none()
-    if api_key is None:
-        return None
-    return Principal(
-        subject=api_key.key_id,
-        role=api_key.role,
-        institution_id=api_key.institution_id,
-        display_name=api_key.label or api_key.key_id,
-    )
-
-
 async def get_principal(
     request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> Principal:
     """Resolve the caller from a bearer token or an ``X-API-Key`` header."""
     api_key_header = request.headers.get("X-API-Key")
     if api_key_header:
-        principal = await _principal_from_api_key(api_key_header, session)
-        if principal is None:
+        repository = UserRepository(db["users"], db["api_keys"], db["revoked_credentials"])
+        api_key = await repository.api_key_by_hash(hash_api_key(api_key_header))
+        if api_key is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid API key.",
                 headers={"WWW-Authenticate": "ApiKey"},
             )
+        principal = Principal(
+            subject=api_key["key_id"],
+            role=api_key.get("role", "institution_admin"),
+            institution_id=api_key.get("institution_id"),
+            display_name=api_key.get("label", api_key["key_id"]),
+        )
         request.state.principal = principal
         return principal
 
@@ -140,19 +178,19 @@ async def get_principal(
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
 
-    subject = payload.get("sub") or ""
-    result = await session.execute(select(User).where(User.user_id == subject))
-    user = result.scalar_one_or_none()
-    if user is None or not user.is_active:
+    repository = UserRepository(db["users"], db["api_keys"], db["revoked_credentials"])
+    user = await repository.by_user_id(payload.get("sub") or "")
+    if user is None or not user.get("is_active", True):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="The account is not active."
         )
 
     principal = Principal(
-        subject=user.user_id,
-        role=user.role,
-        institution_id=user.institution_id,
-        display_name=user.full_name or user.email,
+        subject=user["user_id"],
+        role=user["role"],
+        institution_id=user.get("institution_id"),
+        display_name=user.get("full_name") or user.get("email", ""),
+        email=user.get("email", ""),
         user=user,
     )
     request.state.principal = principal
@@ -162,9 +200,7 @@ async def get_principal(
 def require_permission(permission: rbac.Permission):
     """A dependency that enforces a single permission."""
 
-    async def _dependency(
-        principal: Principal = Depends(get_principal),
-    ) -> Principal:
+    async def _dependency(principal: Principal = Depends(get_principal)) -> Principal:
         principal.require(permission)
         return principal
 
@@ -174,9 +210,7 @@ def require_permission(permission: rbac.Permission):
 def require_any_permission(*permissions: rbac.Permission):
     """A dependency that enforces at least one of several permissions."""
 
-    async def _dependency(
-        principal: Principal = Depends(get_principal),
-    ) -> Principal:
+    async def _dependency(principal: Principal = Depends(get_principal)) -> Principal:
         if not rbac.has_any_permission(principal.role, permissions):
             names = ", ".join(permission.value for permission in permissions)
             raise HTTPException(

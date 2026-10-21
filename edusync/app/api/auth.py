@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
+import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.api.deps import client_ip, get_principal
+from app.api.deps import client_ip, get_db, get_principal
 from app.audit import writer
 from app.core.config import get_settings
-from app.core.database import get_db
 from app.core.security import (
     create_access_token,
     create_refresh_token,
@@ -19,7 +16,8 @@ from app.core.security import (
     password_policy_violations,
     verify_password,
 )
-from app.models import User
+from app.repositories.audit import AuditRepository
+from app.repositories.users import UserRepository
 from app.schemas.auth import LoginRequest, RefreshRequest, TokenPair, UserOut
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
@@ -31,74 +29,70 @@ settings = get_settings()
 async def login(
     payload: LoginRequest,
     request: Request,
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> TokenPair:
     """Exchange credentials for an access token and a refresh token."""
-    identifier = payload.email.strip().lower()
-    result = await session.execute(
-        select(User).where(
-            (User.email == identifier) | (User.user_id == payload.email.strip())
-        )
-    )
-    user = result.scalar_one_or_none()
+    users = UserRepository(db["users"], db["api_keys"], db["revoked_credentials"])
+    audit = AuditRepository(db["audit_events"])
 
-    if user is None or not verify_password(payload.password, user.password_hash):
+    identifier = payload.email.strip().lower()
+    user = await users.by_email(identifier)
+    if user is None:
+        user = await users.by_user_id(payload.email.strip())
+
+    if user is None or not verify_password(payload.password, user.get("password_hash", "")):
         await writer.log(
-            session,
-            actor=payload.email.strip() or "unknown",
+            audit,
+            actor=identifier or "unknown",
             action="LOGIN_FAILED",
-            subject=user.user_id if user else identifier,
+            subject=user["user_id"] if user else identifier,
             details="Invalid credentials presented.",
             category="SECURITY",
             ip_address=client_ip(request),
         )
-        await session.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid e-mail address or password.",
         )
 
-    if not user.is_active:
+    if not user.get("is_active", True):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="The account is not active."
         )
 
-    user.last_login_at = datetime.now(timezone.utc)
+    await users.set_last_login(user["user_id"])
     await writer.log(
-        session,
-        actor=user.user_id,
-        actor_role=user.role,
+        audit,
+        actor=user["user_id"],
+        actor_role=user["role"],
         action="LOGIN",
-        subject=user.user_id,
-        details=f"{user.full_name or user.email} signed in.",
+        subject=user["user_id"],
+        details=f"{user.get('full_name') or user.get('email')} signed in.",
         category="SECURITY",
         ip_address=client_ip(request),
     )
-    await session.commit()
 
     return TokenPair(
         access_token=create_access_token(
-            subject=user.user_id,
-            role=user.role,
-            institution_id=user.institution_id,
+            subject=user["user_id"],
+            role=user["role"],
+            institution_id=user.get("institution_id"),
         ),
-        refresh_token=create_refresh_token(user.user_id),
+        refresh_token=create_refresh_token(user["user_id"]),
         expires_in=settings.access_token_expire_minutes * 60,
-        role=user.role,
-        user_id=user.user_id,
-        display_name=user.full_name or user.email,
-        institution_id=user.institution_id,
+        role=user["role"],
+        user_id=user["user_id"],
+        display_name=user.get("full_name") or user.get("email", ""),
+        institution_id=user.get("institution_id"),
     )
 
 
 @router.post("/refresh", response_model=TokenPair, summary="Exchange a refresh token")
 async def refresh(
     payload: RefreshRequest,
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> TokenPair:
     """Issue a new access token from a valid refresh token."""
-    import jwt
-
     try:
         claims = decode_token(payload.refresh_token, expected_type="refresh")
     except jwt.PyJWTError as exc:
@@ -107,38 +101,39 @@ async def refresh(
             detail=f"Invalid or expired refresh token: {exc}",
         ) from exc
 
-    result = await session.execute(select(User).where(User.user_id == claims.get("sub")))
-    user = result.scalar_one_or_none()
-    if user is None or not user.is_active:
+    users = UserRepository(db["users"], db["api_keys"], db["revoked_credentials"])
+    user = await users.by_user_id(claims.get("sub") or "")
+    if user is None or not user.get("is_active", True):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="The account is not active."
         )
 
     return TokenPair(
         access_token=create_access_token(
-            subject=user.user_id, role=user.role, institution_id=user.institution_id
+            subject=user["user_id"], role=user["role"], institution_id=user.get("institution_id")
         ),
-        refresh_token=create_refresh_token(user.user_id),
+        refresh_token=create_refresh_token(user["user_id"]),
         expires_in=settings.access_token_expire_minutes * 60,
-        role=user.role,
-        user_id=user.user_id,
-        display_name=user.full_name or user.email,
-        institution_id=user.institution_id,
+        role=user["role"],
+        user_id=user["user_id"],
+        display_name=user.get("full_name") or user.get("email", ""),
+        institution_id=user.get("institution_id"),
     )
 
 
 @router.get("/me", response_model=UserOut, summary="The signed-in principal")
 async def me(principal=Depends(get_principal)) -> UserOut:
     """Return the profile of the signed-in user."""
-    user = principal.user
+    user = principal.user or {}
+    last_login = user.get("last_login_at")
     return UserOut(
         user_id=principal.subject,
-        email=user.email if user else "",
+        email=user.get("email", principal.email),
         full_name=principal.display_name,
         role=principal.role,
         institution_id=principal.institution_id,
-        is_active=user.is_active if user else True,
-        last_login_at=user.last_login_at.isoformat() if user and user.last_login_at else None,
+        is_active=user.get("is_active", True),
+        last_login_at=last_login.isoformat() if last_login else None,
     )
 
 

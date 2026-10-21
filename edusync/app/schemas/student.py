@@ -74,7 +74,7 @@ class StudentOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    record_id: int
+    record_id: str = ""
     apaar_id: str
     student_name: str
     date_of_birth: str
@@ -92,6 +92,8 @@ class StudentOut(BaseModel):
     abc_account_id: Optional[str] = None
     verification_status: VerificationStatus
     is_active: bool
+    record_status: str = "ACTIVE"
+    submission_source: str = "MANUAL"
     social_category: SocialCategory
     admission_date: Optional[str] = None
     contact_email: Optional[str] = None
@@ -159,6 +161,8 @@ class ProgrammeIntakeIn(BaseModel):
     institution_id: str = Field(..., max_length=32)
     program_name: str = Field(..., max_length=255)
     program_level: str = Field("UG", max_length=16)
+    academic_year: str = Field("2024-25", max_length=16)
+    policy_version: str = Field("aph-2024-01", max_length=32)
     approved_intake: int = Field(0, ge=0, le=10000)
     max_supernumerary_nri: int = Field(0, ge=0, le=10000)
     max_supernumerary_fn_oci: int = Field(0, ge=0, le=10000)
@@ -171,7 +175,7 @@ class ProgrammeIntakeOut(ProgrammeIntakeIn):
 
     model_config = ConfigDict(from_attributes=True)
 
-    id: int
+    id: str = ""
     total_sanctioned: int = 0
 
 

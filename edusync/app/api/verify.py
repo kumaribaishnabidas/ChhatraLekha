@@ -1,4 +1,4 @@
-"""Secure credential verification (requirement 5).
+"""Secure credential verification (requirement 7.7).
 
 ``GET /api/verify/{apaar_id}`` re-derives the seal from the stored record and
 compares it with the seal presented by the verifier. The response is
@@ -11,37 +11,77 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import RedirectResponse
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.api.deps import Principal, client_ip, require_permission
+from app.api.deps import (
+    Principal,
+    client_ip,
+    get_db,
+    require_permission,
+)
 from app.audit import writer
 from app.core import rbac
-from app.core.database import get_db
-from app.models import Anomaly, Consent, ProgramIntake, RevokedCredential, Student
+from app.models.documents import Doc
 from app.models.enums import ConsentPurpose
+from app.repositories.audit import AuditRepository
+from app.repositories.consents import ConsentRepository
+from app.repositories.students import StudentRepository
+from app.repositories.users import UserRepository
 from app.schemas.anomaly import AnomalyOut
-from app.schemas.student import VerificationResult
+from app.schemas.student import StudentOut, VerificationResult
 from app.services import apaar_validator, consent_policy, qr, seal
 
 router = APIRouter(prefix="/verify", tags=["verification"])
 
 
-def _payload_for(student: Student) -> seal.CredentialPayload:
+def _payload_for(student: Doc) -> seal.CredentialPayload:
     return seal.CredentialPayload(
-        apaar_id=student.apaar_id,
-        institution_id=student.institution_id,
-        program_id=student.program_id,
-        academic_year=student.academic_year,
-        enrollment_date=student.enrollment_date,
-        student_name=student.student_name,
-        date_of_birth=student.date_of_birth,
-        gender=student.gender.value,
-        admission_quota=student.admission_quota.value,
-        nationality=student.nationality,
-        student_institute_roll_no=student.student_institute_roll_no,
+        apaar_id=student.get("apaar_id", ""),
+        institution_id=student.get("institution_id", ""),
+        program_id=student.get("program_id", ""),
+        academic_year=student.get("academic_year", ""),
+        enrollment_date=student.get("enrollment_date", ""),
+        student_name=student.get("student_name", ""),
+        date_of_birth=student.get("date_of_birth", ""),
+        gender=student.get("gender", ""),
+        admission_quota=student.get("admission_quota", ""),
+        nationality=student.get("nationality", ""),
+        student_institute_roll_no=student.get("student_institute_roll_no", ""),
+    )
+
+
+def _student_out(student: Doc) -> StudentOut:
+    return StudentOut(
+        record_id=str(student.get("_id", "")),
+        apaar_id=student.get("apaar_id", ""),
+        student_name=student.get("student_name", ""),
+        date_of_birth=student.get("date_of_birth", ""),
+        gender=student.get("gender", "O"),
+        institution_id=student.get("institution_id", ""),
+        program_id=student.get("program_id", ""),
+        academic_year=student.get("academic_year", ""),
+        admission_quota=student.get("admission_quota", "MERIT"),
+        enrollment_date=student.get("enrollment_date", ""),
+        student_institute_roll_no=student.get("student_institute_roll_no", ""),
+        nationality=student.get("nationality", ""),
+        passport_number=student.get("passport_number"),
+        visa_validity=student.get("visa_validity"),
+        country_of_origin=student.get("country_of_origin"),
+        abc_account_id=student.get("abc_account_id"),
+        verification_status=student.get("verification_status", "PENDING_REVIEW"),
+        is_active=student.get("is_active", True),
+        record_status=student.get("record_status", "ACTIVE"),
+        submission_source=student.get("submission_source", "MANUAL"),
+        social_category=student.get("social_category", "GENERAL"),
+        admission_date=student.get("admission_date"),
+        contact_email=student.get("contact_email"),
+        contact_phone=student.get("contact_phone"),
+        state_of_domicile=student.get("state_of_domicile"),
+        created_at=student.get("created_at"),
+        updated_at=student.get("updated_at"),
+        masked_apaar_id=apaar_validator.mask(student.get("apaar_id")),
     )
 
 
@@ -50,19 +90,19 @@ async def _verify(
     presented_seal: Optional[str],
     request: Request,
     principal: Principal,
-    session: AsyncSession,
+    db: AsyncIOMotorDatabase,
 ) -> VerificationResult:
     compact = "".join(char for char in apaar_id if char.isdigit())
     if not compact:
         raise ValueError("An APAAR ID is required.")
 
-    students = (
-        await session.execute(select(Student).where(Student.apaar_id == compact))
-    ).scalars().all()
+    students = StudentRepository(db["students"])
+    records = await students.all_for_apaar_id(compact)
+    audit = AuditRepository(db["audit_events"])
 
-    if not students:
+    if not records:
         await writer.log(
-            session,
+            audit,
             actor=principal.subject,
             actor_role=principal.role,
             action="CREDENTIAL_VERIFICATION",
@@ -71,7 +111,6 @@ async def _verify(
             category="NOT_FOUND",
             ip_address=client_ip(request),
         )
-        await session.commit()
         return VerificationResult(
             verified=False,
             verdict="NOT_FOUND",
@@ -80,89 +119,63 @@ async def _verify(
             verified_at=datetime.now(timezone.utc).isoformat(),
         )
 
-    revoked = (
-        await session.execute(
-            select(RevokedCredential).where(RevokedCredential.apaar_id == compact)
-        )
-    ).scalars().first()
+    revoked = await UserRepository(
+        db["users"], db["api_keys"], db["revoked_credentials"]
+    ).revoked_for(compact)
     if revoked is not None:
         await writer.log(
-            session,
+            audit,
             actor=principal.subject,
             actor_role=principal.role,
             action="CREDENTIAL_VERIFICATION",
             subject=compact,
-            details=f"Credential is revoked: {revoked.reason}",
+            details=f"Credential is revoked: {revoked.get('reason')}",
             category="REVOKED",
             ip_address=client_ip(request),
         )
-        await session.commit()
         return VerificationResult(
             verified=False,
             verdict=seal.SealVerdict.REVOKED.value,
-            reason=revoked.reason or "This credential has been revoked.",
+            reason=revoked.get("reason") or "This credential has been revoked.",
             apaar_id=compact,
             verified_at=datetime.now(timezone.utc).isoformat(),
         )
 
-    student = students[0]
+    student = records[0]
     payload = _payload_for(student)
 
     if presented_seal:
         verification = seal.verify(presented_seal, payload)
-        verdict = verification.verdict.value
         reason = verification.reason
-        algorithm = verification.algorithm.value if verification.algorithm else None
-        key_id = verification.key_id
     else:
         verification = seal.verify(seal.sign(payload), payload)
-        verdict = verification.verdict.value
         reason = (
             "The credential is present in the registry and its seal re-derives "
             "correctly from the stored record."
         )
-        algorithm = verification.algorithm.value if verification.algorithm else None
-        key_id = verification.key_id
+    verdict = verification.verdict.value
+    algorithm = verification.algorithm.value if verification.algorithm else None
+    key_id = verification.key_id
 
     # Consent: the verdict is always disclosed, the personal fields only when
     # the student has consented to credential verification.
-    consents = (
-        await session.execute(
-            select(Consent).where(Consent.student_apaar_id == compact)
-        )
-    ).scalars().all()
-    decision = consent_policy.evaluate(
-        ConsentPurpose.CREDENTIAL_VERIFICATION, consents
-    )
+    consents = await ConsentRepository(db["consents"]).for_apaar_id(compact)
+    decision = consent_policy.evaluate(ConsentPurpose.CREDENTIAL_VERIFICATION, consents)
     consent_note = decision.reason
     disclose = decision.allowed
 
-    anomalies = (
-        await session.execute(
-            select(Anomaly).where(Anomaly.student_apaar_id == compact)
-        )
-    ).scalars().all()
-
-    program = (
-        await session.execute(
-            select(ProgramIntake).where(
-                ProgramIntake.institution_id == student.institution_id,
-                ProgramIntake.program_id == student.program_id,
-            )
-        )
-    ).scalar_one_or_none()
-
-    student_payload = None
-    if disclose:
-        from app.schemas.student import StudentOut
-
-        student_payload = StudentOut.model_validate(student)
-        student_payload.masked_apaar_id = apaar_validator.mask(student.apaar_id)
-    else:
-        student_payload = None
+    anomaly_rows = await db["anomalies"].find({"student_apaar_id": compact}).to_list(
+        length=None
+    )
+    programme = await db["programmes"].find_one(
+        {
+            "institution_id": student.get("institution_id"),
+            "program_id": student.get("program_id"),
+        }
+    )
 
     await writer.log(
-        session,
+        audit,
         actor=principal.subject,
         actor_role=principal.role,
         action="CREDENTIAL_VERIFICATION",
@@ -174,21 +187,35 @@ async def _verify(
         category=verdict,
         ip_address=client_ip(request),
     )
-    await session.commit()
 
     return VerificationResult(
-        verified=verification.is_valid and student.is_active,
+        verified=verification.is_valid and student.get("record_status") == "ACTIVE",
         verdict=verdict,
         reason=reason,
         algorithm=algorithm,
         key_id=key_id,
         apaar_id=compact,
-        student=student_payload,
-        institution_name=student.institution_id,
-        program_name=program.program_name if program else student.program_id,
+        student=_student_out(student) if disclose else None,
+        institution_name=student.get("institution_id"),
+        program_name=(programme or {}).get("program_name", student.get("program_id")),
         seal=presented_seal,
         consent_note=consent_note,
-        anomalies=[AnomalyOut.model_validate(row) for row in anomalies],
+        anomalies=[
+            AnomalyOut(
+                anomaly_id=str(row.get("_id", "")),
+                student_apaar_id=row.get("student_apaar_id", ""),
+                institution_id=row.get("institution_id", ""),
+                program_id=row.get("program_id"),
+                anomaly_type=row.get("anomaly_type", "INCONSISTENT_CATEGORY"),
+                severity=row.get("severity", "WARNING"),
+                details=row.get("details", ""),
+                recommended_action=row.get("recommended_action", ""),
+                detected_at=row.get("detected_at"),
+                review_status=row.get("review_status", "PENDING"),
+                resolved=row.get("resolved", False),
+            )
+            for row in anomaly_rows
+        ],
         verified_at=datetime.now(timezone.utc).isoformat(),
     )
 
@@ -203,14 +230,12 @@ async def verify_credential(
     request: Request,
     seal_value: Optional[str] = Query(None, alias="seal"),
     principal: Principal = Depends(require_permission(rbac.Permission.VERIFY_CREDENTIAL)),
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> VerificationResult:
     """Verify a credential by APAAR ID, optionally against a presented seal."""
     try:
-        return await _verify(apaar_id, seal_value, request, principal, session)
+        return await _verify(apaar_id, seal_value, request, principal, db)
     except ValueError as exc:
-        from fastapi import HTTPException
-
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
         ) from exc
@@ -225,20 +250,16 @@ async def verify_scanned(
     payload: str,
     request: Request,
     principal: Principal = Depends(require_permission(rbac.Permission.VERIFY_CREDENTIAL)),
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> VerificationResult:
     """Verify a credential from the raw content of a scanned APAAR QR badge."""
     parsed = qr.parse_payload(payload)
     if parsed is None:
-        from fastapi import HTTPException
-
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="The scanned payload is not an APAAR verification link.",
         )
-    return await _verify(
-        parsed.apaar_id, parsed.seal, request, principal, session
-    )
+    return await _verify(parsed.apaar_id, parsed.seal, request, principal, db)
 
 
 @router.get(
@@ -246,14 +267,12 @@ async def verify_scanned(
     include_in_schema=False,
     summary="Public deep-link target of the APAAR QR badge",
 )
-async def verify_redirect(
-    apaar_id: str,
-    request: Request,
-    session: AsyncSession = Depends(get_db),
-) -> RedirectResponse:
+async def verify_redirect(apaar_id: str) -> RedirectResponse:
     """The public landing target of a scanned badge.
 
-    It renders the verification page in the web portal rather than exposing
+    It redirects to the web portal's verification page rather than exposing
     the record to an unauthenticated API caller.
     """
-    return RedirectResponse(url=f"/verify?apaar={apaar_id}", status_code=status.HTTP_307_REDIRECT)
+    return RedirectResponse(
+        url=f"/verify?apaar={apaar_id}", status_code=status.HTTP_307_REDIRECT
+    )

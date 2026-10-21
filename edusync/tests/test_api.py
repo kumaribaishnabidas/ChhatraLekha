@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from app.models import Consent
-from app.models.enums import ConsentPurpose, ConsentStatus
 from app.services import seal
 
 
@@ -27,6 +25,20 @@ async def create_student(client, token, **overrides):
     }
     payload.update(overrides)
     return await client.post("/api/students", json=payload, headers=auth(token))
+
+
+async def grant_consent(client, token, apaar_id="984210357890", status="GRANTED"):
+    """Give a student the credential-verification consent."""
+    return await client.post(
+        "/api/consent",
+        json={
+            "apaar_id": apaar_id,
+            "purpose": "CREDENTIAL_VERIFICATION",
+            "status": status,
+            "channel": "WEB_PORTAL",
+        },
+        headers=auth(token),
+    )
 
 
 # ------------------------------------------------------------------- auth
@@ -141,6 +153,8 @@ async def test_a_student_can_be_deactivated(client, institution_token):
         "/api/students/984210357890", headers=auth(institution_token)
     )
     assert response.status_code == 204
+    listing = await client.get("/api/students", headers=auth(institution_token))
+    assert listing.json() == []
 
 
 async def test_the_qr_badge_is_rendered(client, institution_token):
@@ -153,6 +167,27 @@ async def test_the_qr_badge_is_rendered(client, institution_token):
     assert response.content[:8] == b"\x89PNG\r\n\x1a\n"
 
 
+async def test_the_certificate_carries_the_apaar_id(client, institution_token):
+    await create_student(client, institution_token)
+    response = await client.get(
+        "/api/students/984210357890/certificate.pdf",
+        headers=auth(institution_token),
+    )
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert response.content[:4] == b"%PDF"
+    assert len(response.content) > 2000
+
+
+async def test_a_verifier_may_not_issue_a_certificate(client, institution_token, verifier_token):
+    await create_student(client, institution_token)
+    response = await client.get(
+        "/api/students/984210357890/certificate.pdf",
+        headers=auth(verifier_token),
+    )
+    assert response.status_code == 403
+
+
 async def test_the_issued_badge_verifies_against_the_registry(
     client, institution_token, verifier_token
 ):
@@ -162,9 +197,9 @@ async def test_the_issued_badge_verifies_against_the_registry(
     await create_student(client, institution_token)
     await grant_consent(client, institution_token)
 
-    student = (await client.get(
-        "/api/students/984210357890", headers=auth(institution_token)
-    )).json()
+    student = (
+        await client.get("/api/students/984210357890", headers=auth(institution_token))
+    ).json()
     payload = seal.CredentialPayload(
         apaar_id=student["apaar_id"],
         institution_id=student["institution_id"],
@@ -192,27 +227,6 @@ async def test_the_issued_badge_verifies_against_the_registry(
     body = response.json()
     assert body["verified"] is True
     assert body["verdict"] == "VALID"
-
-
-async def test_the_certificate_carries_the_apaar_id(client, institution_token):
-    await create_student(client, institution_token)
-    response = await client.get(
-        "/api/students/984210357890/certificate.pdf",
-        headers=auth(institution_token),
-    )
-    assert response.status_code == 200
-    assert response.headers["content-type"] == "application/pdf"
-    assert response.content[:4] == b"%PDF"
-    assert len(response.content) > 2000
-
-
-async def test_a_verifier_may_not_issue_a_certificate(client, institution_token, verifier_token):
-    await create_student(client, institution_token)
-    response = await client.get(
-        "/api/students/984210357890/certificate.pdf",
-        headers=auth(verifier_token),
-    )
-    assert response.status_code == 403
 
 
 # ------------------------------------------------------------- bulk csv
@@ -277,21 +291,13 @@ async def test_the_compliance_matrix_is_returned(client, aicte_token):
     assert response.json()[0]["institution_id"] == "INST-T1"
 
 
+async def test_the_quota_distribution_is_returned(client, aicte_token):
+    response = await client.get("/api/dashboard/quota", headers=auth(aicte_token))
+    assert response.status_code == 200
+    assert len(response.json()) == 7
+
+
 # ------------------------------------------------------------ verification
-
-
-async def grant_consent(client, token, apaar_id="984210357890"):
-    """Give a student the credential-verification consent."""
-    return await client.post(
-        "/api/consent",
-        json={
-            "apaar_id": apaar_id,
-            "purpose": "CREDENTIAL_VERIFICATION",
-            "status": "GRANTED",
-            "channel": "WEB_PORTAL",
-        },
-        headers=auth(token),
-    )
 
 
 async def test_a_verifier_can_verify_a_credential(client, institution_token, verifier_token):
@@ -304,19 +310,6 @@ async def test_a_verifier_can_verify_a_credential(client, institution_token, ver
     body = response.json()
     assert body["verified"] is True
     assert body["student"]["student_name"] == "Aakash Verma"
-
-
-async def test_the_verdict_is_issued_even_without_consent(
-    client, institution_token, verifier_token
-):
-    await create_student(client, institution_token)
-    response = await client.get(
-        "/api/verify/984210357890", headers=auth(verifier_token)
-    )
-    body = response.json()
-    assert body["verified"] is True
-    assert body["student"] is None
-    assert "No consent" in body["consent_note"]
 
 
 async def test_verifying_an_unknown_id_is_not_found(client, verifier_token):
@@ -363,22 +356,24 @@ async def test_a_scanned_payload_is_verified(client, institution_token, verifier
     assert response.json()["verified"] is True
 
 
-async def test_the_personal_fields_are_withheld_without_consent(
-    client, institution_token, verifier_token, session
+async def test_the_verdict_is_issued_even_without_consent(
+    client, institution_token, verifier_token
 ):
     await create_student(client, institution_token)
-    session.add(
-        Consent(
-            consent_id="CNS-TEST",
-            student_apaar_id="984210357890",
-            purpose=ConsentPurpose.CREDENTIAL_VERIFICATION,
-            status=ConsentStatus.REVOKED,
-            channel="WEB_PORTAL",
-            policy_version="2024-01",
-        )
+    response = await client.get(
+        "/api/verify/984210357890", headers=auth(verifier_token)
     )
-    await session.commit()
+    body = response.json()
+    assert body["verified"] is True
+    assert body["student"] is None
+    assert "No consent" in body["consent_note"]
 
+
+async def test_the_personal_fields_are_withheld_after_a_revocation(
+    client, institution_token, verifier_token
+):
+    await create_student(client, institution_token)
+    await grant_consent(client, institution_token, status="REVOKED")
     response = await client.get(
         "/api/verify/984210357890", headers=auth(verifier_token)
     )
@@ -442,25 +437,21 @@ async def test_the_audit_trail_exports_as_csv(client, aicte_token):
     assert "PREV_HASH" in response.text
 
 
+async def test_the_utilisation_matrix_exports_as_csv(client, aicte_token):
+    response = await client.get("/api/reports/utilisation.csv", headers=auth(aicte_token))
+    assert response.status_code == 200
+    assert "APPROVED_INTAKE" in response.text
+
+
 # ------------------------------------------------------------------- portal
-
-
-async def test_the_portal_renders(client):
-    response = await client.get("/")
-    assert response.status_code == 200
-    assert "EduSynC" in response.text
-
-
-async def test_the_verification_page_renders(client):
-    response = await client.get("/verify?apaar=984210357890")
-    assert response.status_code == 200
-    assert "984210357890" in response.text
 
 
 async def test_the_health_endpoint_reports_the_database(client):
     response = await client.get("/api/health")
     assert response.status_code == 200
-    assert response.json()["database"] == "up"
+    body = response.json()
+    assert body["database"] == "up"
+    assert body["database_engine"] == "mongodb"
 
 
 async def test_the_openapi_document_is_generated(client):
@@ -469,3 +460,4 @@ async def test_the_openapi_document_is_generated(client):
     paths = response.json()["paths"]
     assert "/api/students" in paths
     assert "/api/verify/{apaar_id}" in paths
+    assert "/api/dashboard/national" in paths

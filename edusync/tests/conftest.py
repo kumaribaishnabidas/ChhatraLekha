@@ -1,154 +1,159 @@
 """Shared pytest fixtures.
 
-The whole suite runs against a throwaway SQLite database so that it never
-touches a developer's working data.
+The whole suite runs against the in-memory MongoDB, so it never needs a
+MongoDB server and never touches a developer's working data.
 """
 
 from __future__ import annotations
 
 import os
-import tempfile
-from pathlib import Path
 
 import pytest
 
-# The database URL has to be set before ``app.core.database`` is imported.
-_TMP_DIR = tempfile.mkdtemp(prefix="edusync-tests-")
+# The in-memory MongoDB is selected by leaving MONGODB_URL empty. It has to
+# be set before ``app.core.database`` is imported.
+os.environ["MONGODB_URL"] = ""
 os.environ.setdefault(
-    "DATABASE_URL", f"sqlite+aiosqlite:///{Path(_TMP_DIR) / 'edusync-test.db'}"
+    "SECRET_KEY", "test-secret-key-that-is-long-enough-for-tests"
 )
-os.environ.setdefault("SECRET_KEY", "test-secret-key-that-is-long-enough-for-tests")
 os.environ.setdefault("SEAL_HMAC_KEY", "test-seal-hmac-key")
 os.environ.setdefault("ENVIRONMENT", "test")
 os.environ.setdefault("RATE_LIMIT_PER_MINUTE", "0")
+# bcrypt at production cost (12 rounds) would dominate the runtime of the
+# suite, because every test needs a hashed password.
+os.environ.setdefault("BCRYPT_ROUNDS", "4")
 
 import httpx  # noqa: E402
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine  # noqa: E402
 
-from app.core.database import Base  # noqa: E402
+from app.core.database import mongo  # noqa: E402
 from app.core.security import hash_password  # noqa: E402
-from app.models import Institution, ProgramIntake, User  # noqa: E402
 from app.models.enums import InstitutionType  # noqa: E402
 
-TEST_DATABASE_URL = os.environ["DATABASE_URL"]
-
-engine = create_async_engine(TEST_DATABASE_URL, future=True)
-SessionFactory = async_sessionmaker(
-    bind=engine, class_=AsyncSession, expire_on_commit=False, autoflush=False
+COLLECTIONS = (
+    "anomalies",
+    "audit_events",
+    "consents",
+    "students",
+    "programmes",
+    "institutions",
+    "users",
+    "api_keys",
+    "revoked_credentials",
+    "submissions",
 )
+
+#: The password hash of the test accounts, computed once for the whole suite.
+TEST_PASSWORD_HASH = hash_password("Test@1234")
 
 
 @pytest.fixture(scope="session", autouse=True)
-async def _create_schema():
-    """Create the schema once for the whole session."""
-    async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.create_all)
+async def _connect():
+    """Open the in-memory MongoDB once for the whole session."""
+    await mongo.connect()
     yield
-    await engine.dispose()
+    await mongo.disconnect()
+
+
+@pytest.fixture(autouse=True)
+async def _clean():
+    """Every test starts with an empty database."""
+    db = mongo.db()
+    for name in COLLECTIONS:
+        await db[name].delete_many({})
+    yield
 
 
 @pytest.fixture
-async def session():
-    """A database session with a clean slate for every test."""
-    async with SessionFactory() as db:
-        for model in (
-            __import__("app.models", fromlist=["Anomaly"]).Anomaly,
-            __import__("app.models", fromlist=["AuditLog"]).AuditLog,
-            __import__("app.models", fromlist=["Consent"]).Consent,
-            __import__("app.models", fromlist=["Student"]).Student,
-            __import__("app.models", fromlist=["ProgramIntake"]).ProgramIntake,
-            __import__("app.models", fromlist=["Institution"]).Institution,
-            __import__("app.models", fromlist=["User"]).User,
-        ):
-            await db.execute(model.__table__.delete())
-        await db.commit()
-        yield db
-        await db.rollback()
-
-
-@pytest.fixture
-async def seeded(session):
-    """A session with one institution, one programme and one student."""
-    institution = Institution(
-        institution_id="INST-T1",
-        name="Test Institute of Technology",
-        institution_type=InstitutionType.ENGINEERING,
-        state="Karnataka",
-        city="Bengaluru",
-        affiliation_university="Test University",
-        approval_year=2015,
-        naac_grade="A+",
+async def seeded():
+    """One institution and one programme."""
+    db = mongo.db()
+    await db["institutions"].insert_one(
+        {
+            "institution_id": "INST-T1",
+            "name": "Test Institute of Technology",
+            "institution_type": InstitutionType.ENGINEERING.value,
+            "state": "Karnataka",
+            "city": "Bengaluru",
+            "affiliation_university": "Test University",
+            "approval_year": 2015,
+            "naac_grade": "A+",
+            "is_active": True,
+        }
     )
-    programme = ProgramIntake(
-        program_id="BTECH_CSE",
-        institution_id="INST-T1",
-        program_name="B.Tech Computer Science",
-        program_level="UG",
-        approved_intake=10,
-        max_supernumerary_nri=1,
-        max_supernumerary_fn_oci=2,
-        max_supernumerary_tfw=1,
-        max_pmsss=1,
+    await db["programmes"].insert_one(
+        {
+            "institution_id": "INST-T1",
+            "program_id": "BTECH_CSE",
+            "program_name": "B.Tech Computer Science",
+            "program_level": "UG",
+            "academic_year": "2024-25",
+            "policy_version": "aph-2024-01",
+            "approved_intake": 10,
+            "max_supernumerary_nri": 1,
+            "max_supernumerary_fn_oci": 2,
+            "max_supernumerary_tfw": 1,
+            "max_pmsss": 1,
+            "total_sanctioned": 15,
+        }
     )
-    session.add_all([institution, programme])
-    await session.commit()
-    return session
+    return db
 
 
 @pytest.fixture
-async def users(session):
+async def users(seeded):
     """One account per role."""
-    rows = [
-        User(
-            user_id="USR-AICTE",
-            email="aicte@edusync.test",
-            full_name="Aicte Admin",
-            role="aicte_admin",
-            password_hash=hash_password("Test@1234"),
-        ),
-        User(
-            user_id="USR-INST",
-            email="principal@inst.test",
-            full_name="Institution Admin",
-            role="institution_admin",
-            institution_id="INST-T1",
-            password_hash=hash_password("Test@1234"),
-        ),
-        User(
-            user_id="USR-VER",
-            email="verifier@edusync.test",
-            full_name="Verifier",
-            role="verifier",
-            password_hash=hash_password("Test@1234"),
-        ),
-        User(
-            user_id="USR-STU",
-            email="student@edusync.test",
-            full_name="Student",
-            role="student",
-            password_hash=hash_password("Test@1234"),
-        ),
-    ]
-    session.add_all(rows)
-    await session.commit()
-    return rows
+    db = mongo.db()
+    await db["users"].insert_many(
+        [
+            {
+                "user_id": "USR-AICTE",
+                "email": "aicte@edusync.test",
+                "full_name": "Aicte Admin",
+                "role": "aicte_admin",
+                "institution_id": None,
+                "password_hash": TEST_PASSWORD_HASH,
+                "is_active": True,
+            },
+            {
+                "user_id": "USR-INST",
+                "email": "principal@inst.test",
+                "full_name": "Institution Admin",
+                "role": "institution_admin",
+                "institution_id": "INST-T1",
+                "password_hash": TEST_PASSWORD_HASH,
+                "is_active": True,
+            },
+            {
+                "user_id": "USR-VER",
+                "email": "verifier@edusync.test",
+                "full_name": "Verifier",
+                "role": "verifier",
+                "institution_id": None,
+                "password_hash": TEST_PASSWORD_HASH,
+                "is_active": True,
+            },
+            {
+                "user_id": "USR-STU",
+                "email": "student@edusync.test",
+                "full_name": "Student",
+                "role": "student",
+                "institution_id": None,
+                "password_hash": TEST_PASSWORD_HASH,
+                "is_active": True,
+            },
+        ]
+    )
+    return db
 
 
 @pytest.fixture
 async def client(seeded, users):
-    """An HTTP client bound to the ASGI app, overriding the database session."""
-    from app.api import deps
+    """An HTTP client bound to the ASGI app."""
     from app.main import app
 
-    async def _get_session():
-        async with SessionFactory() as db:
-            yield db
-
-    app.dependency_overrides[deps.get_db] = _get_session
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as http:
         yield http
-    app.dependency_overrides.clear()
 
 
 async def login(client: httpx.AsyncClient, email: str) -> str:

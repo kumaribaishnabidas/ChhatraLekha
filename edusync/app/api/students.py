@@ -1,95 +1,150 @@
-"""Student registry endpoints: CRUD, bulk CSV ingestion and QR badges."""
+"""Student registry endpoints: CRUD, bulk CSV ingestion, QR badges, certificates."""
 
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
-from fastapi.responses import Response, StreamingResponse
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
+from fastapi.responses import StreamingResponse
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.api.deps import Principal, client_ip, get_principal, require_permission
+from app.api.deps import (
+    Principal,
+    client_ip,
+    get_db,
+    get_principal,
+    require_permission,
+)
 from app.audit import writer
 from app.core import rbac
-from app.core.database import get_db
-from app.models import (
-    Anomaly,
-    Institution,
-    ProgramIntake,
-    Student,
-    VerificationStatus,
-)
-from app.models.enums import AdmissionQuota
+from app.core.config import get_settings
+from app.models.documents import Doc
+from app.models.enums import Gender, SocialCategory
+from app.repositories.audit import AuditRepository
+from app.repositories.programmes import ProgrammeRepository
+from app.repositories.students import StudentRepository
+from app.repositories.submissions import SubmissionRepository
 from app.schemas.student import BatchUploadResult, StudentCreate, StudentOut, StudentUpdate
 from app.services import apaar_validator, csv_ingestion, pdf, qr, seal
-from app.services.anomaly_engine import RegistrySnapshot, engine
+from app.services.registry import recompute_anomalies
 
 router = APIRouter(prefix="/students", tags=["students"])
+
+settings = get_settings()
 
 
 # ------------------------------------------------------------------ helpers
 
 
-def _masked(apaar_id: str) -> str:
-    return apaar_validator.mask(apaar_id)
-
-
-def _to_out(student: Student) -> StudentOut:
-    out = StudentOut.model_validate(student)
-    out.masked_apaar_id = _masked(student.apaar_id)
-    return out
+def _to_out(student: Doc) -> StudentOut:
+    """Build the response model from a stored document."""
+    return StudentOut(
+        record_id=str(student.get("_id", "")),
+        apaar_id=student.get("apaar_id", ""),
+        student_name=student.get("student_name", ""),
+        date_of_birth=student.get("date_of_birth", ""),
+        gender=Gender.from_code(student.get("gender")) or Gender.OTHER,
+        institution_id=student.get("institution_id", ""),
+        program_id=student.get("program_id", ""),
+        academic_year=student.get("academic_year", ""),
+        admission_quota=student.get("admission_quota", "MERIT"),
+        enrollment_date=student.get("enrollment_date", ""),
+        student_institute_roll_no=student.get("student_institute_roll_no", ""),
+        nationality=student.get("nationality", ""),
+        passport_number=student.get("passport_number"),
+        visa_validity=student.get("visa_validity"),
+        country_of_origin=student.get("country_of_origin"),
+        abc_account_id=student.get("abc_account_id"),
+        verification_status=student.get("verification_status", "PENDING_REVIEW"),
+        is_active=student.get("is_active", True),
+        record_status=student.get("record_status", "ACTIVE"),
+        submission_source=student.get("submission_source", "MANUAL"),
+        social_category=student.get("social_category", "GENERAL"),
+        admission_date=student.get("admission_date"),
+        contact_email=student.get("contact_email"),
+        contact_phone=student.get("contact_phone"),
+        state_of_domicile=student.get("state_of_domicile"),
+        created_at=student.get("created_at"),
+        updated_at=student.get("updated_at"),
+        masked_apaar_id=apaar_validator.mask(student.get("apaar_id")),
+    )
 
 
 def _today() -> str:
     return date.today().isoformat()
 
 
-async def _load_context(session: AsyncSession) -> RegistrySnapshot:
-    institutions = (await session.execute(select(Institution))).scalars().all()
-    programs = (await session.execute(select(ProgramIntake))).scalars().all()
-    students = (await session.execute(select(Student))).scalars().all()
-    return RegistrySnapshot(
-        institutions=institutions, programs=programs, students=students
+def _payload_for(student: Doc) -> seal.CredentialPayload:
+    """The credential payload the seal commits to."""
+    return seal.CredentialPayload(
+        apaar_id=student.get("apaar_id", ""),
+        institution_id=student.get("institution_id", ""),
+        program_id=student.get("program_id", ""),
+        academic_year=student.get("academic_year", ""),
+        enrollment_date=student.get("enrollment_date", ""),
+        student_name=student.get("student_name", ""),
+        date_of_birth=student.get("date_of_birth", ""),
+        gender=student.get("gender", ""),
+        admission_quota=student.get("admission_quota", ""),
+        nationality=student.get("nationality", ""),
+        student_institute_roll_no=student.get("student_institute_roll_no", ""),
     )
 
 
-async def _recompute_anomalies(session: AsyncSession) -> list[Anomaly]:
-    """Re-run the detection engine and persist the findings."""
-    snapshot = await _load_context(session)
-    detected = engine.evaluate(snapshot)
-    now = datetime.now(timezone.utc)
+async def _validation_context(
+    db: AsyncIOMotorDatabase, institution_id: str
+) -> csv_ingestion.CsvValidationContext:
+    """Assemble the batch-validation context from the live registry."""
+    programmes = ProgrammeRepository(db["programmes"])
+    students = StudentRepository(db["students"])
 
-    for existing in (await session.execute(select(Anomaly))).scalars().all():
-        await session.delete(existing)
-    await session.flush()
+    program_docs = await programmes.for_institution(institution_id)
+    existing_ids = await students.existing_apaar_ids(institution_id)
+    counts = await students.seat_counts(institution_id)
 
-    for finding in detected:
-        session.add(
-            Anomaly(
-                student_apaar_id=finding.student_apaar_id,
-                institution_id=finding.institution_id,
-                program_id=finding.program_id,
-                anomaly_type=finding.anomaly_type,
-                severity=finding.severity,
-                details=finding.details,
-                detected_at=now,
-            )
-        )
+    regular: dict[str, int] = {}
+    supernumerary: dict[str, int] = {}
+    nri: dict[str, int] = {}
+    oci_fn: dict[str, int] = {}
+    tfw: dict[str, int] = {}
+    pmsss: dict[str, int] = {}
 
-    flagged = {
-        finding.student_apaar_id
-        for finding in detected
-        if finding.severity.name in {"CRITICAL", "HIGH"}
-    }
-    for student in snapshot.students:
-        if student.apaar_id in flagged:
-            student.verification_status = VerificationStatus.FLAGGED_ANOMALY
-        elif student.verification_status == VerificationStatus.PENDING_REVIEW:
-            student.verification_status = VerificationStatus.VERIFIED
-    await session.flush()
-    return detected
+    for program_id, buckets in counts.items():
+        for quota, count in buckets.items():
+            if quota in {"MERIT", "MANAGEMENT", "PMSSS"}:
+                regular[program_id] = regular.get(program_id, 0) + count
+            else:
+                supernumerary[program_id] = supernumerary.get(program_id, 0) + count
+            if quota == "NRI":
+                nri[program_id] = nri.get(program_id, 0) + count
+            if quota in {"OCI", "FN"}:
+                oci_fn[program_id] = oci_fn.get(program_id, 0) + count
+            if quota == "TFW":
+                tfw[program_id] = tfw.get(program_id, 0) + count
+            if quota == "PMSSS":
+                pmsss[program_id] = pmsss.get(program_id, 0) + count
+
+    return csv_ingestion.CsvValidationContext(
+        programs=program_docs,
+        existing_apaar_ids=existing_ids,
+        existing_regular_counts=regular,
+        existing_supernumerary_counts=supernumerary,
+        existing_nri_counts=nri,
+        existing_oci_fn_counts=oci_fn,
+        existing_tfw_counts=tfw,
+        existing_pmsss_counts=pmsss,
+    )
 
 
 # ------------------------------------------------------------------- routes
@@ -99,39 +154,34 @@ async def _recompute_anomalies(session: AsyncSession) -> list[Anomaly]:
 async def list_students(
     institution_id: Optional[str] = Query(None),
     program_id: Optional[str] = Query(None),
-    quota: Optional[AdmissionQuota] = Query(None),
-    flagged_only: bool = Query(False),
+    quota: Optional[str] = Query(None),
+    record_status: Optional[str] = Query(None),
     search: Optional[str] = Query(None, max_length=120),
     limit: int = Query(500, ge=1, le=5000),
     offset: int = Query(0, ge=0),
     principal: Principal = Depends(get_principal),
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> list[StudentOut]:
     """List enrolments, scoped to the caller's institution unless they are AICTE."""
-    statement = select(Student)
-    if principal.role == "institution_admin":
-        if not principal.institution_id:
-            return []
-        statement = statement.where(Student.institution_id == principal.institution_id)
-    elif principal.institution_id:
-        statement = statement.where(Student.institution_id == principal.institution_id)
+    students = StudentRepository(db["students"])
 
-    if institution_id:
-        statement = statement.where(Student.institution_id == institution_id)
-    if program_id:
-        statement = statement.where(Student.program_id == program_id)
-    if quota:
-        statement = statement.where(Student.admission_quota == quota)
-    if flagged_only:
-        statement = statement.where(Student.verification_status == VerificationStatus.FLAGGED_ANOMALY)
-    if search:
-        pattern = f"%{search.strip()}%"
-        statement = statement.where(
-            Student.student_name.ilike(pattern) | Student.apaar_id.ilike(pattern)
-        )
+    if principal.role != "aicte_admin" and principal.institution_id:
+        institution_id = principal.institution_id
 
-    statement = statement.order_by(Student.student_name).limit(limit).offset(offset)
-    rows = (await session.execute(statement)).scalars().all()
+    # The working register shows the active records; a withdrawn enrolment
+    # stays in the registry and is reachable through the explicit filter.
+    if record_status and record_status.upper() != "ALL":
+        record_status = record_status.upper()
+
+    rows = await students.all(
+        institution_id=institution_id,
+        program_id=program_id,
+        quota=quota,
+        record_status=None if record_status == "ALL" else (record_status or "ACTIVE"),
+        search=search,
+        limit=limit,
+        offset=offset,
+    )
     return [_to_out(row) for row in rows]
 
 
@@ -143,17 +193,17 @@ async def list_students(
 async def get_student(
     apaar_id: str,
     principal: Principal = Depends(get_principal),
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> StudentOut:
     """Fetch a single enrolment record by APAAR ID."""
-    result = await session.execute(select(Student).where(Student.apaar_id == apaar_id))
-    student = result.scalars().first()
+    students = StudentRepository(db["students"])
+    student = await students.get(apaar_id)
     if student is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No such APAAR ID."
         )
     if principal.role != "aicte_admin" and principal.institution_id:
-        if student.institution_id != principal.institution_id:
+        if student.get("institution_id") != principal.institution_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You are not allowed to access another institution's records.",
@@ -171,7 +221,7 @@ async def create_student(
     payload: StudentCreate,
     request: Request,
     principal: Principal = Depends(require_permission(rbac.Permission.ONBOARD_STUDENTS)),
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> StudentOut:
     """Create one enrolment record and re-run the detection engine."""
     principal.require_scope(payload.institution_id)
@@ -183,60 +233,58 @@ async def create_student(
             detail=validation.errors,
         )
 
-    existing = (
-        await session.execute(select(Student).where(Student.apaar_id == payload.apaar_id))
-    ).scalars().first()
+    students = StudentRepository(db["students"])
+    existing = await students.get(payload.apaar_id)
     if existing is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="This APAAR ID is already on the register.",
         )
 
-    student = Student(
-        apaar_id=payload.apaar_id,
-        student_name=payload.student_name,
-        date_of_birth=payload.date_of_birth,
-        gender=payload.gender,
-        institution_id=payload.institution_id,
-        program_id=payload.program_id,
-        academic_year=payload.academic_year,
-        admission_quota=payload.admission_quota,
-        enrollment_date=payload.enrollment_date or _today(),
-        student_institute_roll_no=payload.student_institute_roll_no
+    document = {
+        "apaar_id": payload.apaar_id,
+        "student_name": payload.student_name,
+        "date_of_birth": payload.date_of_birth,
+        "gender": payload.gender.value,
+        "institution_id": payload.institution_id,
+        "program_id": payload.program_id,
+        "academic_year": payload.academic_year,
+        "admission_quota": payload.admission_quota.value,
+        "enrollment_date": payload.enrollment_date or _today(),
+        "student_institute_roll_no": payload.student_institute_roll_no
         or f"AUTO-{payload.apaar_id[-4:]}",
-        nationality=payload.nationality or "Indian",
-        passport_number=payload.passport_number,
-        visa_validity=payload.visa_validity,
-        country_of_origin=payload.country_of_origin,
-        abc_account_id=payload.abc_account_id,
-        verification_status=VerificationStatus.PENDING_REVIEW,
-        is_active=True,
-        social_category=payload.social_category,
-        admission_date=payload.admission_date,
-        contact_email=payload.contact_email,
-        contact_phone=payload.contact_phone,
-        state_of_domicile=payload.state_of_domicile,
-    )
-    session.add(student)
-    await session.flush()
+        "nationality": payload.nationality or "Indian",
+        "passport_number": payload.passport_number,
+        "visa_validity": payload.visa_validity,
+        "country_of_origin": payload.country_of_origin,
+        "abc_account_id": payload.abc_account_id,
+        "verification_status": "PENDING_REVIEW",
+        "is_active": True,
+        "record_status": "ACTIVE",
+        "submission_source": "MANUAL",
+        "social_category": payload.social_category.value,
+        "admission_date": payload.admission_date,
+        "contact_email": payload.contact_email,
+        "contact_phone": payload.contact_phone,
+        "state_of_domicile": payload.state_of_domicile,
+    }
+    stored = await students.insert(document)
+    await recompute_anomalies(db)
 
-    anomalies = await _recompute_anomalies(session)
     await writer.log(
-        session,
+        AuditRepository(db["audit_events"]),
         actor=principal.subject,
         actor_role=principal.role,
         action="MANUAL_ADMISSION",
-        subject=student.apaar_id,
+        subject=stored.get("apaar_id", ""),
         details=(
-            f"Onboarded {student.student_name} into {student.program_id} at "
-            f"{student.institution_id}. {len(anomalies)} anomaly record(s) in force."
+            f"Onboarded {stored.get('student_name')} into {stored.get('program_id')} "
+            f"at {stored.get('institution_id')}."
         ),
         category="ADMISSIONS",
         ip_address=client_ip(request),
     )
-    await session.commit()
-    await session.refresh(student)
-    return _to_out(student)
+    return _to_out(stored)
 
 
 @router.put(
@@ -249,39 +297,36 @@ async def update_student(
     payload: StudentUpdate,
     request: Request,
     principal: Principal = Depends(require_permission(rbac.Permission.ONBOARD_STUDENTS)),
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> StudentOut:
     """Update an enrolment record and re-run the detection engine."""
-    result = await session.execute(select(Student).where(Student.apaar_id == apaar_id))
-    student = result.scalars().first()
+    students = StudentRepository(db["students"])
+    student = await students.get(apaar_id)
     if student is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No such APAAR ID."
         )
-    principal.require_scope(student.institution_id)
+    principal.require_scope(student.get("institution_id", ""))
 
     changes = payload.model_dump(exclude_unset=True)
-    for field, value in changes.items():
-        setattr(student, field, value)
+    for field, value in list(changes.items()):
+        if hasattr(value, "value"):
+            changes[field] = value.value
 
-    await session.flush()
-    anomalies = await _recompute_anomalies(session)
+    updated = await students.update(apaar_id, changes)
+    await recompute_anomalies(db)
+
     await writer.log(
-        session,
+        AuditRepository(db["audit_events"]),
         actor=principal.subject,
         actor_role=principal.role,
         action="UPDATE_ADMISSION",
-        subject=student.apaar_id,
-        details=(
-            f"Updated {', '.join(sorted(changes)) or 'no fields'}; "
-            f"{len(anomalies)} anomaly record(s) in force."
-        ),
+        subject=apaar_id,
+        details=f"Updated {', '.join(sorted(changes)) or 'no fields'}.",
         category="ADMISSIONS",
         ip_address=client_ip(request),
     )
-    await session.commit()
-    await session.refresh(student)
-    return _to_out(student)
+    return _to_out(updated)
 
 
 @router.delete(
@@ -293,101 +338,52 @@ async def deactivate_student(
     apaar_id: str,
     request: Request,
     principal: Principal = Depends(require_permission(rbac.Permission.ONBOARD_STUDENTS)),
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> Response:
     """Deactivate (never delete) an enrolment record."""
-    result = await session.execute(select(Student).where(Student.apaar_id == apaar_id))
-    student = result.scalars().first()
+    students = StudentRepository(db["students"])
+    student = await students.get(apaar_id)
     if student is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No such APAAR ID."
         )
-    principal.require_scope(student.institution_id)
-    student.is_active = False
-    await session.flush()
-    await _recompute_anomalies(session)
+    principal.require_scope(student.get("institution_id", ""))
+    await students.set_record_status(apaar_id, "WITHDRAWN")
+    await recompute_anomalies(db)
     await writer.log(
-        session,
+        AuditRepository(db["audit_events"]),
         actor=principal.subject,
         actor_role=principal.role,
         action="DEACTIVATE_ADMISSION",
-        subject=student.apaar_id,
-        details=f"Deactivated {student.student_name}.",
+        subject=apaar_id,
+        details=f"Withdrew the enrolment of {student.get('student_name')}.",
         category="ADMISSIONS",
         ip_address=client_ip(request),
     )
-    await session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # ----------------------------------------------------------------- bulk CSV
 
 
-async def _build_context(
-    session: AsyncSession, institution_id: str
-) -> csv_ingestion.CsvValidationContext:
-    """Assemble the validation context from the live registry."""
-    programs = (
-        await session.execute(
-            select(ProgramIntake).where(ProgramIntake.institution_id == institution_id)
-        )
-    ).scalars().all()
-    students = (
-        await session.execute(
-            select(Student).where(Student.institution_id == institution_id)
-        )
-    ).scalars().all()
-
-    existing_ids = {student.apaar_id for student in students}
-    regular: dict[str, int] = {}
-    supernumerary: dict[str, int] = {}
-    nri: dict[str, int] = {}
-    oci_fn: dict[str, int] = {}
-    tfw: dict[str, int] = {}
-    pmsss: dict[str, int] = {}
-    for student in students:
-        key = student.program_id
-        if student.admission_quota.is_regular:
-            regular[key] = regular.get(key, 0) + 1
-        else:
-            supernumerary[key] = supernumerary.get(key, 0) + 1
-        if student.admission_quota == AdmissionQuota.NRI:
-            nri[key] = nri.get(key, 0) + 1
-        if student.admission_quota in (AdmissionQuota.OCI, AdmissionQuota.FN):
-            oci_fn[key] = oci_fn.get(key, 0) + 1
-        if student.admission_quota == AdmissionQuota.TFW:
-            tfw[key] = tfw.get(key, 0) + 1
-        if student.admission_quota == AdmissionQuota.PMSSS:
-            pmsss[key] = pmsss.get(key, 0) + 1
-
-    return csv_ingestion.CsvValidationContext(
-        programs=programs,
-        existing_apaar_ids=existing_ids,
-        existing_regular_counts=regular,
-        existing_supernumerary_counts=supernumerary,
-        existing_nri_counts=nri,
-        existing_oci_fn_counts=oci_fn,
-        existing_tfw_counts=tfw,
-        existing_pmsss_counts=pmsss,
-    )
-
-
-@router.post(
-    "/bulk/preview",
-    summary="Validate a batch CSV without committing it",
-)
+@router.post("/bulk/preview", summary="Validate a batch CSV without committing it")
 async def preview_bulk(
     request: Request,
     file: UploadFile = File(...),
     institution_id: str = Query(...),
     academic_year: str = Query("2024-25"),
     principal: Principal = Depends(require_permission(rbac.Permission.IMPORT_CSV)),
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> dict:
-    """Validate an uploaded CSV and report every row-level issue."""
+    """Validate an uploaded CSV and report every row-level issue.
+
+    The preview never writes: it tells the institution exactly which rows
+    would be accepted, quarantined or rejected, and what the batch would do
+    to the programme's seat count.
+    """
     principal.require_scope(institution_id)
     raw = (await file.read()).decode("utf-8", errors="replace")
-    context = await _build_context(session, institution_id)
+    context = await _validation_context(db, institution_id)
     report = csv_ingestion.validate_csv(raw, context)
     return {
         "header_errors": report.header_errors,
@@ -445,12 +441,17 @@ async def commit_bulk(
     institution_id: str = Query(...),
     academic_year: str = Query("2024-25"),
     principal: Principal = Depends(require_permission(rbac.Permission.IMPORT_CSV)),
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> BatchUploadResult:
-    """Commit the committable rows of an uploaded CSV to the registry."""
+    """Commit the accepted rows of an uploaded CSV to the registry.
+
+    Rows that failed validation are **quarantined**, not silently dropped:
+    the count of every outcome is reported and the batch is recorded in the
+    submissions history.
+    """
     principal.require_scope(institution_id)
     raw = (await file.read()).decode("utf-8", errors="replace")
-    context = await _build_context(session, institution_id)
+    context = await _validation_context(db, institution_id)
     report = csv_ingestion.validate_csv(raw, context)
 
     if report.header_errors:
@@ -458,57 +459,74 @@ async def commit_bulk(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=report.header_errors
         )
 
-    committable = report.committable_rows
-    committed = 0
-    for row in committable:
-        quota = row.quota or AdmissionQuota.MERIT
-        session.add(
-            Student(
-                apaar_id=row.apaar_id,
-                student_name=row.full_name,
-                date_of_birth=row.dob,
-                gender=_gender_or_other(row.gender),
-                institution_id=institution_id,
-                program_id=row.program_code,
-                academic_year=row.academic_year or academic_year,
-                admission_quota=quota,
-                enrollment_date=_today(),
-                student_institute_roll_no=row.roll_no
+    students = StudentRepository(db["students"])
+    documents: list[dict[str, Any]] = []
+    for row in report.committable_rows:
+        quota = row.quota
+        documents.append(
+            {
+                "apaar_id": row.apaar_id,
+                "student_name": row.full_name,
+                "date_of_birth": row.dob,
+                "gender": _gender_or_other(row.gender),
+                "institution_id": institution_id,
+                "program_id": row.program_code,
+                "academic_year": row.academic_year or academic_year,
+                "admission_quota": quota.value if quota else "MERIT",
+                "enrollment_date": _today(),
+                "student_institute_roll_no": row.roll_no
                 or f"AUTO-{row.apaar_id[-4:]}",
-                nationality=row.nationality or "Indian",
-                passport_number=row.doc_number or None,
-                verification_status=VerificationStatus.PENDING_REVIEW,
-                is_active=True,
-                social_category=_social_or_general(row.social_category),
-                admission_date=row.admission_date or None,
-                contact_email=row.contact_email or None,
-                contact_phone=row.contact_phone or None,
-                state_of_domicile=row.state_of_domicile or None,
-            )
+                "nationality": row.nationality or "Indian",
+                "passport_number": row.doc_number or None,
+                "verification_status": "PENDING_REVIEW",
+                "is_active": True,
+                "record_status": "ACTIVE",
+                "submission_source": "CSV_UPLOAD",
+                "social_category": _social_or_general(row.social_category),
+                "admission_date": row.admission_date or None,
+                "contact_email": row.contact_email or None,
+                "contact_phone": row.contact_phone or None,
+                "state_of_domicile": row.state_of_domicile or None,
+            }
         )
-        committed += 1
-    await session.flush()
+    inserted = await students.insert_many(documents)
+    anomalies = await recompute_anomalies(db)
 
-    anomalies = await _recompute_anomalies(session)
+    submissions = SubmissionRepository(db["submissions"])
+    await submissions.insert(
+        {
+            "submission_id": f"SUB-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
+            "institution_id": institution_id,
+            "submitted_by": principal.subject,
+            "filename": file.filename or "batch.csv",
+            "total_rows": report.total_rows,
+            "accepted_rows": len(inserted),
+            "quarantined_rows": report.critical_rows,
+            "rejected_rows": 0,
+            "warning_rows": report.warning_rows,
+            "anomalies_detected": len(anomalies),
+            "status": "COMMITTED",
+        }
+    )
+
     await writer.log(
-        session,
+        AuditRepository(db["audit_events"]),
         actor=principal.subject,
         actor_role=principal.role,
         action="BATCH_COMMIT",
         subject=institution_id,
         details=(
-            f"Committed {committed} of {report.total_rows} CSV rows; "
-            f"{len(anomalies)} anomaly record(s) in force."
+            f"Committed {len(inserted)} of {report.total_rows} CSV rows; "
+            f"{report.critical_rows} row(s) quarantined."
         ),
         category="ADMISSIONS",
         ip_address=client_ip(request),
     )
-    await session.commit()
 
     return BatchUploadResult(
         total_rows=report.total_rows,
-        committed=committed,
-        skipped=report.total_rows - committed,
+        committed=len(inserted),
+        skipped=report.total_rows - len(inserted),
         critical_rows=report.critical_rows,
         warning_rows=report.warning_rows,
         duplicate_rows=report.duplicate_rows,
@@ -525,16 +543,14 @@ async def commit_bulk(
     )
 
 
-def _gender_or_other(raw: str):
-    from app.models.enums import Gender
+def _gender_or_other(raw: str) -> str:
+    gender = Gender.from_code(raw)
+    return (gender or Gender.OTHER).value
 
-    return Gender.from_code(raw) or Gender.OTHER
 
-
-def _social_or_general(raw: str):
-    from app.models.enums import SocialCategory
-
-    return SocialCategory.from_code(raw) or SocialCategory.GENERAL
+def _social_or_general(raw: str) -> str:
+    social = SocialCategory.from_code(raw)
+    return (social or SocialCategory.GENERAL).value
 
 
 # ------------------------------------------------------------------- badges
@@ -544,43 +560,30 @@ def _social_or_general(raw: str):
 async def student_qr(
     apaar_id: str,
     principal: Principal = Depends(get_principal),
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> StreamingResponse:
     """Render the APAAR QR badge of a student as a PNG image."""
-    result = await session.execute(select(Student).where(Student.apaar_id == apaar_id))
-    student = result.scalars().first()
+    students = StudentRepository(db["students"])
+    student = await students.get(apaar_id)
     if student is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No such APAAR ID."
         )
     if principal.role != "aicte_admin" and principal.institution_id:
-        if student.institution_id != principal.institution_id:
+        if student.get("institution_id") != principal.institution_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You are not allowed to access another institution's records.",
             )
 
-    payload = seal.CredentialPayload(
-        apaar_id=student.apaar_id,
-        institution_id=student.institution_id,
-        program_id=student.program_id,
-        academic_year=student.academic_year,
-        enrollment_date=student.enrollment_date,
-        student_name=student.student_name,
-        date_of_birth=student.date_of_birth,
-        gender=student.gender.value,
-        admission_quota=student.admission_quota.value,
-        nationality=student.nationality,
-        student_institute_roll_no=student.student_institute_roll_no,
-        issued_at=int(datetime.now(timezone.utc).timestamp()),
-    )
+    payload = _payload_for(student)
     signed = seal.sign(payload)
     link = qr.build_payload(
-        apaar_id=student.apaar_id,
-        institution_id=student.institution_id,
-        program_id=student.program_id,
+        apaar_id=student.get("apaar_id", ""),
+        institution_id=student.get("institution_id", ""),
+        program_id=student.get("program_id", ""),
         seal=signed,
-        timestamp=payload.issued_at,
+        timestamp=int(datetime.now(timezone.utc).timestamp()),
     )
     png = qr.render_png(link)
     return StreamingResponse(
@@ -597,54 +600,38 @@ async def student_certificate(
     request: Request,
     certificate_type: str = Query("Bonafide Certificate", max_length=80),
     principal: Principal = Depends(require_permission(rbac.Permission.GENERATE_CERTIFICATE)),
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> Response:
     """Issue a certificate that carries the APAAR ID, the student id and the QR badge."""
-    result = await session.execute(select(Student).where(Student.apaar_id == apaar_id))
-    student = result.scalars().first()
+    students = StudentRepository(db["students"])
+    student = await students.get(apaar_id)
     if student is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No such APAAR ID."
         )
     if principal.role != "aicte_admin" and principal.institution_id:
-        if student.institution_id != principal.institution_id:
+        if student.get("institution_id") != principal.institution_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You are not allowed to issue a certificate for another institution.",
             )
 
-    institution = (
-        await session.execute(
-            select(Institution).where(Institution.institution_id == student.institution_id)
-        )
-    ).scalar_one_or_none()
-    program = (
-        await session.execute(
-            select(ProgramIntake).where(
-                ProgramIntake.institution_id == student.institution_id,
-                ProgramIntake.program_id == student.program_id,
-            )
-        )
-    ).scalar_one_or_none()
-
-    payload = seal.CredentialPayload(
-        apaar_id=student.apaar_id,
-        institution_id=student.institution_id,
-        program_id=student.program_id,
-        academic_year=student.academic_year,
-        enrollment_date=student.enrollment_date,
-        student_name=student.student_name,
-        date_of_birth=student.date_of_birth,
-        gender=student.gender.value,
-        admission_quota=student.admission_quota.value,
-        nationality=student.nationality,
-        student_institute_roll_no=student.student_institute_roll_no,
+    institutions = await db["institutions"].find_one(
+        {"institution_id": student.get("institution_id")}
     )
+    programme = await db["programmes"].find_one(
+        {
+            "institution_id": student.get("institution_id"),
+            "program_id": student.get("program_id"),
+        }
+    )
+
+    payload = _payload_for(student)
     signed = seal.sign(payload)
     link = qr.build_payload(
-        apaar_id=student.apaar_id,
-        institution_id=student.institution_id,
-        program_id=student.program_id,
+        apaar_id=student.get("apaar_id", ""),
+        institution_id=student.get("institution_id", ""),
+        program_id=student.get("program_id", ""),
         seal=signed,
         timestamp=int(datetime.now(timezone.utc).timestamp()),
     )
@@ -652,28 +639,27 @@ async def student_certificate(
 
     body = pdf.build_certificate_pdf(
         student=student,
-        institution_name=institution.name if institution else student.institution_id,
-        program_name=program.program_name if program else student.program_id,
-        academic_year=student.academic_year,
-        apaar_id=student.apaar_id,
+        institution_name=(institutions or {}).get("name", student.get("institution_id", "")),
+        program_name=(programme or {}).get("program_name", student.get("program_id", "")),
+        academic_year=student.get("academic_year", ""),
+        apaar_id=student.get("apaar_id", ""),
         qr_png=png,
         seal_text=signed,
         certificate_type=certificate_type,
     )
 
     await writer.log(
-        session,
+        AuditRepository(db["audit_events"]),
         actor=principal.subject,
         actor_role=principal.role,
         action="ISSUE_CERTIFICATE",
-        subject=student.apaar_id,
-        details=f"Issued '{certificate_type}' for {student.student_name}.",
+        subject=student.get("apaar_id", ""),
+        details=f"Issued '{certificate_type}' for {student.get('student_name')}.",
         category="CREDENTIAL",
         ip_address=client_ip(request),
     )
-    await session.commit()
 
-    filename = f"edusync-certificate-{student.apaar_id}.pdf"
+    filename = f"edusync-certificate-{student.get('apaar_id')}.pdf"
     return Response(
         content=body,
         media_type="application/pdf",

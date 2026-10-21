@@ -12,6 +12,8 @@ from __future__ import annotations
 
 from typing import Iterable, Sequence
 
+from app.models.documents import enum_value, field
+
 STUDENT_COLUMNS = [
     "APAAR_ID",
     "FULL_NAME",
@@ -88,30 +90,26 @@ def students(rows: Iterable, include_header: bool = True) -> str:
     if include_header:
         lines.append(",".join(STUDENT_COLUMNS))
     for student in rows:
-        quota = getattr(student, "admission_quota", None)
-        gender = getattr(student, "gender", None)
-        status = getattr(student, "verification_status", None)
-        social = getattr(student, "social_category", None)
         lines.append(
             _row(
                 [
-                    student.apaar_id,
-                    student.student_name,
-                    student.date_of_birth,
-                    getattr(gender, "value", gender),
-                    student.student_institute_roll_no,
-                    student.program_id,
-                    getattr(quota, "value", quota),
-                    student.nationality,
-                    student.passport_number or "",
-                    getattr(social, "value", social),
-                    student.admission_date or "",
-                    student.academic_year,
-                    student.institution_id,
-                    student.contact_email or "",
-                    student.contact_phone or "",
-                    student.state_of_domicile or "",
-                    getattr(status, "value", status),
+                    field(student, "apaar_id", ""),
+                    field(student, "student_name", ""),
+                    field(student, "date_of_birth", ""),
+                    enum_value(field(student, "gender", "")),
+                    field(student, "student_institute_roll_no", ""),
+                    field(student, "program_id", ""),
+                    enum_value(field(student, "admission_quota", "")),
+                    field(student, "nationality", ""),
+                    field(student, "passport_number", "") or "",
+                    enum_value(field(student, "social_category", "")),
+                    field(student, "admission_date", "") or "",
+                    field(student, "academic_year", ""),
+                    field(student, "institution_id", ""),
+                    field(student, "contact_email", "") or "",
+                    field(student, "contact_phone", "") or "",
+                    field(student, "state_of_domicile", "") or "",
+                    enum_value(field(student, "verification_status", "")),
                 ]
             )
         )
@@ -124,19 +122,19 @@ def anomalies(rows: Iterable, include_header: bool = True) -> str:
     if include_header:
         lines.append(",".join(ANOMALY_COLUMNS))
     for anomaly in rows:
-        anomaly_type = getattr(anomaly, "anomaly_type", None)
-        severity = getattr(anomaly, "severity", None)
-        detected_at = getattr(anomaly, "detected_at", None)
+        detected_at = field(anomaly, "detected_at", "")
         lines.append(
             _row(
                 [
-                    anomaly.student_apaar_id,
-                    anomaly.institution_id,
-                    anomaly.program_id or "",
-                    getattr(anomaly_type, "value", anomaly_type),
-                    getattr(severity, "value", severity),
-                    anomaly.details,
-                    detected_at.isoformat() if hasattr(detected_at, "isoformat") else (detected_at or ""),
+                    field(anomaly, "student_apaar_id", ""),
+                    field(anomaly, "institution_id", ""),
+                    field(anomaly, "program_id", "") or "",
+                    enum_value(field(anomaly, "anomaly_type", "")),
+                    enum_value(field(anomaly, "severity", "")),
+                    field(anomaly, "details", ""),
+                    detected_at.isoformat()
+                    if hasattr(detected_at, "isoformat")
+                    else (detected_at or ""),
                 ]
             )
         )
@@ -149,18 +147,20 @@ def audit_trail(rows: Iterable, include_header: bool = True) -> str:
     if include_header:
         lines.append(",".join(AUDIT_COLUMNS))
     for entry in rows:
-        timestamp = getattr(entry, "timestamp", None)
+        timestamp = field(entry, "timestamp", "")
         lines.append(
             _row(
                 [
-                    timestamp.isoformat() if hasattr(timestamp, "isoformat") else (timestamp or ""),
-                    entry.actor,
-                    entry.action,
-                    entry.subject,
-                    entry.category,
-                    entry.details,
-                    entry.prev_hash,
-                    entry.hash,
+                    timestamp.isoformat()
+                    if hasattr(timestamp, "isoformat")
+                    else (timestamp or ""),
+                    field(entry, "actor", ""),
+                    field(entry, "action", ""),
+                    field(entry, "subject", ""),
+                    field(entry, "category", ""),
+                    field(entry, "details", ""),
+                    field(entry, "prev_hash", ""),
+                    field(entry, "hash", ""),
                 ]
             )
         )
@@ -173,24 +173,24 @@ def programme_utilisation(rows: Iterable, include_header: bool = True) -> str:
     if include_header:
         lines.append(",".join(PROGRAM_COLUMNS))
     for snapshot in rows:
-        program = snapshot.program
-        utilisation = snapshot.overall_utilisation * 100
+        program = field(snapshot, "program", {}) or {}
+        utilisation = float(field(snapshot, "overall_utilisation", 0.0) or 0.0) * 100
         lines.append(
             _row(
                 [
-                    program.institution_id,
-                    program.program_id,
-                    program.program_name,
-                    program.program_level,
-                    program.approved_intake,
-                    snapshot.total_enrolled,
-                    snapshot.regular_enrolled,
-                    snapshot.supernumerary_enrolled,
+                    field(program, "institution_id", ""),
+                    field(program, "program_id", ""),
+                    field(program, "program_name", ""),
+                    field(program, "program_level", ""),
+                    field(program, "approved_intake", 0),
+                    field(snapshot, "total_enrolled", 0),
+                    field(snapshot, "regular_enrolled", 0),
+                    field(snapshot, "supernumerary_enrolled", 0),
                     f"{utilisation:.1f}",
-                    snapshot.nri_enrolled,
-                    snapshot.oci_fn_enrolled,
-                    snapshot.tfw_enrolled,
-                    snapshot.pmsss_enrolled,
+                    field(snapshot, "nri_enrolled", 0),
+                    field(snapshot, "oci_fn_enrolled", 0),
+                    field(snapshot, "tfw_enrolled", 0),
+                    field(snapshot, "pmsss_enrolled", 0),
                 ]
             )
         )
