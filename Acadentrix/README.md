@@ -2,7 +2,7 @@
 
 <img src="../docs/assets/brand/edusync-lockup.png" alt="EduSynC" height="180" />
 
-# Acadentrix
+# EduSynC
 
 **The APAAR ID Student Data Management & Verification Platform**
 
@@ -24,7 +24,7 @@ APAAR or AICTE verification service.
 
 | | |
 | --- | --- |
-| **Product / app / project name** | **Acadentrix** |
+| **Product / app / project name** | **EduSynC** |
 | **Brand name and logo** | **EduSynC** |
 | **Package / application id** | `com.acadentrix.app` |
 | **Gradle project name** | `Acadentrix` |
@@ -175,10 +175,10 @@ The EduSynC logo is present wherever a user might want to know who built the pro
 * **Launcher icon** — the supplied mark, shipped as an adaptive icon (`mipmap-anydpi-v26`) with a
   white plate matching the artwork's own ground, density-bucketed legacy PNGs and a monochrome
   silhouette for themed icons on Android 13+.
-* **App header** — the mark on its white plate, `ACADENTRIX` as the product and `by EduSynC` beneath.
-* **Role select** — the brand lockup closes the page, naming both the product and the team.
+* **App header** — the mark on its white plate, `EDUSYNC` as the product and `APAAR ID platform` beneath.
+* **Role select** — the brand lockup closes the page, naming the product and the platform.
 * **Degree certificate** — the mark appears in the letterhead and in the signature footer beside
-  `ACADENTRIX · by EduSynC`.
+  `EDUSYNC · APAAR ID platform`.
 
 The artwork itself is the team's own raster asset (`res/drawable-nodpi/edusync_mark.png`), so what
 ships on screen is pixel-identical to the supplied logo rather than a redrawn approximation.

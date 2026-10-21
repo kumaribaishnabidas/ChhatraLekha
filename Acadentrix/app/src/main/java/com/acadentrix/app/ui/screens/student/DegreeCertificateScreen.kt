@@ -571,14 +571,14 @@ private fun CertificateSheet(
             EduSynCMark(size = 18.dp)
             Spacer(Modifier.width(7.dp))
             Text(
-                text = "ACADENTRIX",
+                text = "EDUSYNC",
                 style = MaterialTheme.typography.labelSmall,
                 color = NavyDeep,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.2.sp
             )
             Text(
-                text = "  ·  by EduSynC",
+                text = "  ·  APAAR ID platform",
                 style = MaterialTheme.typography.labelSmall,
                 color = Color(0xFF7A828B),
                 letterSpacing = 0.4.sp

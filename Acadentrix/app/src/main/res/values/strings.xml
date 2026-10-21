@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Product name: Acadentrix -->
-    <string name="app_name">Acadentrix</string>
+    <!-- Product name: EduSynC -->
+    <string name="app_name">EduSynC</string>
 
-    <!-- Brand / team: EduSynC -->
+    <!-- Brand -->
     <string name="brand_name">EduSynC</string>
-    <string name="brand_owner">by EduSynC</string>
-    <string name="brand_tagline">A unit of EduSynC · Smart India Hackathon</string>
+    <string name="brand_owner">APAAR ID platform</string>
+    <string name="brand_tagline">One ID. One Truth.</string>
 
     <!-- Product descriptor -->
     <string name="product_descriptor">Automated Permanent Academic Account Registry</string>

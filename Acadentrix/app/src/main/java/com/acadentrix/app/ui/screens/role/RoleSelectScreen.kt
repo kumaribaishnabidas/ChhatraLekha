@@ -81,14 +81,14 @@ fun RoleSelectScreen(viewModel: ApaarViewModel) {
                             letterSpacing = 1.1.sp
                         )
                         Text(
-                            text = "ACADENTRIX",
+                            text = "EDUSYNC",
                             style = MaterialTheme.typography.headlineMedium,
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp
                         )
                         Text(
-                            text = "by EduSynC",
+                            text = "APAAR ID platform",
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.White.copy(alpha = 0.70f),
                             letterSpacing = 1.4.sp
@@ -208,7 +208,7 @@ fun RoleSelectScreen(viewModel: ApaarViewModel) {
                     markSize = 22.dp,
                     wordColor = MaterialTheme.colorScheme.onSurface,
                     subColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    subText = "Smart India Hackathon 2025 · Acadentrix v1.0.0",
+                    subText = "EduSynC v1.0.0",
                     onWhite = true
                 )
             }

@@ -227,14 +227,14 @@ private fun ApaarHeader(
                 Spacer(Modifier.width(11.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "ACADENTRIX",
+                        text = "EDUSYNC",
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.White,
                         letterSpacing = 1.4.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "by EduSynC · AICTE National Academic Identifier",
+                        text = "APAAR ID platform",
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.White.copy(alpha = 0.72f),
                         letterSpacing = 0.4.sp
