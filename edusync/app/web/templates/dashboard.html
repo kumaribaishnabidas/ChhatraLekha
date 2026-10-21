@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}AICTE Directorate dashboard - EduSynC{% endblock %}
+{% block content %}
+
+<div class="pill-row" style="margin-bottom:18px">
+  <h1 style="margin:0; font-size:26px; color:var(--navy)">AICTE Directorate dashboard</h1>
+  <span class="chip" style="background:var(--navy)">Live</span>
+  <button class="btn btn-outline" id="refresh-btn" type="button">Refresh</button>
+</div>
+
+<section class="grid cols-4" style="margin-bottom:22px">
+  <div class="card kpi"><span class="value" id="k-institutions">&mdash;</span><span class="label">Institutions</span></div>
+  <div class="card kpi"><span class="value" id="k-programmes">&mdash;</span><span class="label">Programmes</span></div>
+  <div class="card kpi good"><span class="value" id="k-enrolled">&mdash;</span><span class="label">Enrolled</span><span class="delta" id="k-utilisation">&mdash;</span></div>
+  <div class="card kpi critical"><span class="value" id="k-anomalies">&mdash;</span><span class="label">Anomalies</span><span class="delta" id="k-critical">&mdash;</span></div>
+</section>
+
+<div class="tabs">
+  <button class="tab active" data-view="intake">Intake utilisation</button>
+  <button class="tab" data-view="compliance">Compliance matrix</button>
+  <button class="tab" data-view="risk">Risk scores</button>
+</div>
+
+<section id="view-intake" class="card">
+  <h3>Sanctioned intake against actual enrolment</h3>
+  <p style="margin-bottom:14px">Every approved programme in the national registry.</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Institution</th><th>Programme</th><th>Approved</th><th>Enrolled</th>
+          <th>Utilisation</th><th>Supernumerary</th><th>State</th>
+        </tr>
+      </thead>
+      <tbody id="intake-rows"></tbody>
+    </table>
+  </div>
+</section>
+
+<section id="view-compliance" class="card" hidden>
+  <h3>Institution compliance matrix</h3>
+  <p style="margin-bottom:14px">Ranked by risk score.</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Institution</th><th>State</th><th>Approved</th><th>Enrolled</th>
+          <th>Utilisation</th><th>Anomalies</th><th>Risk</th>
+        </tr>
+      </thead>
+      <tbody id="compliance-rows"></tbody>
+    </table>
+  </div>
+</section>
+
+<section id="view-risk" class="card" hidden>
+  <h3>Institution risk scores</h3>
+  <p style="margin-bottom:14px">Every contributing anomaly family is listed, so the score is explainable.</p>
+  <div class="grid cols-2" id="risk-cards"></div>
+</section>
+
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}

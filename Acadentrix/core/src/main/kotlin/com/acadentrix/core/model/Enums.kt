@@ -184,6 +184,119 @@ enum class AnomalyType(val label: String, val shortLabel: String, val descriptio
     }
 }
 
+/**
+ * Social category as recorded in the National Students' Database.
+ *
+ * AICTE institutions must report the category for every admission because the
+ * category drives reservation, fee slab and the annual intake reconciliation
+ * with the concerned State Government.
+ */
+enum class SocialCategory(val code: String, val label: String, val isReserved: Boolean) {
+    GENERAL("GENERAL", "General", false),
+    EWS("EWS", "EWS (Reserved)", true),
+    OBC("OBC", "OBC (Reserved)", true),
+    SC("SC", "SC (Reserved)", true),
+    ST("ST", "ST (Reserved)", true),
+    OBC_OTHER("OBC_OTHER", "Other Backward Classes", true),
+    NOT_APPLICABLE("NA", "Not Applicable", false);
+
+    companion object {
+        fun fromCode(raw: String?): SocialCategory? {
+            if (raw.isNullOrBlank()) return null
+            val key = raw.trim().uppercase().replace('-', '_').replace(' ', '_')
+            entries.firstOrNull { it.code == key }?.let { return it }
+            entries.firstOrNull { it.name == key }?.let { return it }
+            return when (key) {
+                "GEN", "UR", "OPEN", "UNRESERVED" -> GENERAL
+                "OBC", "OBC_NCL", "BACKWARD" -> OBC
+                "SC", "ST", "SR" -> entries.firstOrNull { it.name == key }
+                else -> null
+            }
+        }
+    }
+}
+
+/**
+ * The purpose for which a student consented to the processing of their APAAR
+ * record. Every export, verification and third-party disclosure has to name
+ * one of these purposes in the consent ledger.
+ */
+enum class ConsentPurpose(val label: String, val description: String, val requiresExplicitConsent: Boolean) {
+    CREDENTIAL_VERIFICATION(
+        "Credential verification",
+        "Allowing an employer or verifier to check the validity of the APAAR credential.",
+        true
+    ),
+    DATA_SHARING_WITH_EMPLOYER(
+        "Employer data sharing",
+        "Allowing the academic record to be shared with a prospective employer.",
+        true
+    ),
+    ANALYTICS_AND_REPORTING(
+        "Analytics and reporting",
+        "Allowing anonymised or identified data to feed national analytics.",
+        false
+    ),
+    RESEARCH(
+        "Research",
+        "Allowing the record to be used for accredited research purposes.",
+        true
+    ),
+    MARKETING(
+        "Marketing and outreach",
+        "Allowing the student to be contacted about courses, events or offers.",
+        true
+    );
+
+    companion object {
+        fun fromCode(raw: String?): ConsentPurpose? {
+            if (raw.isNullOrBlank()) return null
+            val key = raw.trim().uppercase().replace('-', '_').replace(' ', '_')
+            entries.firstOrNull { it.name == key }?.let { return it }
+            return when (key) {
+                "VERIFY", "VERIFICATION" -> CREDENTIAL_VERIFICATION
+                "EMPLOYER", "SHARE" -> DATA_SHARING_WITH_EMPLOYER
+                "ANALYTICS", "REPORTING" -> ANALYTICS_AND_REPORTING
+                "RESEARCH" -> RESEARCH
+                "MARKETING" -> MARKETING
+                else -> null
+            }
+        }
+    }
+}
+
+/**
+ * Lifecycle state of a single consent record.
+ */
+enum class ConsentStatus(val label: String) {
+    GRANTED("Granted"),
+    REVOKED("Revoked"),
+    PENDING("Pending");
+
+    companion object {
+        fun from(raw: String?): ConsentStatus = entries.firstOrNull {
+            it.name.equals(raw, ignoreCase = true)
+        } ?: PENDING
+    }
+}
+
+/**
+ * How the consent was captured — the channel is part of the legal evidence.
+ */
+enum class ConsentChannel(val label: String) {
+    MOBILE_APP("Mobile app"),
+    WEB_PORTAL("Web portal"),
+    PAPER_FORM("Signed paper form"),
+    VERIFIER_KIOSK("Verifier kiosk"),
+    ADMIN_OVERRIDE("Administrative override");
+
+    companion object {
+        fun from(raw: String?): ConsentChannel = entries.firstOrNull {
+            it.name.equals(raw, ignoreCase = true)
+        } ?: MOBILE_APP
+    }
+}
+
 enum class AnomalySeverity(val label: String, val rank: Int) {
     CRITICAL("Critical", 0),
     HIGH("High", 1),

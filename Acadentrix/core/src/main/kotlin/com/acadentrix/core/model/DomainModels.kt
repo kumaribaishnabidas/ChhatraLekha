@@ -56,7 +56,18 @@ data class Student(
     val abcAccountId: String?,
     val verificationStatus: VerificationStatus,
     val isActive: Boolean = true,
-    val photoSeed: Int = 0
+    val photoSeed: Int = 0,
+    // ---------------------------------------------------- extended record set
+    /** Social category (General / OBC / SC / ST / EWS) declared at admission. */
+    val socialCategory: SocialCategory = SocialCategory.GENERAL,
+    /** Date the admission was formally granted, ISO-8601 (`yyyy-MM-dd`). */
+    val admissionDate: String? = null,
+    /** Contact e-mail captured for verification notices. */
+    val contactEmail: String? = null,
+    /** Contact mobile number captured for verification notices. */
+    val contactPhone: String? = null,
+    /** State of domicile at the time of admission. */
+    val stateOfDomicile: String? = null
 ) {
     val initials: String
         get() = studentName.trim().split(" ")
@@ -64,6 +75,10 @@ data class Student(
             .take(2)
             .joinToString("") { it.first().uppercase() }
             .ifEmpty { "--" }
+
+    /** True when the record carries enough contact data to reach the student. */
+    val hasContactDetails: Boolean
+        get() = !contactEmail.isNullOrBlank() || !contactPhone.isNullOrBlank()
 }
 
 /**
@@ -83,6 +98,9 @@ data class Anomaly(
 
 /**
  * Immutable audit trail entry.
+ *
+ * [prevHash] and [hash] make the trail tamper-evident: every entry commits to
+ * its predecessor, so removing or editing a row invalidates every hash after it.
  */
 data class AuditEntry(
     val logId: Long,
@@ -91,7 +109,47 @@ data class AuditEntry(
     val action: String,
     val subject: String,
     val details: String,
-    val category: String
+    val category: String,
+    val prevHash: String = "",
+    val hash: String = ""
+)
+
+/**
+ * One consent record in the consent ledger.
+ *
+ * Consent is modelled per purpose rather than as a single flag because the
+ * Digital Personal Data Protection Act requires purpose-wise, revocable and
+ * evidenced consent.
+ */
+data class ConsentRecord(
+    val consentId: String,
+    val studentApaarId: String,
+    val purpose: ConsentPurpose,
+    val status: ConsentStatus,
+    val channel: ConsentChannel,
+    val policyVersion: String,
+    val recordedAt: Long,
+    val revokedAt: Long? = null,
+    val evidence: String? = null
+) {
+    val isActive: Boolean get() = status == ConsentStatus.GRANTED
+}
+
+/**
+ * A signed-in account on the portal.
+ *
+ * The app authenticates locally: the PIN is never stored, only a PBKDF2 hash
+ * of it together with a per-account salt.
+ */
+data class UserAccount(
+    val accountId: String,
+    val displayName: String,
+    val role: UserRole,
+    val institutionId: String? = null,
+    val email: String? = null,
+    val pinSalt: String,
+    val pinHash: String,
+    val isActive: Boolean = true
 )
 
 /**

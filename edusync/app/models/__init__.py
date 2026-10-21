@@ -1,0 +1,53 @@
+"""EduSynC database models."""
+
+from app.models.entities import (
+    Anomaly,
+    ApiKey,
+    AuditLog,
+    Consent,
+    Institution,
+    InstitutionRiskScore,
+    ProgramIntake,
+    RevokedCredential,
+    Student,
+    User,
+    utcnow,
+)
+from app.models.enums import (
+    AdmissionQuota,
+    AnomalySeverity,
+    AnomalyType,
+    ConsentChannel,
+    ConsentPurpose,
+    ConsentStatus,
+    Gender,
+    InstitutionType,
+    QuotaBasis,
+    SocialCategory,
+    VerificationStatus,
+)
+
+__all__ = [
+    "Anomaly",
+    "AnomalySeverity",
+    "AnomalyType",
+    "ApiKey",
+    "AuditLog",
+    "Consent",
+    "ConsentChannel",
+    "ConsentPurpose",
+    "ConsentStatus",
+    "AdmissionQuota",
+    "Gender",
+    "Institution",
+    "InstitutionRiskScore",
+    "InstitutionType",
+    "ProgramIntake",
+    "QuotaBasis",
+    "RevokedCredential",
+    "SocialCategory",
+    "Student",
+    "User",
+    "VerificationStatus",
+    "utcnow",
+]

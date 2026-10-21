@@ -1,0 +1,29 @@
+# EduSynC - Python build artefacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# Test and coverage artefacts
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+.mypy_cache/
+
+# Local configuration and data
+.env
+*.db
+*.sqlite3
+edusync.db
+
+# Editors
+.idea/
+.vscode/
+*.swp
+.DS_Store
