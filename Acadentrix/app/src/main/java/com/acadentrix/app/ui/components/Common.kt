@@ -39,10 +39,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.acadentrix.app.core.model.AnomalySeverity
-import com.acadentrix.app.core.model.AdmissionQuota
-import com.acadentrix.app.core.model.VerificationStatus
-import com.acadentrix.app.core.validation.ApaarIdValidator
+import com.acadentrix.core.model.AnomalySeverity
+import com.acadentrix.core.model.AdmissionQuota
+import com.acadentrix.core.model.VerificationStatus
+import com.acadentrix.core.validation.ApaarIdValidator
 import com.acadentrix.app.ui.theme.ApaarIdSmallTextStyle
 import com.acadentrix.app.ui.theme.ApaarIdTextStyle
 import com.acadentrix.app.ui.theme.ApaarKpiNumberStyle

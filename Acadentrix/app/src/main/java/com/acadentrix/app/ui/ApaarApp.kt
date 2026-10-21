@@ -60,7 +60,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.acadentrix.app.core.model.UserRole
+import com.acadentrix.core.model.UserRole
 import com.acadentrix.app.ui.components.EduSynCPlate
 import com.acadentrix.app.ui.screens.aicte.AnomalyInspectorScreen
 import com.acadentrix.app.ui.screens.aicte.AuditTrailScreen

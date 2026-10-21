@@ -38,9 +38,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.acadentrix.app.core.model.AdmissionQuota
-import com.acadentrix.app.core.model.Student
-import com.acadentrix.app.core.validation.ApaarIdValidator
+import com.acadentrix.core.model.AdmissionQuota
+import com.acadentrix.core.model.Student
+import com.acadentrix.core.validation.ApaarIdValidator
 import com.acadentrix.app.ui.components.ApaarCard
 import com.acadentrix.app.ui.components.DetailRow
 import com.acadentrix.app.ui.components.EmptyState

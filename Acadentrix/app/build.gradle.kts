@@ -102,6 +102,9 @@ tasks.withType<Test>().configureEach {
 }
 
 dependencies {
+    // Shared domain rules (validator, anomaly engine, CSV, QR, seal).
+    implementation(project(":core"))
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)

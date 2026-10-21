@@ -39,8 +39,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.acadentrix.app.core.model.AdmissionQuota
-import com.acadentrix.app.core.model.IntakeSnapshot
+import com.acadentrix.core.model.AdmissionQuota
+import com.acadentrix.core.model.IntakeSnapshot
 import com.acadentrix.app.ui.components.AnimatedGauge
 import com.acadentrix.app.ui.components.ApaarCard
 import com.acadentrix.app.ui.components.DropdownSelector
@@ -289,7 +289,7 @@ fun IntakeTrackerScreen(viewModel: ApaarViewModel) {
                     it.institutionId == selected.program.institutionId &&
                     it.programId == selected.program.programId
             }
-            .sortedWith(compareByDescending<com.acadentrix.app.core.model.Student> { it.admissionQuota.isRegular }
+            .sortedWith(compareByDescending<com.acadentrix.core.model.Student> { it.admissionQuota.isRegular }
                 .thenBy { it.enrollmentDate })
 
         if (roster.isEmpty()) {

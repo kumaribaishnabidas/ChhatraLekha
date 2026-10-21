@@ -38,9 +38,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.acadentrix.app.core.model.AnomalySeverity
-import com.acadentrix.app.core.model.AnomalyType
-import com.acadentrix.app.core.security.SealGenerator
+import com.acadentrix.core.model.AnomalySeverity
+import com.acadentrix.core.model.AnomalyType
+import com.acadentrix.core.security.SealGenerator
 import com.acadentrix.app.ui.components.ApaarCard
 import com.acadentrix.app.ui.components.EmptyState
 import com.acadentrix.app.ui.components.KpiCard

@@ -17,7 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.acadentrix.app.core.qr.QrEncoder
+import com.acadentrix.core.qr.QrEncoder
 import com.acadentrix.app.ui.theme.ApaarTheme
 import kotlin.math.ceil
 import kotlin.math.roundToInt

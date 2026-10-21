@@ -45,10 +45,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.acadentrix.app.core.qr.ApaarQrPayload
-import com.acadentrix.app.core.qr.QrEncoder
-import com.acadentrix.app.core.security.SealGenerator
-import com.acadentrix.app.core.validation.ApaarIdValidator
+import com.acadentrix.core.qr.ApaarQrPayload
+import com.acadentrix.core.qr.QrEncoder
+import com.acadentrix.core.security.SealGenerator
+import com.acadentrix.core.validation.ApaarIdValidator
 import com.acadentrix.app.ui.components.ApaarCard
 import com.acadentrix.app.ui.components.DropdownSelector
 import com.acadentrix.app.ui.components.EmptyState

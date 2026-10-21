@@ -1,19 +1,19 @@
 package com.acadentrix.app.data.repository
 
-import com.acadentrix.app.core.csv.CsvStudentRow
-import com.acadentrix.app.core.model.AdmissionQuota
-import com.acadentrix.app.core.model.Anomaly
-import com.acadentrix.app.core.model.AnomalySeverity
-import com.acadentrix.app.core.model.AnomalyType
-import com.acadentrix.app.core.model.AuditEntry
-import com.acadentrix.app.core.model.Gender
-import com.acadentrix.app.core.model.Institution
-import com.acadentrix.app.core.model.InstitutionType
-import com.acadentrix.app.core.model.ProgramIntake
-import com.acadentrix.app.core.model.Student
-import com.acadentrix.app.core.model.VerificationStatus
-import com.acadentrix.app.core.validation.AnomalyEngine
-import com.acadentrix.app.core.validation.RegistrySnapshot
+import com.acadentrix.core.csv.CsvStudentRow
+import com.acadentrix.core.model.AdmissionQuota
+import com.acadentrix.core.model.Anomaly
+import com.acadentrix.core.model.AnomalySeverity
+import com.acadentrix.core.model.AnomalyType
+import com.acadentrix.core.model.AuditEntry
+import com.acadentrix.core.model.Gender
+import com.acadentrix.core.model.Institution
+import com.acadentrix.core.model.InstitutionType
+import com.acadentrix.core.model.ProgramIntake
+import com.acadentrix.core.model.Student
+import com.acadentrix.core.model.VerificationStatus
+import com.acadentrix.core.validation.AnomalyEngine
+import com.acadentrix.core.validation.RegistrySnapshot
 import com.acadentrix.app.data.local.ApaarDatabase
 import com.acadentrix.app.data.local.SeedData
 import com.acadentrix.app.data.local.entity.AnomalyRecordEntity
@@ -162,7 +162,7 @@ class ApaarRepository(private val database: ApaarDatabase) {
         academicYear: String
     ): BatchCommitResult {
         val committable = rows.filter { row ->
-            row.issues.none { it.severity == com.acadentrix.app.core.csv.RowIssueSeverity.CRITICAL }
+            row.issues.none { it.severity == com.acadentrix.core.csv.RowIssueSeverity.CRITICAL }
         }
         val entities = committable.map { row ->
             StudentEntity(

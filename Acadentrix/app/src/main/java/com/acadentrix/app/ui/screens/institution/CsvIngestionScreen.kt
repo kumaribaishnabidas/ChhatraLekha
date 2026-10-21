@@ -43,11 +43,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.acadentrix.app.core.csv.CsvIngestionReport
-import com.acadentrix.app.core.csv.CsvStudentRow
-import com.acadentrix.app.core.csv.RowIssue
-import com.acadentrix.app.core.csv.RowIssueSeverity
-import com.acadentrix.app.core.validation.ApaarIdValidator
+import com.acadentrix.core.csv.CsvIngestionReport
+import com.acadentrix.core.csv.CsvStudentRow
+import com.acadentrix.core.csv.RowIssue
+import com.acadentrix.core.csv.RowIssueSeverity
+import com.acadentrix.core.validation.ApaarIdValidator
 import com.acadentrix.app.ui.components.ApaarCard
 import com.acadentrix.app.ui.components.EmptyState
 import com.acadentrix.app.ui.components.InfoBanner

@@ -1,10 +1,10 @@
 package com.acadentrix.app.data.local
 
-import com.acadentrix.app.core.model.AdmissionQuota
-import com.acadentrix.app.core.model.Gender
-import com.acadentrix.app.core.model.InstitutionType
-import com.acadentrix.app.core.model.VerificationStatus
-import com.acadentrix.app.core.validation.ApaarIdValidator
+import com.acadentrix.core.model.AdmissionQuota
+import com.acadentrix.core.model.Gender
+import com.acadentrix.core.model.InstitutionType
+import com.acadentrix.core.model.VerificationStatus
+import com.acadentrix.core.validation.ApaarIdValidator
 import com.acadentrix.app.data.local.entity.InstitutionEntity
 import com.acadentrix.app.data.local.entity.ProgramIntakeEntity
 import com.acadentrix.app.data.local.entity.StudentEntity

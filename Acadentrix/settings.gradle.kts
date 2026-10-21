@@ -30,4 +30,10 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Acadentrix"
+
+// :core is a plain Kotlin/JVM module. It holds the domain rules — APAAR
+// validation, the anomaly engine, CSV ingestion, the QR codec and the seal
+// generator — so the Android app and the backend can never disagree about
+// what a valid record is.
+include(":core")
 include(":app")

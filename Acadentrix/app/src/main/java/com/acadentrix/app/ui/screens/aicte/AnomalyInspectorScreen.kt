@@ -42,8 +42,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.acadentrix.app.core.model.Anomaly
-import com.acadentrix.app.core.model.AnomalySeverity
+import com.acadentrix.core.model.Anomaly
+import com.acadentrix.core.model.AnomalySeverity
 import com.acadentrix.app.ui.components.ApaarCard
 import com.acadentrix.app.ui.components.DetailRow
 import com.acadentrix.app.ui.components.EmptyState
@@ -160,18 +160,18 @@ fun AnomalyInspectorScreen(viewModel: ApaarViewModel) {
                             it.severity == AnomalySeverity.CRITICAL || it.severity == AnomalySeverity.HIGH
                         }
                         AnomalyFilter.DUPLICATE -> state.anomalies.count {
-                            it.anomalyType == com.acadentrix.app.core.model.AnomalyType.DUPLICATE_CROSS_COLLEGE
+                            it.anomalyType == com.acadentrix.core.model.AnomalyType.DUPLICATE_CROSS_COLLEGE
                         }
                         AnomalyFilter.INTAKE -> state.anomalies.count {
-                            it.anomalyType == com.acadentrix.app.core.model.AnomalyType.EXCESS_APPROVED_INTAKE
+                            it.anomalyType == com.acadentrix.core.model.AnomalyType.EXCESS_APPROVED_INTAKE
                         }
                         AnomalyFilter.SUPERNUMERARY -> state.anomalies.count {
-                            it.anomalyType == com.acadentrix.app.core.model.AnomalyType.SUPERNUMERARY_BREACH
+                            it.anomalyType == com.acadentrix.core.model.AnomalyType.SUPERNUMERARY_BREACH
                         }
                         AnomalyFilter.DATA -> state.anomalies.count {
-                            it.anomalyType == com.acadentrix.app.core.model.AnomalyType.INVALID_APAAR_FORMAT ||
-                                it.anomalyType == com.acadentrix.app.core.model.AnomalyType.INCONSISTENT_CATEGORY ||
-                                it.anomalyType == com.acadentrix.app.core.model.AnomalyType.UNSANCTIONED_PROGRAM
+                            it.anomalyType == com.acadentrix.core.model.AnomalyType.INVALID_APAAR_FORMAT ||
+                                it.anomalyType == com.acadentrix.core.model.AnomalyType.INCONSISTENT_CATEGORY ||
+                                it.anomalyType == com.acadentrix.core.model.AnomalyType.UNSANCTIONED_PROGRAM
                         }
                     }
                 }
@@ -260,7 +260,7 @@ private fun AnomalyRow(anomaly: Anomaly, institutionName: String) {
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 StatusPill(
-                    text = com.acadentrix.app.core.validation.ApaarIdValidator.format(anomaly.studentApaarId),
+                    text = com.acadentrix.core.validation.ApaarIdValidator.format(anomaly.studentApaarId),
                     container = MaterialTheme.colorScheme.surfaceContainerHigh,
                     content = MaterialTheme.colorScheme.onSurface
                 )

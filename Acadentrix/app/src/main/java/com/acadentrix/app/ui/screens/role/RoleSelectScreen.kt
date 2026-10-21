@@ -34,7 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.acadentrix.app.core.model.UserRole
+import com.acadentrix.core.model.UserRole
 import com.acadentrix.app.ui.components.EduSynCPlate
 import com.acadentrix.app.ui.components.EduSynCLockup
 import com.acadentrix.app.ui.components.RoleCard

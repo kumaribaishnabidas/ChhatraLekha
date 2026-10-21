@@ -39,9 +39,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.acadentrix.app.core.model.AdmissionQuota
-import com.acadentrix.app.core.model.AnomalySeverity
-import com.acadentrix.app.core.model.IntakeSnapshot
+import com.acadentrix.core.model.AdmissionQuota
+import com.acadentrix.core.model.AnomalySeverity
+import com.acadentrix.core.model.IntakeSnapshot
 import com.acadentrix.app.ui.components.ApaarCard
 import com.acadentrix.app.ui.components.EmptyState
 import com.acadentrix.app.ui.components.InfoBanner
