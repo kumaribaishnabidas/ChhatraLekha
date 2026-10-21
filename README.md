@@ -6,19 +6,17 @@
 
 **The APAAR ID Student Data Management &amp; Verification Platform**
 
-*Built by the **Sentinals** team for Smart India Hackathon 2026 (problem statement SIH26263)*
-
 [Website &amp; landing page →](https://kumaribaishnabidas.github.io/EduSynC/) · [Source code](https://github.com/kumaribaishnabidas/EduSynC) · [Backend documentation](edusync/README.md) · [App documentation](Acadentrix/README.md)
 
 </div>
 
 ---
 
-> **A note on the names.** The product is **EduSynC**, built by the
-> **Sentinals** team. The code base keeps its earlier internal identifiers -
-> the `edusync/` Python package and the `com.acadentrix.app` Android package -
-> because renaming them would be a large, risky change with no functional
-> benefit. The user-facing text is consistent everywhere.
+> **A note on the names.** The product is **EduSynC**. The code base keeps its
+> earlier internal identifiers - the `edusync/` Python package and the
+> `com.acadentrix.app` Android package - because renaming them would be a
+> large, risky change with no functional benefit. The user-facing text is
+> consistent everywhere.
 
 > **APAAR** — the **Automated Permanent Academic Account Registry**, issued under the
 > Ministry of Education's *One Nation, One Student ID* initiative. It is the student's
@@ -54,7 +52,6 @@ without ever silently changing an official academic record.
 | | |
 | --- | --- |
 | **Product / project name** | **EduSynC** |
-| **Team** | **Sentinals** (Smart India Hackathon 2026, SIH26263) |
 | **Brand name and logo** | **EduSynC** |
 | **Package / application id** | `com.acadentrix.app` |
 | **Gradle project name** | `Acadentrix` |
@@ -387,7 +384,7 @@ When server synchronisation is added, note that:
 
 **Distribution**
 
-* *Hackathon demo* — a signed release APK shared by link or QR code.
+* *Demo* — a signed release APK shared by link or QR code.
 * *Wider testing* — Firebase App Distribution, or Google Play Internal
   Testing (Play needs a one-time developer registration fee; check the
   current amount on the Play Console).
@@ -562,4 +559,4 @@ so the portal is demonstrable on a laptop.
 
 ## Team
 
-**EduSynC** — Smart India Hackathon.
+**EduSynC**.

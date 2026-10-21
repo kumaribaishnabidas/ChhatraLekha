@@ -6,7 +6,7 @@
 
 **The APAAR ID Student Data Management & Verification Platform**
 
-*A product of **EduSynC** · Smart India Hackathon · AICTE (All India Council for Technical Education)*
+*A product of **EduSynC** · AICTE (All India Council for Technical Education)*
 
 [← Repository overview](../README.md) · [Website](https://kumaribaishnabidas.github.io/EduSynC/)
 
