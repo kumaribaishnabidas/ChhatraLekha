@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Acadentrix — APAAR ID Student Data Management &amp; Verification Platform | EduSynC</title>
+<meta name="description" content="Acadentrix by EduSynC: an offline-first Android platform that turns the APAAR identifier into a verifiable, tamper-evident academic credential for AICTE-approved institutions, verifiers, employers and students." />
+<link rel="icon" type="image/png" href="assets/brand/favicon.png" />
+<meta property="og:title" content="Acadentrix — APAAR ID Student Data Management &amp; Verification Platform" />
+<meta property="og:description" content="A product of EduSynC. Four-layer anomaly engine, dependency-free QR credentialing and tamper-evident seals. Built for Smart India Hackathon." />
+<meta property="og:image" content="assets/brand/edusync-lockup.png" />
+<meta property="og:type" content="website" />
+<style>
+  :root{
+    --navy-deep:#14246B;
+    --navy:#0F2F73;
+    --blue:#0F3A8A;
+    --blue-bright:#1558B8;
+    --teal:#12B886;
+    --teal-dark:#0B4D38;
+    --saffron:#E65100;
+    --crimson:#B71C1C;
+    --emerald:#1B5E20;
+    --ink:#121A24;
+    --ink-soft:#41484D;
+    --surface:#F8F9FA;
+    --card:#FFFFFF;
+    --line:#DDE3EE;
+    --radius:16px;
+    --maxw:1140px;
+    --shadow:0 1px 2px rgba(20,36,107,.06), 0 8px 24px rgba(20,36,107,.07);
+    --shadow-lg:0 2px 4px rgba(20,36,107,.08), 0 18px 48px rgba(20,36,107,.12);
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    color:var(--ink);
+    background:var(--surface);
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  img{max-width:100%;height:auto;display:block}
+  a{color:var(--blue-bright);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .mono{font-family:"JetBrains Mono","Cascadia Mono",Consolas,"SF Mono",Menlo,monospace}
+
+  /* ---------------------------------------------------------- masthead */
+  .masthead{
+    background:linear-gradient(135deg,var(--navy-deep) 0%,var(--navy) 45%,var(--blue) 100%);
+    color:#fff;position:relative;overflow:hidden;
+  }
+  .masthead::after{
+    content:"";position:absolute;right:-140px;top:-140px;width:520px;height:520px;
+    background:radial-gradient(circle,rgba(18,184,134,.30),transparent 62%);pointer-events:none;
+  }
+  .masthead::before{
+    content:"";position:absolute;left:-120px;bottom:-200px;width:460px;height:460px;
+    background:radial-gradient(circle,rgba(230,81,0,.18),transparent 60%);pointer-events:none;
+  }
+  nav{
+    display:flex;align-items:center;gap:18px;
+    padding:16px 0;position:relative;z-index:2;
+  }
+  nav .brand{display:flex;align-items:center;gap:12px;margin-right:auto}
+  nav .brand img{height:46px;width:auto;background:#fff;padding:6px 10px;border-radius:10px}
+  nav .brand .word{line-height:1.15}
+  nav .brand .product{font-weight:700;font-size:1.06rem;letter-spacing:.03em}
+  nav .brand .owner{font-size:.72rem;opacity:.72;letter-spacing:.11em;text-transform:uppercase}
+  nav a.navlink{color:rgba(255,255,255,.86);font-size:.9rem;font-weight:500}
+  nav a.navlink:hover{color:#fff;text-decoration:none}
+  nav a.cta{
+    background:var(--teal);color:#06281C;font-weight:700;font-size:.86rem;
+    padding:9px 16px;border-radius:999px;
+  }
+  nav a.cta:hover{background:#1FD3A0;text-decoration:none}
+
+  .hero{padding:70px 0 78px;position:relative;z-index:2}
+  .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:56px;align-items:center}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:9px;
+    font-size:.74rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+    color:var(--teal);background:rgba(18,184,134,.13);
+    border:1px solid rgba(18,184,134,.34);
+    padding:6px 13px;border-radius:999px;
+  }
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--teal)}
+  h1{
+    font-size:clamp(2.1rem,4.6vw,3.5rem);line-height:1.1;margin:22px 0 6px;
+    letter-spacing:-.02em;font-weight:800;
+  }
+  h1 .accent{
+    background:linear-gradient(120deg,var(--teal),#5FE0B8);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .lede{font-size:1.08rem;color:rgba(255,255,255,.80);margin:0 0 14px;max-width:56ch}
+  .subline{font-size:.93rem;color:rgba(255,255,255,.62);margin:0 0 30px}
+  .subline strong{color:rgba(255,255,255,.9);font-weight:600}
+  .btnrow{display:flex;flex-wrap:wrap;gap:12px}
+  .btn{
+    display:inline-flex;align-items:center;gap:9px;font-weight:700;font-size:.92rem;
+    padding:13px 24px;border-radius:11px;transition:transform .16s ease, box-shadow .16s ease;
+  }
+  .btn:hover{text-decoration:none;transform:translateY(-2px)}
+  .btn-primary{background:var(--teal);color:#06281C;box-shadow:0 10px 26px rgba(18,184,134,.28)}
+  .btn-ghost{background:rgba(255,255,255,.09);color:#fff;border:1px solid rgba(255,255,255,.24)}
+  .stats{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:44px;
+    position:relative;z-index:2;
+  }
+  .stat{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:13px;padding:16px 18px}
+  .stat .n{font-size:1.65rem;font-weight:800;line-height:1.1}
+  .stat .l{font-size:.73rem;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.62)}
+
+  .hero-art{
+    background:#fff;border-radius:22px;padding:26px;
+    box-shadow:var(--shadow-lg);
+  }
+  .hero-art img.lockup{margin:0 auto 22px;max-height:190px;width:auto}
+  .card-preview{border:1px solid var(--line);border-radius:13px;padding:15px;background:var(--surface)}
+  .card-preview .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .card-preview .lbl{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft)}
+  .apaar-id{
+    font-family:"JetBrains Mono","Cascadia Mono",Consolas,monospace;
+    font-size:1.02rem;font-weight:700;color:var(--navy);letter-spacing:.06em;
+  }
+  .sev{display:inline-flex;align-items:center;gap:7px;font-size:.78rem;font-weight:700;
+    padding:5px 11px;border-radius:999px}
+  .sev-ok{background:#E7F4EA;color:var(--emerald)}
+  .sev-warn{background:#FFEDE1;color:var(--saffron)}
+  .sev-crit{background:#FFE7E5;color:var(--crimson)}
+
+  /* ------------------------------------------------------------ layout */
+  section{padding:84px 0}
+  section.band{background:var(--card);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  section.deep{background:linear-gradient(160deg,var(--navy-deep),var(--navy));color:#fff}
+  .kicker{
+    font-size:.74rem;font-weight:800;letter-spacing:.17em;text-transform:uppercase;
+    color:var(--blue-bright);margin-bottom:12px;
+  }
+  .deep .kicker{color:var(--teal)}
+  h2{font-size:clamp(1.6rem,3vw,2.25rem);line-height:1.2;margin:0 0 14px;letter-spacing:-.015em;font-weight:800}
+  .section-intro{color:var(--ink-soft);max-width:70ch;margin:0 0 44px}
+  .deep .section-intro{color:rgba(255,255,255,.72)}
+
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:24px;box-shadow:var(--shadow);
+  }
+  .card h3{margin:0 0 8px;font-size:1.05rem;font-weight:750}
+  .card p{margin:0;color:var(--ink-soft);font-size:.93rem}
+  .deep .card{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);box-shadow:none}
+  .deep .card p{color:rgba(255,255,255,.72)}
+  .num{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:34px;height:34px;border-radius:10px;font-weight:800;font-size:.9rem;
+    background:var(--navy);color:#fff;margin-bottom:14px;
+  }
+  .card .tag{
+    display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--navy);background:#EAF0FA;padding:4px 9px;border-radius:6px;margin-bottom:12px;
+  }
+
+  .layers{display:grid;gap:14px}
+  .layer{
+    display:grid;grid-template-columns:74px 1fr;gap:20px;align-items:start;
+    background:var(--card);border:1px solid var(--line);border-left:5px solid var(--blue-bright);
+    border-radius:13px;padding:20px 22px;
+  }
+  .layer:nth-child(2){border-left-color:var(--saffron)}
+  .layer:nth-child(3){border-left-color:var(--teal)}
+  .layer:nth-child(4){border-left-color:var(--crimson)}
+  .layer .lnum{
+    font-weight:800;font-size:1.5rem;color:var(--ink);opacity:.24;line-height:1.1;
+  }
+  .layer h3{margin:0 0 5px;font-size:1.03rem}
+  .layer p{margin:0;color:var(--ink-soft);font-size:.93rem}
+  .layer code{background:#EEF2F8;padding:1px 6px;border-radius:5px;font-size:.86em;color:var(--navy)}
+
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+  th,td{text-align:left;padding:15px 18px;border-bottom:1px solid var(--line);font-size:.93rem;vertical-align:top}
+  th{background:#EFF3FA;font-size:.74rem;letter-spacing:.11em;text-transform:uppercase;color:var(--navy);font-weight:800}
+  tr:last-child td{border-bottom:none}
+  td.who{font-weight:700;color:var(--navy);white-space:nowrap}
+
+  pre{
+    background:#0F1A2E;color:#E6ECF5;padding:20px 22px;border-radius:13px;overflow-x:auto;
+    font-family:"JetBrains Mono","Cascadia Mono",Consolas,monospace;font-size:.86rem;line-height:1.7;
+  }
+  pre .cm{color:#7C8CA6}
+  code.inline{
+    background:#EAF0FA;color:var(--navy);padding:2px 7px;border-radius:6px;
+    font-family:"JetBrains Mono","Cascadia Mono",Consolas,monospace;font-size:.87em;
+  }
+
+  .brandblock{
+    display:flex;align-items:center;gap:26px;flex-wrap:wrap;
+    background:var(--card);border:1px solid var(--line);border-radius:20px;padding:34px 38px;
+    box-shadow:var(--shadow);
+  }
+  .brandblock img{height:150px;width:auto}
+  .brandblock .copy h3{margin:0 0 8px;font-size:1.5rem;font-weight:800;letter-spacing:-.01em}
+  .brandblock .copy p{margin:0 0 16px;color:var(--ink-soft);max-width:58ch}
+
+  .stack{display:flex;flex-wrap:wrap;gap:9px}
+  .pill{
+    font-size:.8rem;font-weight:600;padding:7px 14px;border-radius:999px;
+    background:#EAF0FA;color:var(--navy);border:1px solid #D7E1F2;
+  }
+  .deep .pill{background:rgba(255,255,255,.08);color:#DCE7FA;border-color:rgba(255,255,255,.16)}
+
+  footer{
+    background:var(--navy-deep);color:rgba(255,255,255,.66);
+    padding:44px 0;font-size:.87rem;
+  }
+  footer .frow{display:flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:space-between}
+  footer img{height:52px;width:auto;background:#fff;padding:6px 10px;border-radius:9px}
+  footer a{color:rgba(255,255,255,.85)}
+
+  @media (max-width:900px){
+    .hero-grid{grid-template-columns:1fr;gap:40px}
+    .grid-4{grid-template-columns:repeat(2,1fr)}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    nav a.navlink{display:none}
+  }
+  @media (max-width:560px){
+    .grid-4,.grid-2{grid-template-columns:1fr}
+    section{padding:60px 0}
+    .brandblock{padding:26px}
+    .brandblock img{height:110px}
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <nav>
+      <div class="brand">
+        <img src="assets/brand/edusync-mark-on-white.png" alt="EduSynC logo" />
+        <div class="word">
+          <div class="product">Acadentrix</div>
+          <div class="owner">by EduSynC</div>
+        </div>
+      </div>
+      <a class="navlink" href="#problem">Problem</a>
+      <a class="navlink" href="#engine">Engine</a>
+      <a class="navlink" href="#roles">Roles</a>
+      <a class="navlink" href="#build">Build</a>
+      <a class="cta" href="https://github.com/kumaribaishnabidas/EduSynC" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+
+    <div class="hero">
+      <div class="hero-grid">
+        <div>
+          <span class="eyebrow"><span class="dot"></span>Smart India Hackathon · AICTE</span>
+          <h1>Acadentrix<br /><span class="accent">One ID. One Truth.</span></h1>
+          <p class="lede">
+            The APAAR ID Student Data Management &amp; Verification Platform — an offline-first
+            Android app that turns AICTE&rsquo;s academic passport into a
+            <strong>verifiable, tamper-evident credential</strong> for institutions,
+            verifiers, employers and students.
+          </p>
+          <p class="subline">
+            <strong>Acadentrix</strong> is the product. <strong>EduSynC</strong> is the brand.
+          </p>
+          <div class="btnrow">
+            <a class="btn btn-primary" href="https://github.com/kumaribaishnabidas/EduSynC" target="_blank" rel="noopener">View the source ↗</a>
+            <a class="btn btn-ghost" href="#build">Build the APK</a>
+          </div>
+        </div>
+
+        <div class="hero-art">
+          <img class="lockup" src="assets/brand/edusync-lockup.png" alt="EduSynC brand lockup" />
+          <div class="card-preview">
+            <div class="row">
+              <div>
+                <div class="lbl">APAAR ID</div>
+                <div class="apaar-id">4821-9037-1655</div>
+              </div>
+              <span class="sev sev-ok">✓ VERIFIED</span>
+            </div>
+            <div style="margin-top:12px">
+              <div class="lbl">SEAL (SHA-256 · truncated)</div>
+              <div class="apaar-id" style="font-size:.86rem">9f2c7a41e0b53d68c4af17e0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><div class="n">4</div><div class="l">Anomaly layers</div></div>
+        <div class="stat"><div class="n">78</div><div class="l">Unit tests passing</div></div>
+        <div class="stat"><div class="n">2,219</div><div class="l">Seeded students</div></div>
+        <div class="stat"><div class="n">0</div><div class="l">Network calls</div></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="problem">
+  <div class="wrap">
+    <div class="kicker">The problem</div>
+    <h2>An academic passport that cannot be checked</h2>
+    <p class="section-intro">
+      APAAR IDs are issued, stored and reconciled by hand across thousands of institutions.
+      That process reliably produces four failure modes — and leaves verifiers, employers and
+      universities with no offline way to detect any of them.
+    </p>
+    <div class="grid-4">
+      <div class="card">
+        <span class="tag">Layer 1</span>
+        <h3>Garbage identifiers</h3>
+        <p>Wrong length, placeholder values, failing the checksum — all issued as valid records.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Layer 2</span>
+        <h3>Intakes beyond sanction</h3>
+        <p>Programmes filled well past the intake AICTE approved, with nothing to catch it.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Layer 3</span>
+        <h3>Supernumerary abuse</h3>
+        <p>NRI, OCI, FN and TFW quotas quietly breached — and PMSSS uncapped per course.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Layer 4</span>
+        <h3>Duplicate &amp; unsanctioned enrolment</h3>
+        <p>One APAAR enrolled at two institutions, or at a programme never approved to run.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="engine" class="band">
+  <div class="wrap">
+    <div class="kicker">Solution</div>
+    <h2>A four-layer anomaly engine</h2>
+    <p class="section-intro">
+      Every record is checked against four independent layers. A single failure is a warning; a
+      pattern across records is a finding — and both are surfaced with the evidence attached.
+    </p>
+    <div class="layers">
+      <div class="layer">
+        <div class="lnum">01</div>
+        <div>
+          <h3>APAAR syntactic check</h3>
+          <p>Length must be exactly 12 digits, the value must be non-trivial and not a known
+             placeholder. The Luhn checksum is evaluated and reported as an
+             <strong>advisory</strong> warning — never a hard reject — so genuine edge cases still
+             get through for human review.</p>
+        </div>
+      </div>
+      <div class="layer">
+        <div class="lnum">02</div>
+        <div>
+          <h3>Intake breach</h3>
+          <p>Enrolled count compared against the programme&rsquo;s sanctioned intake for the
+             academic year. The dashboard animates the utilisation gauge so a breach is visible
+             before it becomes a finding.</p>
+        </div>
+      </div>
+      <div class="layer">
+        <div class="lnum">03</div>
+        <div>
+          <h3>Supernumerary quota ceilings</h3>
+          <p><code>NRI ≤ 5%</code> · <code>OCI / FN ≤ 15%</code> · <code>TFW ≤ 5%</code> ·
+             <code>PMSSS</code> capped per course and institute. Computed against live enrolment,
+             with the offending rows listed by name.</p>
+        </div>
+      </div>
+      <div class="layer">
+        <div class="lnum">04</div>
+        <div>
+          <h3>Cross-institution multi-enrolment</h3>
+          <p>The same APAAR appearing at two institutions is flagged as
+             <code>DUPLICATE_CROSS_COLLEGE</code>; enrolment at a programme the institution was
+             never approved to run is flagged as <code>UNSANCTIONED_PROGRAM</code>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="roles" class="deep">
+  <div class="wrap">
+    <div class="kicker">One install, four workspaces</div>
+    <h2>Built for every stakeholder in the chain</h2>
+    <p class="section-intro">
+      The role picker at launch routes each stakeholder straight to the tools their job needs —
+      without a login, a server or a network connection.
+    </p>
+    <table>
+      <thead>
+        <tr><th>Role</th><th>What Acadentrix gives them</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="who">AICTE Central Directorate</td>
+          <td>Pan-India dashboard, anomaly inspector, institution compliance matrix and a full audit trail of every batch committed.</td>
+        </tr>
+        <tr>
+          <td class="who">AICTE-Approved Institution</td>
+          <td>Student register, CSV bulk intake with per-row verdicts, intake tracking and manual admission — all validated live against the quota rules.</td>
+        </tr>
+        <tr>
+          <td class="who">Third-Party Verifier / Employer</td>
+          <td>Single-APAAR lookup that produces a signed verification dossier, a scannable QR credential card and the full anomaly history.</td>
+        </tr>
+        <tr>
+          <td class="who">Student / Degree-Awarding Body</td>
+          <td>Personal APAAR credential card with QR badge, flip-card animation and a printable degree certificate carrying its own seal.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">Tamper-evident by construction</div>
+    <h2>A scanned QR card proves the record behind it</h2>
+    <div class="grid-2" style="align-items:center">
+      <div>
+        <p class="section-intro" style="margin-bottom:18px">
+          Each enrolment is sealed with a 32-character digest over the facts the APAAR was issued
+          against. Change any bound field and the seal changes with it.
+        </p>
+        <pre><span class="cm"># seal = first 32 hex chars of the digest</span>
+SHA-256(<span class="cm">"APAAR|{id}|{institution}|{program}|{year}|{date}"</span>)
+  .hexdigest()[:32]</pre>
+        <p style="margin-top:20px;color:var(--ink-soft);font-size:.95rem">
+          The QR matrix itself is produced by a <strong>dependency-free ISO/IEC 18004 encoder</strong>
+          — Reed–Solomon error correction included — and rendered directly on a Compose
+          <span class="mono">Canvas</span>. No third-party QR library is used anywhere in the app.
+        </p>
+      </div>
+      <div class="card">
+        <div class="kicker" style="margin-bottom:6px">CSV intake schema</div>
+        <p style="font-size:.88rem;color:var(--ink-soft);margin-bottom:14px">
+          The bulk intake contract — nine columns, one row per student:
+        </p>
+        <pre><span class="cm">APAAR_ID,Full_Name,DOB,Gender,</span>
+<span class="cm">Roll_No,Program_Code,Category,</span>
+<span class="cm">Nationality,Doc_Number</span></pre>
+        <p style="margin:14px 0 0;font-size:.9rem;color:var(--ink-soft)">
+          Every row returns a verdict — <span class="mono">MISSING_NAME</span>,
+          <span class="mono">INVALID_APAAR</span>, <span class="mono">LUHN_ADVISORY</span>,
+          <span class="mono">DUPLICATE</span>, <span class="mono">UNKNOWN_PROGRAM</span>,
+          <span class="mono">CATEGORY_MISMATCH</span> — plus an aggregate per-programme impact
+          summary before anything is committed.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <div class="kicker">Under the hood</div>
+    <h2>Modern Android, deliberately offline</h2>
+    <p class="section-intro">
+      Clean architecture with a Room-backed repository and a single state holder. The app ships
+      with a deterministic seeded pan-India dataset so every screen, anomaly and failure mode is
+      demonstrable with no network at all.
+    </p>
+    <div class="stack" style="margin-bottom:28px">
+      <span class="pill">Kotlin 2.2.21</span>
+      <span class="pill">Jetpack Compose</span>
+      <span class="pill">Material 3</span>
+      <span class="pill">Room 2.8.5 + KSP</span>
+      <span class="pill">Coroutines &amp; Flow</span>
+      <span class="pill">Navigation Compose</span>
+      <span class="pill">AGP 8.13.2</span>
+      <span class="pill">Gradle 8.14.6</span>
+      <span class="pill">minSdk 24</span>
+      <span class="pill">targetSdk 36</span>
+    </div>
+    <div class="grid-4">
+      <div class="card"><h3>Clean architecture</h3><p>Domain, data and UI layers with a single <span class="mono">ApaarRepository</span> and one <span class="mono">ApaarViewModel</span> exposing immutable state through <span class="mono">StateFlow</span>.</p></div>
+      <div class="card"><h3>Deterministic data</h3><p>12 institutions, 30 programmes and 2,219 students seeded with crafted anomalies — the same every launch.</p></div>
+      <div class="card"><h3>Proven QR</h3><p>The round-trip suite decodes the encoder output with an independently written ISO 18004 reference decoder and asserts zero Reed–Solomon syndromes.</p></div>
+      <div class="card"><h3>Room schema shipped</h3><p>Every schema version is committed to the repository, so migrations are reviewable in the pull request.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="build" class="deep">
+  <div class="wrap">
+    <div class="kicker">Build it</div>
+    <h2>Clone, build, verify</h2>
+    <p class="section-intro">
+      Requires JDK 17+ and an Android SDK with <span class="mono">compileSdk 36</span>. Add a
+      <span class="mono">local.properties</span> pointing at your SDK, then:
+    </p>
+    <pre><span class="cm"># clone</span>
+git clone https://github.com/kumaribaishnabidas/EduSynC.git
+cd EduSynC/Acadentrix
+
+<span class="cm"># run the 78 unit tests and assemble the debug APK</span>
+./gradlew testDebugUnitTest assembleDebug
+
+<span class="cm"># artifacts</span>
+app/build/outputs/apk/debug/app-debug.apk
+app/build/reports/tests/testDebugUnitTest/index.html</pre>
+    <div class="grid-4" style="margin-top:34px">
+      <div class="card"><h3>CsvIngestionTest</h3><p>21 tests</p></div>
+      <div class="card"><h3>AnomalyEngineTest</h3><p>16 tests</p></div>
+      <div class="card"><h3>ApaarIdValidatorTest</h3><p>15 tests</p></div>
+      <div class="card"><h3>SealGeneratorTest</h3><p>11 tests</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="brandblock">
+      <img src="assets/brand/edusync-lockup.png" alt="EduSynC brand lockup" />
+      <div class="copy">
+        <h3>Acadentrix is a product of EduSynC</h3>
+        <p>
+          The application, its name and its engineering belong to <strong>Acadentrix</strong>.
+          The brand, the identity and the logo you see throughout this site and inside the app
+          belong to <strong>EduSynC</strong>. Built for Smart India Hackathon, on behalf of the
+          AICTE Central Directorate and every approved institution that has to live with the
+          APAAR ID.
+        </p>
+        <div class="btnrow">
+          <a class="btn btn-primary" href="https://github.com/kumaribaishnabidas/EduSynC" target="_blank" rel="noopener">Open the repository ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap frow">
+    <div style="display:flex;align-items:center;gap:14px">
+      <img src="assets/brand/edusync-mark-on-white.png" alt="EduSynC" />
+      <div>
+        <div style="color:#fff;font-weight:700">EduSynC</div>
+        <div>Smart India Hackathon · APAAR ID platform</div>
+      </div>
+    </div>
+    <div>
+      <div>Acadentrix v1.0.0 · MIT-style prototype build</div>
+      <div><a href="https://github.com/kumaribaishnabidas/EduSynC" target="_blank" rel="noopener">github.com/kumaribaishnabidas/EduSynC</a></div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

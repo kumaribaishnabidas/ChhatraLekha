@@ -1,6 +1,18 @@
-# EduSynC
+<div align="center">
 
-**Team EduSynC** · Smart India Hackathon · AICTE — *Academic Performance Assessment and Accreditation Registry*
+<img src="docs/assets/brand/edusync-lockup.png" alt="EduSynC" height="220" />
+
+# Acadentrix
+
+**The APAAR ID Student Data Management &amp; Verification Platform**
+
+*A product of **EduSynC** · Smart India Hackathon · AICTE — Academic Performance Assessment and Accreditation Registry*
+
+[Website &amp; landing page →](https://kumaribaishnabidas.github.io/EduSynC/) · [Source code](https://github.com/kumaribaishnabidas/EduSynC) · [App documentation](Acadentrix/README.md)
+
+</div>
+
+---
 
 An offline-first Android application that turns the **APAAR** identifier into a verifiable,
 tamper-evident academic credential for every student enrolled in an AICTE-approved programme.
@@ -12,13 +24,35 @@ tamper-evident academic credential for every student enrolled in an AICTE-approv
 
 ---
 
+## Branding
+
+| | |
+| --- | --- |
+| **Product / app / project name** | **Acadentrix** |
+| **Brand name and logo** | **EduSynC** |
+| **Package / application id** | `com.acadentrix.app` |
+| **Gradle project name** | `Acadentrix` |
+
+The EduSynC logo is the artwork the team supplied, shipped verbatim — as the launcher icon
+(adaptive, with a themed-monochrome layer), in the app's header, on the degree certificate and
+across the website. The brand palette is sampled directly from that artwork:
+navy `#14246B` / `#0F2F73`, blue `#0F3A8A` / `#1558B8`, teal `#12B886`.
+
+Source assets live in [`docs/assets/brand/`](docs/assets/brand/).
+
+---
+
 ## What is in this repository
 
 ```
 EduSynC/
 ├── README.md                 ← you are here
 ├── .gitignore
-└── EduSynC-APAAR/            ← the Android application
+├── .gitattributes
+├── docs/                     ← the website & landing page (GitHub Pages)
+│   ├── index.html
+│   └── assets/brand/         ← EduSynC logo artwork
+└── Acadentrix/               ← the Android application
     ├── app/                  ← Kotlin + Jetpack Compose source, unit tests, Room schema
     ├── gradle/               ← Gradle wrapper
     ├── build.gradle.kts
@@ -28,7 +62,7 @@ EduSynC/
     └── README.md             ← full technical documentation
 ```
 
-See **[`EduSynC-APAAR/README.md`](EduSynC-APAAR/README.md)** for the complete technical write-up:
+See **[`Acadentrix/README.md`](Acadentrix/README.md)** for the complete technical write-up:
 anomaly engine, CSV intake, seal/QR design, architecture and the test matrix.
 
 ---
@@ -81,14 +115,14 @@ the record that was sealed. The QR matrix is produced by a **dependency-free ISO
 Requirements: **JDK 17+**, Android SDK with **compileSdk 36**.
 
 ```powershell
-cd EduSynC-APAAR
+cd Acadentrix
 .\gradlew.bat testDebugUnitTest assembleDebug
 ```
 
 or with the convenience launcher (pins JDK 17, sanitises PATH):
 
 ```powershell
-cd EduSynC-APAAR
+cd Acadentrix
 .\build.cmd testDebugUnitTest assembleDebug
 ```
 
@@ -103,8 +137,8 @@ cd EduSynC-APAAR
 | `QrRoundTripTest` | 8 |
 | `ApaarQrPayloadTest` | 7 |
 
-Artifacts land in `EduSynC-APAAR/app/build/outputs/apk/debug/app-debug.apk`, with the HTML test
-report at `EduSynC-APAAR/app/build/reports/tests/testDebugUnitTest/index.html`.
+Artifacts land in `Acadentrix/app/build/outputs/apk/debug/app-debug.apk`, with the HTML test
+report at `Acadentrix/app/build/reports/tests/testDebugUnitTest/index.html`.
 
 ---
 

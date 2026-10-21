@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The EduSynC mark is drawn on a white ground; the adaptive icon uses the
+         same ground so the artwork sits exactly as it was designed. -->
+    <color name="ic_launcher_background">#FFFFFF</color>
+</resources>

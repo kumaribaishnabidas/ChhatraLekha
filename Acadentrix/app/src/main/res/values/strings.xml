@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Product name: Acadentrix -->
+    <string name="app_name">Acadentrix</string>
+
+    <!-- Brand / team: EduSynC -->
+    <string name="brand_name">EduSynC</string>
+    <string name="brand_owner">by EduSynC</string>
+    <string name="brand_tagline">A unit of EduSynC · Smart India Hackathon</string>
+
+    <!-- Product descriptor -->
+    <string name="product_descriptor">Automated Permanent Academic Account Registry</string>
+    <string name="product_descriptor_short">APAAR ID Student Data Management &amp; Verification Platform</string>
+</resources>
