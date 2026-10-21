@@ -258,11 +258,16 @@ The configuration files are [`render.yaml`](render.yaml) and
    root directory**.
 2. Framework **Vite**, build command `npm run build`, output directory
    `dist`. [`frontend/vercel.json`](frontend/vercel.json) adds the SPA
-   rewrite, so a deep link such as `/impact` resolves instead of 404ing.
-3. Set `VITE_API_URL` to the Render URL of the backend.
+   rewrite, so a deep link such as `/impact` or `/verify/t/<token>` resolves
+   instead of 404ing.
+3. **Set `VITE_API_URL` to the Render URL of the backend** (no trailing
+   slash), and build. The Vercel rewrite sends *every* path — `/api`
+   included — to `index.html`, so a build with `VITE_API_URL` unset would
+   receive HTML instead of JSON.
 
-> **`VITE_*` variables are baked in at build time.** Changing `VITE_API_URL`
-> needs a **redeploy**, not just a restart.
+> **`VITE_*` variables are baked in at build time.** Set `VITE_API_URL`
+> **before the first build**; changing it later needs a **redeploy**, not
+> just a restart.
 
 ### 4. Set `FRONTEND_ORIGIN` and redeploy the backend
 
@@ -273,21 +278,24 @@ backend** — the CORS list is read at start-up.
 
 ### 5. Seed the demo data (an explicit, manual step)
 
-Seeding never runs automatically against a real database. Run it from a
+Seeding **never** runs on start-up against a real database. Run it from a
 machine that can reach Atlas:
 
 ```bash
 cd edusync
 MONGODB_URL='mongodb+srv://...' \
 MONGODB_DATABASE=edusync \
+ENVIRONMENT=production \
+ALLOW_PRODUCTION_SEED=true \
 DEMO_PASSWORD='choose-a-demo-password' \
 python -m app.scripts.seed
 ```
 
-The script refuses to touch a production database unless
-`ALLOW_PRODUCTION_SEED=true` is set, so a stray call cannot wipe the live
-registry. When `DEMO_PASSWORD` is empty, a password is generated and printed
-**once**.
+`ALLOW_PRODUCTION_SEED=true` is required when `ENVIRONMENT=production`, so a
+stray call cannot wipe the live registry. **Switch it off again afterwards** —
+remove the variable from the environment and from Render.
+
+When `DEMO_PASSWORD` is empty, a password is generated and printed **once**.
 
 ### Environment variables
 
@@ -334,7 +342,11 @@ curl -s https://<service>.onrender.com/health
    with the findings listed underneath.
 5. Press **Apply the correction**, then open **Review checklist** and resolve
    a task.
-6. Open the anomaly inspector — the change should not have created a
+6. Issue a verification token for a student and open its QR link in a
+   **private window** (so no session is carried over). Only the allowlisted
+   fields may appear — the APAAR ID, the date of birth and the contact
+   details must not.
+7. Open the anomaly inspector — the change should not have created a
    duplicate.
 
 ### Free-tier caveats
@@ -366,31 +378,35 @@ curl -s https://<service>.onrender.com/health
 
 ### The Android client
 
-The client is offline-first and currently makes **no API call at all**, so
-there is **no backend base URL to configure**. The only URL in the code is
-`BASE_URL` in
-`Acadentrix/core/src/main/kotlin/com/acadentrix/core/qr/ApaarQrPayload.kt`
-— the verification deep link that is embedded in a QR badge.
+The client is **offline-first** and currently makes **no API call at all** —
+there is no HTTP client in it (no Retrofit, OkHttp or Ktor). It cannot talk to
+the Render backend, and nothing in the demo requires it to.
 
-When server synchronisation is added, note that:
-
-* `buildConfig = true` is already enabled in `Acadentrix/app/build.gradle.kts`,
-  so a `buildConfigField("API_BASE_URL", ...)` per build type is a small
-  change. **It has not been made here.**
-* The URL must be the **HTTPS** Render URL. Android blocks cleartext HTTP by
-  default.
-* CORS does not apply to a native client, so `FRONTEND_ORIGIN` does not need
-  the APK.
-
-**Distribution**
+**For the hackathon demo, share the APK.** Live backend connectivity would be
+a new feature, not a configuration change.
 
 * *Demo* — a signed release APK shared by link or QR code.
 * *Wider testing* — Firebase App Distribution, or Google Play Internal
   Testing (Play needs a one-time developer registration fee; check the
   current amount on the Play Console).
 
-The React site can also be made installable as a PWA (a manifest and a
-service worker). The manifest is already in place; the service worker is not.
+Two follow-ups for the team:
+
+1. **The QR format on the Android side still carries the raw APAAR ID** and
+   still points at `https://apaar.aicte-india.gov.in/verify`
+   (`Acadentrix/core/src/main/kotlin/com/acadentrix/core/qr/ApaarQrPayload.kt`,
+   and the call sites in `ApaarCardScreen.kt` and
+   `DegreeCertificateScreen.kt`). The web and PDF badges now carry an opaque
+   token on this deployment's own origin instead, so **the Android badge
+   format and the web badge format have diverged**. They should be brought
+   back together — the Android payload needs the same
+   `{origin}/verify/t/{token}` shape, and a per-build-type
+   `VERIFICATION_BASE_URL` build-config field so each build points at its own
+   deployment. Until then, a badge printed by the app will not resolve
+   through the portal.
+2. When server synchronisation is added, the URL must be the **HTTPS** Render
+   URL — Android blocks cleartext HTTP by default. CORS does not apply to a
+   native client, so `FRONTEND_ORIGIN` does not need the APK.
 
 ### Not yet verified
 
@@ -400,12 +416,15 @@ accounts and credentials that are deliberately not committed:
 * a live Render deployment;
 * a live MongoDB Atlas connection, and therefore the transaction path of the
   correction workflow against a real replica set;
-* a live Vercel deployment;
-* the Android APK talking to a live backend (it does not make API calls yet).
+* a live Vercel deployment, and therefore the built bundle behind the Vercel
+  rewrite;
+* the Android APK talking to a live backend (it does not make API calls yet,
+  and its QR payload format still has to be brought in line with the web one).
 
 What **was** run: the whole pytest suite, the whole Vitest suite, the
-production build of the frontend, the Docker image build, and the backend
-served locally against the in-memory database.
+production build of the frontend, the Docker image build, the backend served
+locally against the in-memory database, and the production-safety start-up
+refusals.
 
 ---
 

@@ -422,7 +422,15 @@ def build_certificate_pdf(
 
     qr_image = Image(io.BytesIO(qr_png), width=30 * mm, height=30 * mm)
     qr_block = [
-        [qr_image, Paragraph("Scan to verify this credential at the EduSynC verification portal.", styles["body"])],
+        [
+            qr_image,
+            Paragraph(
+                "Scan to verify this credential at the EduSynC verification portal. "
+                "The badge carries an opaque, expiring, revocable token - it does "
+                "not carry the APAAR ID.",
+                styles["body"],
+            ),
+        ],
     ]
     qr_table = Table(qr_block, colWidths=[34 * mm, 106 * mm])
     qr_table.setStyle(
@@ -451,6 +459,14 @@ def build_certificate_pdf(
             f"Issued {issued.strftime('%d %B %Y, %H:%M UTC')} by the EduSynC national "
             "registry. This certificate is verifiable offline using the digital seal "
             "and the APAAR QR badge printed above.",
+            styles["small"],
+        )
+    )
+    story.append(Spacer(1, 2 * mm))
+    story.append(
+        Paragraph(
+            "Verification is against this prototype's database, not official APAAR "
+            "or AICTE verification.",
             styles["small"],
         )
     )

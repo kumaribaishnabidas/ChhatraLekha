@@ -1,9 +1,22 @@
 """APAAR QR badge payload and QR image rendering.
 
-The payload is a plain HTTPS verification link so that any standards-compliant
-QR scanner (or a future deep-link handler) can resolve the credential. The
-server can therefore be pointed at by the Android app, the web portal and a
-third-party verifier alike.
+The payload is a plain HTTPS link so that any standards-compliant QR scanner
+can resolve the credential.
+
+Two rules govern what goes into that link:
+
+* It points at **this deployment's own verification page**, derived from
+  ``FRONTEND_ORIGIN``. It never points at an official government service:
+  EduSynC is a prototype, a badge that resolved to somebody else's registry
+  would claim an authenticity the platform does not have, and would send a
+  stranger's browser to a domain nobody on the team controls.
+* It carries an **opaque, expiring, revocable token** - never the raw APAAR
+  ID. The token discloses nothing, and only its hash is stored, so a dump of
+  the collection cannot be replayed.
+
+The public verification route is therefore ``{origin}/verify/t/{token}``, and
+the token resolves to an allowlist of fields through
+``GET /api/verify/token/{token}``.
 """
 
 from __future__ import annotations
@@ -17,7 +30,11 @@ from urllib.parse import parse_qs, urlparse
 import qrcode
 from qrcode.constants import ERROR_CORRECT_H, ERROR_CORRECT_L, ERROR_CORRECT_M, ERROR_CORRECT_Q
 
-BASE_URL = "https://apaar.aicte-india.gov.in/verify"
+#: The path of the verification page on this deployment.
+VERIFY_PATH = "/verify"
+
+#: The path segment that carries the opaque token.
+TOKEN_PATH = "t"
 
 _EC_LEVELS = {
     "L": ERROR_CORRECT_L,
@@ -27,6 +44,17 @@ _EC_LEVELS = {
 }
 
 _BARE_ID = re.compile(r"^\d{12}$")
+
+
+def verification_base_url() -> str:
+    """The public URL a scanned badge resolves to.
+
+    It is derived from ``FRONTEND_ORIGIN``, so a badge always points at the
+    deployment that issued it.
+    """
+    from app.core.config import get_settings
+
+    return f"{get_settings().frontend_origin.rstrip('/')}{VERIFY_PATH}"
 
 
 @dataclass
@@ -46,45 +74,24 @@ class ParsedApaarPayload:
         return bool(self.token)
 
 
-def build_payload(
-    apaar_id: str,
-    institution_id: str,
-    program_id: str,
-    seal: str,
-    timestamp: int,
-    base_url: str = BASE_URL,
-) -> str:
-    """Build the deep-link payload carried by the APAAR QR badge.
-
-    This is the original format, which puts the APAAR ID in the URL. It is
-    kept for badges that were already printed; new badges carry an opaque
-    token instead - see [build_token_payload].
-    """
-    return (
-        f"{base_url}?apaar={apaar_id}"
-        f"&inst={institution_id}"
-        f"&prog={program_id}"
-        f"&seal={seal}"
-        f"&t={timestamp}"
-    )
-
-
-def build_token_payload(token: str, base_url: str = BASE_URL) -> str:
+def build_token_payload(token: str, base_url: Optional[str] = None) -> str:
     """Build the deep-link payload of a badge that carries a token.
 
-    The token is opaque, expiring and revocable, so the URL discloses
-    nothing about the student.
+    The result is ``{origin}/verify/t/{token}``. The token is opaque, so the
+    link discloses nothing about the student.
     """
-    return f"{base_url}?token={token}"
+    if not token:
+        raise ValueError("A verification token is required to build a badge.")
+    base = (base_url or verification_base_url()).rstrip("/")
+    return f"{base}/{TOKEN_PATH}/{token}"
 
 
 def parse_payload(raw: str | None) -> ParsedApaarPayload | None:
-    """Extract the APAAR identifier or the token from a scanned payload.
+    """Extract the token or the APAAR identifier from a scanned QR payload.
 
-    Accepts the canonical verification URL as well as a bare 12-digit
-    identifier. A payload that carries ``token=`` is the current format; one
-    that carries ``apaar=`` is the original format, which is only readable by
-    an authenticated verifier.
+    The current format carries a token. The original format, which put the
+    APAAR ID in the URL, is still readable so that a badge printed before the
+    token flow existed can be parsed - but the server never *builds* one.
     """
     value = (raw or "").strip()
     if not value:
@@ -94,11 +101,18 @@ def parse_payload(raw: str | None) -> ParsedApaarPayload | None:
     try:
         query = parse_qs(urlparse(value).query)
     except ValueError:
-        return None
+        query = {}
 
     token = (query.get("token") or [None])[0]
     if token:
         return ParsedApaarPayload(apaar_id="", token=token)
+
+    # A token can also sit in the path: {origin}/verify/t/{token}.
+    path = urlparse(value).path.rstrip("/")
+    if f"/{TOKEN_PATH}/" in path:
+        candidate = path.rsplit(f"/{TOKEN_PATH}/", 1)[-1]
+        if candidate and "/" not in candidate:
+            return ParsedApaarPayload(apaar_id="", token=candidate)
 
     apaar = (query.get("apaar") or [None])[0]
     if not apaar:

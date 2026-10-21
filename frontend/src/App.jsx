@@ -9,6 +9,7 @@ import InstitutionsPage from './pages/InstitutionsPage'
 import LoginPage from './pages/LoginPage'
 import ReportsPage from './pages/ReportsPage'
 import StudentsPage from './pages/StudentsPage'
+import TokenVerificationPage from './pages/TokenVerificationPage'
 import UploadPage from './pages/UploadPage'
 import VerificationPage from './pages/VerificationPage'
 import { PERMISSIONS } from './utils/permissions'
@@ -44,6 +45,9 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      {/* The public token verification route. A QR badge resolves to
+          {origin}/verify/t/{token}, and the SPA rewrite delivers it here. */}
+      <Route path="/verify/t/:token" element={<TokenVerificationPage />} />
       <Route
         element={
           <Protected>

@@ -28,6 +28,7 @@ from app.models.enums import ConsentPurpose
 from app.repositories.audit import AuditRepository
 from app.repositories.consents import ConsentRepository
 from app.repositories.students import StudentRepository
+from app.repositories.tokens import hash_token
 from app.repositories.users import UserRepository
 from app.schemas.anomaly import AnomalyOut
 from app.schemas.student import StudentOut, VerificationResult
@@ -258,13 +259,41 @@ async def verify_scanned(
     principal: Principal = Depends(require_permission(rbac.Permission.VERIFY_CREDENTIAL)),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> VerificationResult:
-    """Verify a credential from the raw content of a scanned APAAR QR badge."""
+    """Verify a credential from the raw content of a scanned APAAR QR badge.
+
+    The current badge carries an opaque token; the legacy badge carried the
+    APAAR ID. Both are accepted here, and neither is accepted for a public
+    caller - this route always requires the ``verify_credential`` permission.
+    """
     parsed = qr.parse_payload(payload)
     if parsed is None:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="The scanned payload is not an APAAR verification link.",
         )
+
+    if parsed.is_token_payload:
+        from app.repositories.tokens import VerificationTokenRepository
+
+        document = await VerificationTokenRepository(
+            db["verification_tokens"]
+        ).by_hash(hash_token(parsed.token or ""))
+        if document is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No such verification token.",
+            )
+        record_id = str(document.get("student_record_id", ""))
+        student = await StudentRepository(db["students"]).get_by_record_id(record_id)
+        if student is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="The record behind this token no longer exists.",
+            )
+        return await _verify(
+            str(student.get("apaar_id", "")), None, request, principal, db
+        )
+
     return await _verify(parsed.apaar_id, parsed.seal, request, principal, db)
 
 

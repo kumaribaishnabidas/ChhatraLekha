@@ -37,6 +37,7 @@ from app.schemas.tokens import (
     TokenIssueResponse,
     TokenOut,
 )
+from app.services import qr
 
 router = APIRouter(tags=["verification tokens"])
 
@@ -130,7 +131,8 @@ async def issue_token(
     return TokenIssueResponse(
         token_id=document.get("token_id", ""),
         token=raw,
-        token_url=f"{settings.frontend_origin.rstrip('/')}/verify?token={raw}",
+        # Exactly the link the QR badge and the PDF certificate carry.
+        token_url=qr.build_token_payload(raw),
         student_record_id=str(student.get("_id", "")),
         issued_at=document.get("issued_at"),
         expires_at=document.get("expires_at"),

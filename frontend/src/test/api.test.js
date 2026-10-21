@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { errorMessage, tokenStore } from '../services/api'
+import { apiBaseUrl, errorMessage, normaliseApiUrl, tokenStore } from '../services/api'
 
 describe('errorMessage', () => {
   it('uses a string detail', () => {
@@ -38,5 +38,38 @@ describe('tokenStore', () => {
     expect(tokenStore.get()).toBe('')
     expect(tokenStore.getRefresh()).toBe('')
     expect(tokenStore.getUser()).toBeNull()
+  })
+})
+
+describe('the API base URL', () => {
+  it('strips a trailing slash from the configured URL', () => {
+    expect(normaliseApiUrl('https://edusync-api.onrender.com/')).toBe(
+      'https://edusync-api.onrender.com',
+    )
+    expect(normaliseApiUrl('https://edusync-api.onrender.com///')).toBe(
+      'https://edusync-api.onrender.com',
+    )
+  })
+
+  it('is an empty string when the URL is unset', () => {
+    expect(normaliseApiUrl(undefined)).toBe('')
+    expect(normaliseApiUrl('')).toBe('')
+    expect(normaliseApiUrl('   ')).toBe('')
+  })
+
+  it('trims the surrounding whitespace', () => {
+    expect(normaliseApiUrl('  https://edusync-api.onrender.com  ')).toBe(
+      'https://edusync-api.onrender.com',
+    )
+  })
+
+  it('leaves a URL without a trailing slash alone', () => {
+    expect(normaliseApiUrl('https://edusync-api.onrender.com')).toBe(
+      'https://edusync-api.onrender.com',
+    )
+  })
+
+  it('never ends with a slash', () => {
+    expect(apiBaseUrl().endsWith('/')).toBe(false)
   })
 })

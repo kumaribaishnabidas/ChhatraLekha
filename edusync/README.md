@@ -140,8 +140,17 @@ Only the SHA-256 hash of the token is stored, so a dump of the collection
 cannot be replayed. The public answer contains the record status, the
 institution, the programme, the academic year, the issue date and the
 verdict - **never** the APAAR ID, the date of birth, contact details or the
-underlying document. The QR badges and the PDF certificates carry the token
-URL, not the APAAR ID.
+underlying document.
+
+The QR badges and the PDF certificates carry
+
+```
+{FRONTEND_ORIGIN}/verify/t/{token}
+```
+
+- the opaque token, on **this deployment's own origin**, never the raw APAAR
+ID and never an official government service. The portal resolves it at
+`/verify/t/:token` through the public endpoint above.
 
 The older `GET /api/verify/{apaar_id}` route still exists, but it requires the
 `verify_credential` permission and every call is audited.
@@ -266,8 +275,12 @@ policy, the audit chain, the RBAC matrix and the HTTP API end to end.
 1. Import the repository into Vercel with **the `frontend` directory as the
    root**.
 2. The build is `npm run build` and the output directory is `dist`.
-   `frontend/vercel.json` adds the SPA rewrite.
-3. Set `VITE_API_URL` to the Render URL of the backend.
+   `frontend/vercel.json` adds the SPA rewrite, so `/verify/t/<token>` and
+   `/impact` resolve as deep links.
+3. **Set `VITE_API_URL` to the Render URL of the backend** (no trailing
+   slash) **before the first build**. The Vercel rewrite sends every path -
+   `/api` included - to `index.html`, so a build with the variable unset
+   would receive HTML instead of JSON. Changing it later needs a redeploy.
 
 > The deployment configuration is provided and documented, but **it was not
 > exercised against a live Atlas, Render or Vercel account** in this

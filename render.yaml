@@ -45,9 +45,9 @@ services:
       - key: SEAL_HMAC_KEY
         sync: false
       # The public origin of the Vercel frontend, e.g. https://edusync.vercel.app
+      # This alone determines the allowed CORS origins - there is no wildcard,
+      # and the trailing slash is normalised away.
       - key: FRONTEND_ORIGIN
-        sync: false
-      - key: CORS_ORIGINS
         sync: false
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: "60"

@@ -588,7 +588,7 @@ async def student_qr(
             )
 
     document, raw = await _issue_badge_token(db, student, principal.subject)
-    link = qr.build_token_payload(raw, base_url=_verification_base_url())
+    link = qr.build_token_payload(raw)
     png = qr.render_png(link)
     return StreamingResponse(
         iter([png]), media_type="image/png", headers={"Content-Disposition": "inline"}
@@ -597,9 +597,7 @@ async def student_qr(
 
 def _verification_base_url() -> str:
     """The public URL a scanned badge resolves to."""
-    from app.core.config import get_settings
-
-    return f"{get_settings().frontend_origin.rstrip('/')}/verify"
+    return qr.verification_base_url()
 
 
 async def _issue_badge_token(db, student: Doc, issued_by: str) -> tuple[Doc, str]:
@@ -658,7 +656,7 @@ async def student_certificate(
     payload = _payload_for(student)
     signed = seal.sign(payload)
     _, raw = await _issue_badge_token(db, student, principal.subject)
-    link = qr.build_token_payload(raw, base_url=_verification_base_url())
+    link = qr.build_token_payload(raw)
     png = qr.render_png(link)
 
     body = pdf.build_certificate_pdf(

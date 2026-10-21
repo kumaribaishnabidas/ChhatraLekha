@@ -200,26 +200,18 @@ async def test_the_issued_badge_verifies_against_the_registry(
     student = (
         await client.get("/api/students/984210357890", headers=auth(institution_token))
     ).json()
-    payload = seal.CredentialPayload(
-        apaar_id=student["apaar_id"],
-        institution_id=student["institution_id"],
-        program_id=student["program_id"],
-        academic_year=student["academic_year"],
-        enrollment_date=student["enrollment_date"],
-        student_name=student["student_name"],
-        date_of_birth=student["date_of_birth"],
-        gender=student["gender"],
-        admission_quota=student["admission_quota"],
-        nationality=student["nationality"],
-        student_institute_roll_no=student["student_institute_roll_no"],
+    assert student["apaar_id"] == "984210357890"
+
+    # The badge carries an opaque token, not the APAAR ID.
+    issued = await client.post(
+        "/api/verification-tokens",
+        json={"student_record_id": student["record_id"]},
+        headers=auth(institution_token),
     )
-    link = qr.build_payload(
-        apaar_id=payload.apaar_id,
-        institution_id=payload.institution_id,
-        program_id=payload.program_id,
-        seal=seal.sign(payload),
-        timestamp=0,
-    )
+    assert issued.status_code == 201, issued.text
+    link = qr.build_token_payload(issued.json()["token"])
+    assert "984210357890" not in link
+
     response = await client.post(
         "/api/verify/scan", params={"payload": link}, headers=auth(verifier_token)
     )
@@ -346,9 +338,9 @@ async def test_a_scanned_payload_is_verified(client, institution_token, verifier
             student_institute_roll_no="CSE-0001",
         )
     )
-    link = (
-        "https://apaar.aicte-india.gov.in/verify?apaar=984210357890&seal=" + payload
-    )
+    # The legacy link format - the one a badge printed before the token flow
+    # existed - is still readable, so a verifier can check an old badge.
+    link = "https://edusync.vercel.app/verify?apaar=984210357890&seal=" + payload
     response = await client.post(
         "/api/verify/scan", params={"payload": link}, headers=auth(verifier_token)
     )

@@ -12,12 +12,39 @@ import axios from 'axios'
  * The base URL of the EduSynC API.
  *
  * `VITE_API_URL` is read at BUILD time, so changing it needs a new
- * deployment, not just a restart. When it is unset the frontend talks to
- * `/api` on its own origin, which is the same-origin deployment (the API
- * serves the built bundle) and the local development setup (the Vite dev
- * server proxies `/api` to the backend).
+ * deployment, not just a restart.
+ *
+ * When it is unset, the frontend talks to `/api` on its own origin. That
+ * only works when the API serves the frontend as well - the Docker Compose
+ * setup, or the backend on port 8000 with the Vite dev server proxying
+ * `/api`. On a **split Vercel + Render deployment** `VITE_API_URL` must be
+ * set to the Render URL, because the Vercel rewrite sends every path -
+ * `/api` included - to `index.html`.
  */
-const BASE_URL = import.meta.env.VITE_API_URL || '/api'
+/**
+ * Normalise a configured API URL.
+ *
+ * A trailing slash would produce a double slash in every request path, and
+ * the surrounding whitespace is easy to pick up from a copy-pasted value.
+ */
+export function normaliseApiUrl(value) {
+  return (value || '').trim().replace(/\/+$/, '')
+}
+
+export function apiBaseUrl() {
+  return normaliseApiUrl(import.meta.env.VITE_API_URL)
+}
+
+const BASE_URL = apiBaseUrl()
+
+if (import.meta.env.PROD && !import.meta.env.VITE_API_URL) {
+  // eslint-disable-next-line no-console
+  console.error(
+    'EduSynC: VITE_API_URL is not set. This build talks to "/api" on its own ' +
+      'origin, which only works when the API serves the frontend. On a split ' +
+      'deployment set VITE_API_URL to the backend URL and rebuild.',
+  )
+}
 
 const TOKEN_KEY = 'edusync.token'
 const REFRESH_KEY = 'edusync.refresh'
@@ -79,7 +106,22 @@ api.interceptors.request.use((config) => {
 })
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // A misconfigured deployment answers an API call with the SPA's
+    // index.html. That is not JSON, and it is not a crash either - it is a
+    // configuration mistake, and it deserves a readable message.
+    const contentType = response.headers?.['content-type'] || ''
+    if (contentType.includes('text/html') && response.config?.url?.startsWith('/')) {
+      const error = new Error(
+        'The API returned a web page instead of data. VITE_API_URL is probably ' +
+          'not set for this build.',
+      )
+      error.response = response
+      error.config = response.config
+      return Promise.reject(error)
+    }
+    return response
+  },
   async (error) => {
     const original = error.config
     if (error.response?.status === 401 && !original?._retried) {
@@ -110,7 +152,10 @@ api.interceptors.response.use(
 
 /** The human-readable message of an Axios error. */
 export function errorMessage(error, fallback = 'Something went wrong.') {
-  const detail = error?.response?.data?.detail
+  const data = error?.response?.data
+  // A misconfigured deployment answers with the SPA's HTML, so `data` is a
+  // string and must never be shown to the user.
+  const detail = data && typeof data === 'object' ? data.detail : undefined
   if (typeof detail === 'string') return detail
   if (Array.isArray(detail) && detail.length) {
     return detail.map((item) => item.msg || JSON.stringify(item)).join(' ')

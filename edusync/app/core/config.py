@@ -75,11 +75,11 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------- security
     #: ``NoDecode`` stops pydantic-settings from trying to JSON-parse the
     #: environment variable, so a plain comma-separated list works.
-    cors_origins: Annotated[List[str], NoDecode] = [
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-        "http://localhost:5173",
-    ]
+    #:
+    #: The list is empty by default, which means the allowed origins are
+    #: exactly ``FRONTEND_ORIGIN`` - the only origin a deployment needs. The
+    #: local development origins are added in development only.
+    cors_origins: Annotated[List[str], NoDecode] = []
     rate_limit_per_minute: int = 60
     upload_max_size_mb: int = 10
     bcrypt_rounds: int = 12
@@ -123,6 +123,10 @@ class Settings(BaseSettings):
         trailing slash is stripped from every origin, so that
         ``https://app.vercel.app/`` and ``https://app.vercel.app`` are the
         same origin.
+
+        In production the list is exactly ``FRONTEND_ORIGIN``. In
+        development the local origins are added so that the Vite dev server
+        and the backend can talk to each other.
         """
         origins = [
             origin.strip().rstrip("/")
@@ -132,8 +136,12 @@ class Settings(BaseSettings):
         frontend = self.frontend_origin.strip().rstrip("/")
         if frontend and frontend not in origins:
             origins.append(frontend)
-        if not origins:
-            origins = ["http://localhost:5173"]
+        if not origins and not self.is_production:
+            origins = [
+                "http://localhost:8000",
+                "http://127.0.0.1:8000",
+                "http://localhost:5173",
+            ]
         object.__setattr__(self, "cors_origins", origins)
         return self
 
@@ -150,10 +158,12 @@ class Settings(BaseSettings):
         """
         if not self.is_production:
             return
-        if len(self.secret_key) < 32:
-            raise RuntimeError("SECRET_KEY must be at least 32 characters in production.")
-        if len(self.seal_hmac_key) < 16:
-            raise RuntimeError("SEAL_HMAC_KEY must be at least 16 characters in production.")
+        if self.allow_in_memory_db:
+            raise RuntimeError(
+                "ALLOW_IN_MEMORY_DB is set, but the in-memory database is never "
+                "used in production. Remove it, or point MONGODB_URL at a real "
+                "MongoDB server."
+            )
         if self.is_in_memory_mongo:
             raise RuntimeError(
                 "MONGODB_URL is not set, so the application would fall back to the "
@@ -161,6 +171,27 @@ class Settings(BaseSettings):
                 "MONGODB_URL to a real MongoDB server (a mongodb+srv:// Atlas "
                 "connection string, for example)."
             )
+        if len(self.secret_key) < 32 or _is_placeholder(self.secret_key):
+            raise RuntimeError(
+                "SECRET_KEY must be a fresh random value of at least 32 characters "
+                "in production. Generate one with: "
+                'python -c "import secrets; print(secrets.token_urlsafe(48))"'
+            )
+        if len(self.seal_hmac_key) < 16 or _is_placeholder(self.seal_hmac_key):
+            raise RuntimeError(
+                "SEAL_HMAC_KEY must be a fresh random value of at least 16 characters "
+                "in production. Generate one with: "
+                'python -c "import secrets; print(secrets.token_urlsafe(32))"'
+            )
+
+
+def _is_placeholder(value: str) -> bool:
+    """Whether a secret is one of the documented placeholders."""
+    lowered = (value or "").strip().lower()
+    if not lowered:
+        return True
+    markers = ("change-me", "change_me", "your-", "your_", "example", "placeholder", "local-development")
+    return any(marker in lowered for marker in markers)
 
 
 @lru_cache
