@@ -248,7 +248,11 @@ def test_a_removed_entry_breaks_the_chain():
 def test_the_directorate_sees_the_national_picture():
     assert rbac.has_permission("aicte_admin", rbac.Permission.VIEW_NATIONAL_DASHBOARD)
     assert rbac.has_permission("aicte_admin", rbac.Permission.REVIEW_ANOMALIES)
+    # The Directorate is the national authority, so it verifies credentials.
+    assert rbac.has_permission("aicte_admin", rbac.Permission.VERIFY_CREDENTIAL)
     assert not rbac.has_permission("aicte_admin", rbac.Permission.ONBOARD_STUDENTS)
+    # Institutions issue the certificates, not the regulator.
+    assert not rbac.has_permission("aicte_admin", rbac.Permission.GENERATE_CERTIFICATE)
 
 
 def test_an_institution_onboards_but_cannot_audit_the_nation():

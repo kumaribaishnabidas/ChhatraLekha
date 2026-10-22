@@ -43,6 +43,9 @@ _DIRECTORATE = frozenset(
         Permission.VIEW_AUDIT_TRAIL,
         Permission.VIEW_COMPLIANCE_MATRIX,
         Permission.EXPORT_REPORTS,
+        # The Directorate is the national authority, so it verifies
+        # credentials and issues the tokens that back them.
+        Permission.VERIFY_CREDENTIAL,
         Permission.PREVIEW_CORRECTION,
         Permission.APPLY_CORRECTION,
         Permission.VIEW_IMPACTS,
