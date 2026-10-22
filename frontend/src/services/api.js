@@ -9,12 +9,12 @@
 import axios from 'axios'
 
 /**
- * The base URL of the EduSynC API.
+ * The origin of the EduSynC API.
  *
  * `VITE_API_URL` is read at BUILD time, so changing it needs a new
  * deployment, not just a restart.
  *
- * When it is unset, the frontend talks to `/api` on its own origin. That
+ * When it is unset, the frontend talks to the API on its own origin. That
  * only works when the API serves the frontend as well - the Docker Compose
  * setup, or the backend on port 8000 with the Vite dev server proxying
  * `/api`. On a **split Vercel + Render deployment** `VITE_API_URL` must be
@@ -31,8 +31,21 @@ export function normaliseApiUrl(value) {
   return (value || '').trim().replace(/\/+$/, '')
 }
 
-export function apiBaseUrl() {
+export function apiOrigin() {
   return normaliseApiUrl(import.meta.env.VITE_API_URL)
+}
+
+/**
+ * The base URL every request is made against.
+ *
+ * The API lives under `/api`, so the prefix belongs to the **base URL**, not
+ * to the individual request paths. Axios only prefixes `baseURL` onto a
+ * *relative* path, and every path in this app starts with a slash - so
+ * putting `/api` in the request paths instead would silently drop it.
+ */
+export function apiBaseUrl() {
+  const origin = apiOrigin()
+  return origin ? `${origin}/api` : '/api'
 }
 
 const BASE_URL = apiBaseUrl()

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { apiBaseUrl, errorMessage, normaliseApiUrl, tokenStore } from '../services/api'
+import { api, apiBaseUrl, apiOrigin, errorMessage, normaliseApiUrl, tokenStore } from '../services/api'
 
 describe('errorMessage', () => {
   it('uses a string detail', () => {
@@ -71,5 +71,27 @@ describe('the API base URL', () => {
 
   it('never ends with a slash', () => {
     expect(apiBaseUrl().endsWith('/')).toBe(false)
+  })
+
+  it('keeps the /api prefix when no URL is configured', () => {
+    // The API lives under /api. With no VITE_API_URL the frontend talks to
+    // /api on its own origin.
+    expect(apiOrigin()).toBe('')
+    expect(apiBaseUrl()).toBe('/api')
+  })
+
+  it('keeps the /api prefix on a configured origin too', () => {
+    // Axios only prefixes baseURL onto a *relative* path, and every path in
+    // this app starts with a slash. If /api were left out of the base URL it
+    // would be silently dropped from every request.
+    expect(apiBaseUrl()).toContain('/api')
+  })
+
+  it('builds the sign-in URL with the /api prefix', () => {
+    // The regression that made the sign-in form fail: the request went to
+    // /auth/login instead of /api/auth/login and came back 405.
+    expect(api.getUri({ url: '/auth/login' })).toBe('/api/auth/login')
+    expect(api.getUri({ url: '/students' })).toBe('/api/students')
+    expect(api.getUri({ url: '/verify/token/abc' })).toBe('/api/verify/token/abc')
   })
 })
