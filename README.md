@@ -150,7 +150,8 @@ explicitly, is never used in production, and says so in `/health` and in the
 UI. The demo accounts are created by the seed script, and their password comes
 from `DEMO_PASSWORD` or is generated and printed once.
 
-What it does: multi-role JWT authentication, RBAC on every endpoint, the
+What it does: multi-role JWT authentication with optional **Google sign-in**,
+RBAC on every endpoint, the
 ten-layer anomaly engine, the **academic record change impact detector**,
 batch CSV ingestion with row-level validation and seat-impact preview,
 consent-aware verification, **opaque expiring revocable verification tokens**,
@@ -158,8 +159,26 @@ APAAR QR badges, PDF certificates carrying the APAAR ID, CSV/PDF regulatory
 reports, an explainable per-institution risk score, versioned seat policy, and
 a hash-chained audit trail.
 
-**217 pytest tests, all passing.** See [`edusync/README.md`](edusync/README.md)
+**258 pytest tests, all passing.** See [`edusync/README.md`](edusync/README.md)
 and [`edusync/docs/architecture.md`](edusync/docs/architecture.md).
+
+#### Google sign-in
+
+The login page can also offer **Sign in with Google**, using the OAuth 2.0
+authorization-code flow. The browser is sent to
+`/api/auth/google`, which redirects to Google's consent screen with a random
+`state` kept in a short-lived, HttpOnly cookie; the callback exchanges the
+code, reads the profile, and returns the browser to
+`/auth/callback#access_token=...` — the URL *fragment*, which is never sent
+to a server and never lands in a log.
+
+An account is **linked, not duplicated**: a Google identity that is already
+known signs in as that account, an e-mail that already has a local account
+attaches the Google identity to it, and only a genuinely new person gets a
+new account with the restricted `verifier` role.
+
+It is off until you give the backend a client of your own — see
+[`edusync/README.md`](edusync/README.md#google-sign-in).
 
 ### 3. The Android client (`Acadentrix/`)
 
@@ -319,6 +338,10 @@ When `DEMO_PASSWORD` is empty, a password is generated and printed **once**.
 | `UPLOAD_MAX_SIZE_MB` | no | `10` | Render |
 | `BCRYPT_ROUNDS` | no | `12` | Render |
 | `DEMO_PASSWORD` | no | the seeded demo accounts' password | Render (secret) |
+| `GOOGLE_CLIENT_ID` | no | `xxxx.apps.googleusercontent.com` | Render (secret) |
+| `GOOGLE_CLIENT_SECRET` | no | `xxxx` | Render (secret) |
+| `GOOGLE_REDIRECT_URI` | no | `https://<service>.onrender.com/api/auth/google/callback` | Render |
+| `GOOGLE_DEFAULT_ROLE` | no | `verifier` | Render |
 | `ALLOW_PRODUCTION_SEED` | no | `false` — only for a deliberate seed | local only |
 
 **Frontend** (set on Vercel, or in `frontend/.env.local` locally):
@@ -524,7 +547,7 @@ pip install -r requirements.txt
 cp .env.example .env            # then edit the secrets
 python -m app.scripts.seed
 uvicorn app.main:app --reload
-pytest -q                       # 217 tests
+pytest -q                       # 258 tests
 ```
 
 ### The web frontend
@@ -532,7 +555,7 @@ pytest -q                       # 217 tests
 ```bash
 cd frontend
 npm install
-npm test                        # 31 tests
+npm test                        # 44 tests
 npm run build
 ```
 
@@ -556,6 +579,56 @@ Artifacts land in `Acadentrix/app/build/outputs/apk/debug/app-debug.apk`, with t
 report at `Acadentrix/app/build/reports/tests/testDebugUnitTest/index.html`.
 
 ---
+
+## Themes, languages and voice
+
+### Appearance
+
+The web portal supports **Light**, **Dark** and **System** appearance. The
+choice is kept locally, follows operating-system changes in System mode, and
+is applied before React loads to prevent a flash of the wrong palette. Android
+has the same three choices in **Settings**, persisted with Jetpack DataStore.
+
+### Languages
+
+The web registry contains English (`en`), Hindi (`hi`), Bengali (`bn`), Tamil
+(`ta`), Telugu (`te`), Marathi (`mr`) and Urdu (`ur`, RTL), with Tier 2
+registry entries for Gujarati, Kannada, Malayalam, Punjabi, Odia and Assamese.
+Indic fonts are self-hosted and loaded on demand; no external font request is
+made. Android supplies values folders for the Tier 1 languages plus Urdu and
+uses Android's per-app language setting on Android 13+ (and AppCompat on older
+versions).
+
+**Every non-English locale is Beta and draft, needs native-speaker review.**
+The current structural coverage and review checklist are in
+[`docs/TRANSLATIONS.md`](docs/TRANSLATIONS.md). Add a language by adding its
+locale JSON and one registry entry, then run:
+
+```powershell
+cd frontend
+npm run i18n:check
+```
+
+The check fails for missing/extra translation keys or mismatched
+`{{placeholders}}`.
+
+### Voice (optional)
+
+Voice is a deterministic convenience feature, **not a chatbot**. In browsers
+that expose the Web Speech API it can recognize a fixed catalogue of navigation,
+statistics, review-task and theme commands, and read fixed templates based on
+structured API data. It cannot apply corrections, dismiss tasks, revoke
+tokens, or perform any other state-changing action. APAAR IDs are masked before
+display or read-aloud, and audio is never recorded, stored or sent to the
+EduSynC backend.
+
+Voice input is opt-in. A translated privacy notice explains that some browsers
+process microphone audio through the browser vendor's cloud speech service.
+Browser recognition support varies (Chromium browsers commonly support it;
+Firefox commonly does not); unsupported browsers keep all typed workflows and
+show a clear fallback notice. Android uses the device `SpeechRecognizer` and
+TTS language data when available, but requires device testing for the selected
+vendor/language.
 
 ## Tech stack
 

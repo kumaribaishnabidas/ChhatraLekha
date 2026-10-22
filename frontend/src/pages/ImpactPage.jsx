@@ -24,9 +24,9 @@ const CORRECTABLE_FIELDS = [
 ]
 
 const CERTAINTY_CLASS = {
-  confirmed: 'bg-[#FDE7E7] text-crimson',
-  suspected: 'bg-[#FEF3DC] text-[#96650A]',
-  review_only: 'bg-[#E7EFFC] text-mid-blue',
+  confirmed: 'bg-danger-surface text-danger-strong',
+  suspected: 'bg-warning-surface text-warning-strong',
+  review_only: 'bg-info-surface text-info-strong',
 }
 
 const TASK_STATUSES = [
@@ -316,7 +316,7 @@ export default function ImpactPage() {
 
         <div className="flex flex-col gap-4">
           {applied && (
-            <div className="rounded-2xl border border-[#0A6B3D]/30 bg-[#E2F6EC] p-5 text-[#0A6B3D]">
+            <div className="rounded-2xl border border-success/30 bg-success-surface p-5 text-success-strong">
               <p className="m-0 font-extrabold">Correction applied</p>
               <p className="m-0 mt-1 text-sm">{applied.notice}</p>
               <p className="m-0 mt-2 text-xs">
@@ -332,7 +332,7 @@ export default function ImpactPage() {
               title="Impact preview"
               subtitle={`${preview.findings.length} finding(s), ${preview.checklist.length} task(s) to review`}
             >
-              <div className="mb-4 rounded-xl border border-bright-blue/30 bg-[#E7EFFC] p-3 text-sm text-mid-blue">
+              <div className="mb-4 rounded-xl border border-brand-bright/30 bg-info-surface p-3 text-sm text-info-strong">
                 <strong>Preview only: nothing has been saved.</strong> No record has been
                 changed and no linked record has been touched. Review the findings, then
                 apply the correction if they are acceptable.
@@ -409,7 +409,7 @@ export default function ImpactPage() {
                       <Badge className={CERTAINTY_CLASS[task.certainty] || CERTAINTY_CLASS.suspected}>
                         {task.certainty.replace('_', ' ')}
                       </Badge>
-                      <Badge className="bg-[#EDF1F6] text-muted">{task.status}</Badge>
+                      <Badge className="bg-neutral-surface text-neutral-strong">{task.status}</Badge>
                       <span className="font-mono text-xs text-muted">{task.rule_id}</span>
                     </div>
                     <p className="m-0 mt-2 font-semibold text-navy">{task.title}</p>

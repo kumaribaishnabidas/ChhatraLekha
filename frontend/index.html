@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/brand/favicon.png" />
@@ -7,6 +7,19 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#14246B" />
+    <script>
+      /* Apply the theme before the module graph loads: no flash of light UI. */
+      (function () {
+        try {
+          var choice = localStorage.getItem('edusync.theme') || 'system';
+          var dark = choice === 'dark' || (choice === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+          document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', dark ? '#0a0f1a' : '#14246B');
+        } catch (_) { document.documentElement.setAttribute('data-theme', 'light'); }
+      })();
+    </script>
     <meta
       name="description"
       content="EduSynC - APAAR ID student data management, validation and verification for AICTE-approved institutions."

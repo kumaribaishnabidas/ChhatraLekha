@@ -3,6 +3,7 @@ package com.acadentrix.app
 import android.app.Application
 import com.acadentrix.app.data.local.ApaarDatabase
 import com.acadentrix.app.data.repository.ApaarRepository
+import com.acadentrix.app.settings.AppSettings
 
 /**
  * Application-scoped dependency container.
@@ -17,4 +18,6 @@ class ApaarApplication : Application() {
 
     /** The single repository instance used by the whole UI layer. */
     val repository: ApaarRepository by lazy { ApaarRepository(database) }
+    /** Theme choice is UI-only and survives app restarts. */
+    val settings: AppSettings by lazy { AppSettings(this) }
 }

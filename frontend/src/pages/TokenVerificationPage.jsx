@@ -57,7 +57,7 @@ export default function TokenVerificationPage() {
       {!loading && error && (
         <div
           role="alert"
-          className="rounded-2xl border border-crimson/30 bg-[#FDE7E7] p-5 text-sm text-crimson"
+          className="rounded-2xl border border-danger/30 bg-danger-surface p-5 text-sm text-danger-strong"
         >
           <p className="m-0 font-semibold">The token could not be checked.</p>
           <p className="m-0 mt-1">{error}</p>
@@ -69,17 +69,17 @@ export default function TokenVerificationPage() {
           <div
             className={`rounded-2xl p-5 ${
               result.valid
-                ? 'bg-[#E2F6EC] text-[#0A6B3D]'
-                : 'bg-[#FDE7E7] text-crimson'
+                ? 'bg-success-surface text-success-strong'
+                : 'bg-danger-surface text-danger-strong'
             }`}
           >
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-lg font-extrabold">
                 {result.valid ? 'Credential verified' : 'Credential could not be verified'}
               </span>
-              <Badge className="bg-white/70">{result.verdict}</Badge>
+              <Badge className="bg-surface/70">{result.verdict}</Badge>
               {result.needs_refresh && (
-                <Badge className="bg-white/70">needs refresh</Badge>
+                <Badge className="bg-surface/70">needs refresh</Badge>
               )}
             </div>
             <p className="mt-2 mb-0 text-sm">{result.reason}</p>
@@ -110,7 +110,7 @@ export default function TokenVerificationPage() {
           )}
 
           {result.notice && (
-            <p className="m-0 rounded-xl border border-line bg-white p-4 text-sm text-muted">
+            <p className="m-0 rounded-xl border border-line bg-surface p-4 text-sm text-muted">
               {result.notice}
             </p>
           )}

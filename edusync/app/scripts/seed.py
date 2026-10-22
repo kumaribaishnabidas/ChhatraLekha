@@ -568,6 +568,7 @@ async def seed(student_count: int = 2219, reset: bool = True) -> dict:
         "students": len(students),
         "anomalies": len(anomalies),
         "users": len(users),
+        "accounts": [(email, role) for email, _, role, _ in DEMO_USERS],
         "scenarios": scenarios,
         "demo_password": password,
         "api_key": api_key_plain,

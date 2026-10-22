@@ -6,25 +6,200 @@
  * The palette is sampled directly from the EduSynC brand artwork: navy
  * #14246B, mid blue #0F3A8A, bright blue #1558B8, brand teal #12B886, plus
  * saffron, emerald and crimson for the anomaly severities.
+ *
+ * Every colour is a **CSS variable** with a light value and a dark value.
+ * The Tailwind theme below maps the utilities onto those variables, so a
+ * component never names a hex value and never needs to know which theme is
+ * active. `data-theme="dark"` on the <html> element flips the whole set.
  */
-@theme {
-  --color-navy: #14246b;
-  --color-navy-deep: #0f1a4a;
-  --color-mid-blue: #0f3a8a;
-  --color-bright-blue: #1558b8;
-  --color-brand-teal: #12b886;
-  --color-brand-teal-dark: #0d926b;
-  --color-saffron: #f2a413;
-  --color-emerald: #0f9d58;
-  --color-crimson: #c62828;
-  --color-ink: #1a1f2b;
-  --color-muted: #5a6472;
-  --color-line: #d6deea;
-  --color-canvas: #f4f7fc;
 
-  --font-sans: 'Segoe UI', Inter, system-ui, -apple-system, 'Helvetica Neue', Arial,
-    sans-serif;
-  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+/*
+ * The dark variant is driven by an attribute rather than by the operating
+ * system, because the user can choose "system", "light" or "dark" in the
+ * application itself. When the choice is "system", the theme controller
+ * resolves it and writes the resolved value to the same attribute.
+ */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+:root {
+  /* ------------------------------------------------------------ surfaces */
+  --app-canvas: #f4f7fc;
+  --app-surface: #ffffff;
+  --app-surface-2: #f7f9fd;
+  --app-surface-3: #eef2f8;
+
+  /* --------------------------------------------------------------- text */
+  --app-ink: #1a1f2b;
+  --app-muted: #5a6472;
+
+  /* ------------------------------------------------------------- borders */
+  --app-line: #d6deea;
+  --app-line-strong: #b9c4d6;
+
+  /* --------------------------------------------------------------- brand */
+  /* The brand navy is used as a *background* (the header, the buttons). */
+  --app-brand: #14246b;
+  --app-brand-deep: #0f1a4a;
+  /* ...and as a *text* colour (headings, emphasised names). */
+  --app-brand-text: #14246b;
+  --app-brand-mid: #0f3a8a;
+  --app-brand-bright: #1558b8;
+  --app-on-brand: #ffffff;
+
+  /* -------------------------------------------------------------- accent */
+  --app-accent: #12b886;
+  --app-accent-strong: #0d926b;
+  --app-on-accent: #05231a;
+
+  /* ------------------------------------------------- regulatory semantics */
+  --app-success: #0f7a44;
+  --app-success-surface: #e2f6ec;
+  --app-success-strong: #0a6b3d;
+  --app-on-success: #ffffff;
+
+  --app-warning: #b26a00;
+  --app-warning-surface: #fef3dc;
+  --app-warning-strong: #96650a;
+  --app-on-warning: #ffffff;
+
+  --app-danger: #c62828;
+  --app-danger-surface: #fde7e7;
+  --app-danger-strong: #a01b1b;
+  --app-on-danger: #ffffff;
+
+  --app-info: #1558b8;
+  --app-info-surface: #e7effc;
+  --app-info-strong: #0f3a8a;
+  --app-on-info: #ffffff;
+
+  --app-neutral-surface: #edf1f6;
+  --app-neutral-strong: #5a6472;
+
+  /* -------------------------------------------------------------- effects */
+  --app-shadow: rgba(20, 36, 107, 0.08);
+  --app-shadow-strong: rgba(20, 36, 107, 0.12);
+  --app-header-ink: #ffffff;
+  --app-header-ink-soft: rgba(255, 255, 255, 0.72);
+  --app-header-line: rgba(255, 255, 255, 0.2);
+  --app-header-hover: rgba(255, 255, 255, 0.1);
+  --app-header-active: rgba(255, 255, 255, 0.15);
+
+  /* --------------------------------------------------------------- fonts */
+  /* The script-specific face is installed by the i18n layer, per language. */
+  --app-font-sans: 'Noto Sans', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue',
+    Arial, sans-serif;
+  --app-font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+}
+
+[data-theme='dark'] {
+  --app-canvas: #0a0f1a;
+  --app-surface: #121a26;
+  --app-surface-2: #18212f;
+  --app-surface-3: #1d2735;
+
+  --app-ink: #e6ebf2;
+  --app-muted: #9aa6b8;
+
+  --app-line: #2a3547;
+  --app-line-strong: #3b4860;
+
+  --app-brand: #16255c;
+  --app-brand-deep: #0d1636;
+  --app-brand-text: #a9c0f2;
+  --app-brand-mid: #7ba6e8;
+  --app-brand-bright: #93b8f2;
+  --app-on-brand: #ffffff;
+
+  --app-accent: #3fd3a3;
+  --app-accent-strong: #2bbd8d;
+  --app-on-accent: #04231a;
+
+  --app-success: #5ad07f;
+  --app-success-surface: #10331f;
+  --app-success-strong: #7fe0a4;
+  --app-on-success: #04231a;
+
+  --app-warning: #f0b03a;
+  --app-warning-surface: #3a2c0c;
+  --app-warning-strong: #f5cf7a;
+  --app-on-warning: #2b1d05;
+
+  --app-danger: #ff8a80;
+  --app-danger-surface: #3a1616;
+  --app-danger-strong: #ffab99;
+  --app-on-danger: #3a1616;
+
+  --app-info: #90caf9;
+  --app-info-surface: #14294a;
+  --app-info-strong: #a9c8f5;
+  --app-on-info: #06182e;
+
+  --app-neutral-surface: #1e2836;
+  --app-neutral-strong: #9aa6b8;
+
+  --app-shadow: rgba(0, 0, 0, 0.55);
+  --app-shadow-strong: rgba(0, 0, 0, 0.7);
+}
+
+@theme inline {
+  /* Compatibility aliases used by the existing components. They resolve to
+     semantic values, so old class names remain safe in both themes. */
+  --color-navy: var(--app-brand);
+  --color-navy-deep: var(--app-brand-deep);
+  --color-mid-blue: var(--app-brand-mid);
+  --color-bright-blue: var(--app-brand-bright);
+  --color-brand-teal: var(--app-accent);
+  --color-brand-teal-dark: var(--app-accent-strong);
+  --color-saffron: var(--app-warning);
+  --color-emerald: var(--app-success);
+  --color-crimson: var(--app-danger);
+  --color-canvas: var(--app-canvas);
+  --color-surface: var(--app-surface);
+  --color-surface-2: var(--app-surface-2);
+  --color-surface-3: var(--app-surface-3);
+
+  --color-ink: var(--app-ink);
+  --color-muted: var(--app-muted);
+
+  --color-line: var(--app-line);
+  --color-line-strong: var(--app-line-strong);
+
+  --color-brand: var(--app-brand);
+  --color-brand-deep: var(--app-brand-deep);
+  --color-brand-text: var(--app-brand-text);
+  --color-brand-mid: var(--app-brand-mid);
+  --color-brand-bright: var(--app-brand-bright);
+  --color-on-brand: var(--app-on-brand);
+
+  --color-accent: var(--app-accent);
+  --color-accent-strong: var(--app-accent-strong);
+  --color-on-accent: var(--app-on-accent);
+
+  --color-success: var(--app-success);
+  --color-success-surface: var(--app-success-surface);
+  --color-success-strong: var(--app-success-strong);
+  --color-on-success: var(--app-on-success);
+
+  --color-warning: var(--app-warning);
+  --color-warning-surface: var(--app-warning-surface);
+  --color-warning-strong: var(--app-warning-strong);
+  --color-on-warning: var(--app-on-warning);
+
+  --color-danger: var(--app-danger);
+  --color-danger-surface: var(--app-danger-surface);
+  --color-danger-strong: var(--app-danger-strong);
+  --color-on-danger: var(--app-on-danger);
+
+  --color-info: var(--app-info);
+  --color-info-surface: var(--app-info-surface);
+  --color-info-strong: var(--app-info-strong);
+  --color-on-info: var(--app-on-info);
+
+  --color-neutral-surface: var(--app-neutral-surface);
+  --color-neutral-strong: var(--app-neutral-strong);
+
+  --font-sans: var(--app-font-sans);
+  --font-mono: var(--app-font-mono);
 }
 
 @layer base {
@@ -40,18 +215,27 @@
   h2,
   h3,
   h4 {
-    @apply text-navy font-bold tracking-tight;
+    @apply text-brand-text font-bold tracking-tight;
   }
 
   /* A visible, consistent focus ring on every interactive element. */
   :focus-visible {
-    @apply outline-2 outline-offset-2 outline-bright-blue;
+    @apply outline-2 outline-offset-2 outline-brand-bright;
+  }
+
+  /* The window is only ever as wide as the text allows, so a long
+     translation must never be clipped. */
+  html {
+    overflow-wrap: break-word;
   }
 }
 
 @layer components {
   .card {
-    @apply bg-white border border-line rounded-2xl shadow-[0_1px_2px_rgba(20,36,107,0.06),0_8px_24px_rgba(20,36,107,0.08)];
+    @apply bg-surface border border-line rounded-2xl;
+    box-shadow:
+      0 1px 2px var(--app-shadow),
+      0 8px 24px var(--app-shadow);
   }
 
   .btn {
@@ -64,36 +248,36 @@
   }
 
   .btn-primary {
-    @apply bg-brand-teal text-emerald-950 hover:bg-brand-teal-dark;
+    @apply bg-accent text-on-accent hover:bg-accent-strong;
   }
 
   .btn-navy {
-    @apply bg-navy text-white hover:bg-mid-blue;
+    @apply bg-brand text-on-brand hover:bg-brand-mid;
   }
 
   .btn-outline {
-    @apply bg-white text-navy border border-line hover:border-mid-blue;
+    @apply bg-surface text-brand-text border border-line hover:border-brand-mid;
   }
 
   .btn-danger {
-    @apply bg-crimson text-white;
+    @apply bg-danger text-on-danger;
   }
 
   .btn-ghost {
-    @apply text-navy hover:bg-[#EEF2F8];
+    @apply text-brand-text hover:bg-surface-3;
   }
 
   .input {
-    @apply w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm text-ink
-      placeholder:text-muted/70 focus:border-bright-blue focus:ring-4 focus:ring-bright-blue/10 focus:outline-none;
+    @apply w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-ink
+      placeholder:text-muted/70 focus:border-brand-bright focus:ring-4 focus:ring-brand-bright/10 focus:outline-none;
   }
 
   .label {
-    @apply block text-[11px] font-bold uppercase tracking-wider text-navy mb-1.5;
+    @apply block text-[11px] font-bold uppercase tracking-wider text-brand-text mb-1.5;
   }
 
   .table-wrap {
-    @apply overflow-x-auto rounded-2xl border border-line bg-white;
+    @apply overflow-x-auto rounded-2xl border border-line bg-surface;
   }
 
   .data-table {
@@ -101,7 +285,7 @@
   }
 
   .data-table th {
-    @apply bg-[#F7F9FD] text-navy text-[11px] uppercase tracking-wider text-left px-3 py-2.5 whitespace-nowrap;
+    @apply bg-surface-2 text-brand-text text-[11px] uppercase tracking-wider text-start px-3 py-2.5 whitespace-nowrap;
   }
 
   .data-table td {
@@ -109,6 +293,14 @@
   }
 
   .data-table tbody tr:hover {
-    @apply bg-[#FAFCFF];
+    @apply bg-surface-3;
+  }
+
+  /*
+   * A quiet surface used by the panels that carry a machine-readable
+   * payload (the CSV template, the audit chain).
+   */
+  .code-panel {
+    @apply mt-2 overflow-x-auto rounded-xl bg-surface-2 p-3 text-xs;
   }
 }

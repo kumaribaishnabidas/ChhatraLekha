@@ -60,6 +60,11 @@ class Settings(BaseSettings):
         """The secret used for the keyed match token."""
         return (self.match_key or self.seal_hmac_key).encode("utf-8")
 
+    @property
+    def google_enabled(self) -> bool:
+        """Whether "Sign in with Google" is offered."""
+        return bool(self.google_client_id.strip() and self.google_client_secret.strip())
+
     # ---------------------------------------------------------------- auth
     secret_key: str = Field(default_factory=lambda: secrets.token_urlsafe(48))
     algorithm: str = "HS256"
@@ -83,6 +88,21 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 60
     upload_max_size_mb: int = 10
     bcrypt_rounds: int = 12
+
+    # ------------------------------------------------------- Google sign-in
+    #: The OAuth 2.0 client of the Google Cloud project. When both the id and
+    #: the secret are present, "Sign in with Google" is offered.
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    #: The redirect URI registered with Google. When it is empty it is
+    #: derived from the incoming request, which is what a local development
+    #: run needs.
+    google_redirect_uri: str = ""
+    #: The role given to somebody who signs in with Google for the first
+    #: time and has no account yet.
+    google_default_role: str = "verifier"
+    #: The scopes requested from Google.
+    google_scopes: List[str] = ["openid", "email", "profile"]
 
     # -------------------------------------------------------------- session
     session_cookie_name: str = "edusync_session"

@@ -125,7 +125,7 @@ export default function UploadPage() {
             <summary className="cursor-pointer text-sm font-semibold text-navy">
               Show the CSV template
             </summary>
-            <pre className="mt-2 overflow-x-auto rounded-xl bg-[#F4F7FC] p-3 text-xs">
+            <pre className="code-panel">
               {TEMPLATE}
             </pre>
           </details>
@@ -169,7 +169,7 @@ export default function UploadPage() {
                 description="Choose a CSV and validate it to see the row-by-row verdicts and the seat impact."
               />
             ) : preview.header_errors?.length ? (
-              <div className="rounded-xl border border-crimson/30 bg-[#FDE7E7] p-4 text-sm text-crimson">
+              <div className="rounded-xl border border-danger/30 bg-danger-surface p-4 text-sm text-danger-strong">
                 <p className="m-0 font-semibold">The file header was rejected.</p>
                 <ul className="mt-2 mb-0 pl-5">
                   {preview.header_errors.map((item) => (
@@ -203,7 +203,7 @@ export default function UploadPage() {
                               </td>
                               <td>
                                 {impact.regular_overflow > 0 ? (
-                                  <Badge className="bg-[#FDE7E7] text-crimson">
+                                  <Badge className="bg-danger-surface text-danger-strong">
                                     +{impact.regular_overflow}
                                   </Badge>
                                 ) : (
@@ -247,7 +247,7 @@ export default function UploadPage() {
                           <td className="text-xs">{row.program_code}</td>
                           <td>
                             {row.issues.length === 0 ? (
-                              <Badge className="bg-[#E2F6EC] text-[#0A6B3D]">Accepted</Badge>
+                              <Badge className="bg-success-surface text-success-strong">Accepted</Badge>
                             ) : (
                               <ul className="m-0 p-0 list-none grid gap-1">
                                 {row.issues.map((issue) => (
@@ -255,8 +255,8 @@ export default function UploadPage() {
                                     <Badge
                                       className={
                                         issue.severity === 'CRITICAL'
-                                          ? 'bg-[#FDE7E7] text-crimson'
-                                          : 'bg-[#FEF3DC] text-[#96650A]'
+                                          ? 'bg-danger-surface text-danger-strong'
+                                          : 'bg-warning-surface text-warning-strong'
                                       }
                                     >
                                       {issue.severity}

@@ -2,8 +2,14 @@
 
 from __future__ import annotations
 
+import logging
+from datetime import datetime, timezone
+from typing import Optional
+from urllib.parse import urlencode
+
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import RedirectResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.api.deps import client_ip, get_db, get_principal
@@ -19,6 +25,9 @@ from app.core.security import (
 from app.repositories.audit import AuditRepository
 from app.repositories.users import UserRepository
 from app.schemas.auth import LoginRequest, RefreshRequest, TokenPair, UserOut
+from app.services import google
+
+logger = logging.getLogger("edusync.auth")
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -153,3 +162,138 @@ async def check_password(password: str) -> dict:
     """Return the list of policy violations for a candidate password."""
     violations = password_policy_violations(password)
     return {"valid": not violations, "violations": violations}
+
+
+# --------------------------------------------------------- Google sign-in
+
+
+@router.get("/google/config", summary="Whether Google sign-in is available")
+async def google_config() -> dict:
+    """Tell the portal whether the Google button should be shown."""
+    return {
+        "enabled": settings.google_enabled,
+        "login_url": f"{settings.api_prefix}/auth/google",
+        "default_role": settings.google_default_role,
+    }
+
+
+@router.get("/google", summary="Start the Google sign-in")
+async def google_start(request: Request):
+    """Redirect the browser to Google's consent screen.
+
+    A random ``state`` is put in a short-lived, HttpOnly cookie and compared
+    with the one that comes back, so a third party cannot feed the callback a
+    code of their own.
+    """
+    if not settings.google_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Google sign-in is not configured. Set GOOGLE_CLIENT_ID and "
+                "GOOGLE_CLIENT_SECRET."
+            ),
+        )
+
+    state = google.new_state()
+    redirect_uri = _google_redirect_uri(request)
+    url = google.authorisation_url(redirect_uri=redirect_uri, state=state)
+    response = RedirectResponse(url=url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+    response.set_cookie(
+        google.STATE_COOKIE,
+        state,
+        max_age=google.STATE_TTL_SECONDS,
+        httponly=True,
+        samesite="lax",
+        secure=request.url.scheme == "https",
+        path="/",
+    )
+    return response
+
+
+@router.get("/google/callback", summary="Finish the Google sign-in")
+async def google_callback(
+    request: Request,
+    code: Optional[str] = None,
+    state: Optional[str] = None,
+    error: Optional[str] = None,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """Exchange the code, issue the tokens and return the browser to the portal."""
+    if error:
+        return _google_failure(request, f"Google refused the sign-in: {error}")
+    if not code:
+        return _google_failure(request, "Google did not return an authorisation code.")
+
+    expected_state = request.cookies.get(google.STATE_COOKIE)
+    if not expected_state or not state or state != expected_state:
+        return _google_failure(
+            request, "The sign-in could not be verified. Please try again."
+        )
+
+    redirect_uri = _google_redirect_uri(request)
+    try:
+        tokens = await google.exchange_code(code, redirect_uri=redirect_uri)
+        access_token = tokens.get("access_token", "")
+        if not access_token:
+            raise google.GoogleAuthError("Google did not return an access token.")
+        profile = await google.fetch_profile(access_token)
+        account, created = await google.resolve_account(db, profile)
+    except google.GoogleAuthError as exc:
+        return _google_failure(request, str(exc))
+
+    if not account.get("is_active", True):
+        return _google_failure(request, "That account is not active.")
+
+    await users_repo_set_last_login(db, account["user_id"])
+
+    await writer.log(
+        AuditRepository(db["audit_events"]),
+        actor=account["user_id"],
+        actor_role=account.get("role", ""),
+        action="GOOGLE_LOGIN",
+        subject=account["user_id"],
+        details=(
+            f"Signed in with Google ({'new account' if created else 'linked account'})."
+        ),
+        category="SECURITY",
+        ip_address=client_ip(request),
+    )
+
+    access = create_access_token(
+        subject=account["user_id"],
+        role=account.get("role", "verifier"),
+        institution_id=account.get("institution_id"),
+    )
+    refresh = create_refresh_token(account["user_id"])
+
+    fragment = urlencode(
+        {"access_token": access, "refresh_token": refresh, "role": account.get("role", "")}
+    )
+    return RedirectResponse(
+        url=f"{settings.frontend_origin.rstrip('/')}/auth/callback#{fragment}",
+        status_code=status.HTTP_307_TEMPORARY_REDIRECT,
+    )
+
+
+def _google_redirect_uri(request: Request) -> str:
+    """The redirect URI registered with Google."""
+    if settings.google_redirect_uri.strip():
+        return settings.google_redirect_uri.strip()
+    return f"{str(request.base_url).rstrip('/')}{settings.api_prefix}/auth/google/callback"
+
+
+def _google_failure(request: Request, message: str) -> RedirectResponse:
+    """Return the browser to the portal with an explanation."""
+    logger.warning("Google sign-in failed: %s", message)
+    fragment = urlencode({"error": message})
+    return RedirectResponse(
+        url=f"{settings.frontend_origin.rstrip('/')}/login#{fragment}",
+        status_code=status.HTTP_307_TEMPORARY_REDIRECT,
+    )
+
+
+async def users_repo_set_last_login(db, user_id: str) -> None:
+    """Record the sign-in time."""
+    await db["users"].update_one(
+        {"user_id": user_id}, {"$set": {"last_login_at": datetime.now(timezone.utc)}}
+    )

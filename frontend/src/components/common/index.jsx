@@ -1,4 +1,5 @@
 /** Small, reusable building blocks shared by every page. */
+import { useTranslation } from 'react-i18next'
 
 export function Card({ title, subtitle, actions, children, className = '' }) {
   return (
@@ -46,25 +47,27 @@ export function Badge({ children, className = '' }) {
 }
 
 export function Spinner({ label = 'Loading...' }) {
+  const { t } = useTranslation()
   return (
     <div className="flex items-center gap-3 p-8 text-sm text-muted" role="status">
       <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-line border-t-bright-blue" />
-      {label}
+       {label === 'Loading...' ? t('common.loading') : label}
     </div>
   )
 }
 
 export function ErrorState({ message, onRetry }) {
+  const { t } = useTranslation()
   return (
     <div
       role="alert"
-      className="rounded-2xl border border-crimson/30 bg-[#FDE7E7] p-5 text-sm text-crimson"
+      className="rounded-2xl border border-danger/30 bg-danger-surface p-5 text-sm text-danger-strong"
     >
-      <p className="m-0 font-semibold">Something went wrong.</p>
+      <p className="m-0 font-semibold">{t('common.errorTitle')}</p>
       <p className="m-0 mt-1">{message}</p>
       {onRetry && (
         <button type="button" className="btn btn-outline mt-3" onClick={onRetry}>
-          Try again
+          {t('common.retry')}
         </button>
       )}
     </div>
@@ -73,7 +76,7 @@ export function ErrorState({ message, onRetry }) {
 
 export function EmptyState({ title, description, action }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-line bg-[#FBFCFE] p-10 text-center">
+    <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-line bg-surface-2 p-10 text-center">
       <p className="m-0 font-semibold text-navy">{title}</p>
       {description && <p className="m-0 text-sm text-muted">{description}</p>}
       {action}
@@ -82,19 +85,20 @@ export function EmptyState({ title, description, action }) {
 }
 
 export function Pagination({ page, pageCount, onChange }) {
+  const { t } = useTranslation()
   if (!pageCount || pageCount <= 1) return null
   return (
-    <nav className="flex items-center justify-end gap-2 mt-4" aria-label="Pagination">
+    <nav className="flex items-center justify-end gap-2 mt-4" aria-label={t('common.page', { page, count: pageCount })}>
       <button
         type="button"
         className="btn btn-outline"
         disabled={page <= 1}
         onClick={() => onChange(page - 1)}
       >
-        Previous
+        {t('common.previous')}
       </button>
       <span className="text-sm text-muted">
-        Page {page} of {pageCount}
+        {t('common.page', { page, count: pageCount })}
       </span>
       <button
         type="button"
@@ -102,7 +106,7 @@ export function Pagination({ page, pageCount, onChange }) {
         disabled={page >= pageCount}
         onClick={() => onChange(page + 1)}
       >
-        Next
+        {t('common.next')}
       </button>
     </nav>
   )

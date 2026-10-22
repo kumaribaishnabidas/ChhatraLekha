@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material.icons.filled.Warning
@@ -80,6 +81,9 @@ import com.acadentrix.app.ui.theme.NavyDeep
 import com.acadentrix.app.ui.theme.NavyPrimary
 import com.acadentrix.app.ui.theme.Saffron
 import com.acadentrix.app.ui.viewmodel.ApaarViewModel
+import com.acadentrix.app.settings.AppSettings
+import com.acadentrix.app.settings.ThemePreference
+import com.acadentrix.app.ui.screens.SettingsScreen
 
 object Routes {
     const val HOME = "home"
@@ -95,6 +99,7 @@ object Routes {
     const val VERIFIER = "verifier/verify"
     const val STUDENT_CARD = "student/card"
     const val STUDENT_CERTIFICATE = "student/certificate"
+    const val SETTINGS = "settings"
 }
 
 private data class NavItem(val route: String, val label: String, val icon: ImageVector)
@@ -127,6 +132,8 @@ private fun navItemsFor(role: UserRole): List<NavItem> = when (role) {
 @Composable
 fun ApaarApp(
     viewModel: ApaarViewModel,
+    settings: AppSettings,
+    themePreference: ThemePreference,
     navController: NavHostController = rememberNavController()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -157,7 +164,8 @@ fun ApaarApp(
                     navController.navigate(Routes.HOME) {
                         popUpTo(Routes.HOME) { inclusive = true }
                     }
-                }
+                },
+                onSettings = { navController.navigate(Routes.SETTINGS) }
             )
         },
         bottomBar = {
@@ -200,7 +208,7 @@ fun ApaarApp(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            ApaarNavHost(navController = navController, viewModel = viewModel)
+            ApaarNavHost(navController = navController, viewModel = viewModel, settings = settings, themePreference = themePreference)
         }
     }
 }
@@ -212,7 +220,8 @@ fun ApaarApp(
 private fun ApaarHeader(
     role: UserRole,
     onRoleChange: (UserRole) -> Unit,
-    onHome: () -> Unit
+    onHome: () -> Unit,
+    onSettings: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     Box(
@@ -240,6 +249,13 @@ private fun ApaarHeader(
                         letterSpacing = 0.4.sp
                     )
                 }
+                Icon(
+                    Icons.Filled.Settings,
+                    contentDescription = "Settings",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp).clickable(onClick = onSettings)
+                )
+                Spacer(Modifier.width(8.dp))
                 Box {
                     Row(
                         modifier = Modifier
@@ -326,7 +342,9 @@ private fun ApaarHeader(
 @Composable
 private fun ApaarNavHost(
     navController: NavHostController,
-    viewModel: ApaarViewModel
+    viewModel: ApaarViewModel,
+    settings: AppSettings,
+    themePreference: ThemePreference
 ) {
     NavHost(navController = navController, startDestination = Routes.HOME) {
         composable(Routes.HOME) {
@@ -344,5 +362,6 @@ private fun ApaarNavHost(
         composable(Routes.VERIFIER) { VerifierScreen(viewModel = viewModel) }
         composable(Routes.STUDENT_CARD) { ApaarCardScreen(viewModel = viewModel) }
         composable(Routes.STUDENT_CERTIFICATE) { DegreeCertificateScreen(viewModel = viewModel) }
+        composable(Routes.SETTINGS) { SettingsScreen(settings = settings, themePreference = themePreference) }
     }
 }

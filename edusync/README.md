@@ -155,6 +155,57 @@ ID and never an official government service. The portal resolves it at
 The older `GET /api/verify/{apaar_id}` route still exists, but it requires the
 `verify_credential` permission and every call is audited.
 
+## Google sign-in
+
+The portal can sign a user in with their Google account, using the standard
+OAuth 2.0 **authorization code** flow:
+
+```
+browser  ->  /api/auth/google          ->  accounts.google.com
+          ->  /api/auth/google/callback ->  exchanges the code, reads the
+                                               profile, issues the JWT pair
+          ->  {FRONTEND_ORIGIN}/auth/callback#access_token=...
+```
+
+The tokens travel in the URL **fragment**, which is never sent to a server
+and never lands in a log. A random `state` is kept in a short-lived, HttpOnly
+cookie and compared on the way back, so a third party cannot feed the
+callback a code of their own.
+
+**To switch it on**
+
+1. In the [Google Cloud console](https://console.cloud.google.com/), create a
+   project and enable the **Google Identity Services** API.
+2. Create an **OAuth client ID** of the type *Web application*.
+3. Add the authorised redirect URI, which must match exactly:
+   * local: `http://localhost:8000/api/auth/google/callback`
+   * deployed: `https://<your-render-service>.onrender.com/api/auth/google/callback`
+4. Set the credentials:
+
+   ```env
+   GOOGLE_CLIENT_ID=xxxx.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=xxxx
+   # Optional, when the backend sits behind a proxy that rewrites the host.
+   GOOGLE_REDIRECT_URI=https://<your-render-service>.onrender.com/api/auth/google/callback
+   # The role given to a first-time Google sign-in.
+   GOOGLE_DEFAULT_ROLE=verifier
+   ```
+
+   When the id and the secret are both present, the portal shows the
+   **Sign in with Google** button; when they are not, the button is hidden and
+   the endpoint answers `503` with an explanation.
+
+**How an account is resolved**
+
+| Situation | What happens |
+|---|---|
+| The Google identity is already known | That account is signed in. |
+| The e-mail already has a local account | The Google identity is **linked** to it - no second account, and the existing role and institution are kept. |
+| Neither | A new account is created with `GOOGLE_DEFAULT_ROLE` (the restricted `verifier` role by default) and no usable password. |
+
+A Google-only account can never be signed into with a password: its stored
+`password_hash` is not a valid bcrypt hash, so no password can match it.
+
 ---
 
 ## The rules
@@ -238,7 +289,7 @@ button in React is not a security control.
 ## Tests
 
 ```bash
-cd edusync && pytest -q
+cd edusync && pytest -q     # 258 tests
 ```
 
 The suite runs against the in-memory MongoDB, so it needs no server and no
@@ -246,7 +297,9 @@ fixtures on disk. It covers the APAAR validator, all ten anomaly layers, the
 six impact rules, the correction workflow (including the no-mutation
 assertion, the 409 on a stale version and the review-task lifecycle), the
 verification tokens (including the allowlist-only public answer), the consent
-policy, the audit chain, the RBAC matrix and the HTTP API end to end.
+policy, the audit chain, the RBAC matrix, the Google sign-in (the
+authorisation URL, the code exchange, the account linking and the CSRF state)
+and the HTTP API end to end.
 
 ---
 

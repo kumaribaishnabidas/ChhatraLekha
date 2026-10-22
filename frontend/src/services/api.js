@@ -164,8 +164,19 @@ api.interceptors.response.use(
 )
 
 /** The human-readable message of an Axios error. */
-export function errorMessage(error, fallback = 'Something went wrong.') {
+export function errorMessage(error, fallback = 'Something went wrong.', t) {
   const data = error?.response?.data
+  // Backends may give us a stable code. The browser maps that code locally;
+  // never parse a human English API message in order to translate it.
+  const code = data && typeof data === 'object' ? data.code : undefined
+  if (code && typeof t === 'function') return t(`errors.${code}`, { defaultValue: fallback })
+  if (typeof t === 'function') {
+    const statusKey = {
+      400: 'validation', 401: 'unauthorized', 403: 'forbidden', 404: 'notFound',
+      409: 'conflict', 422: 'validation', 500: 'server', 502: 'server', 503: 'server',
+    }[error?.response?.status]
+    if (statusKey) return t(`errors.${statusKey}`)
+  }
   // A misconfigured deployment answers with the SPA's HTML, so `data` is a
   // string and must never be shown to the user.
   const detail = data && typeof data === 'object' ? data.detail : undefined

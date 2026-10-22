@@ -59,3 +59,20 @@ services:
       # seeded into the deployment.
       - key: DEMO_PASSWORD
         sync: false
+      # ------------------------------------------------------- Google sign-in
+      # Set both of these to switch "Sign in with Google" on. The OAuth client
+      # is created in the Google Cloud console; its type must be "Web
+      # application". Without them the button stays hidden and the endpoint
+      # answers 503.
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      # The redirect URI registered with Google must match this exactly:
+      #   https://<this-service>.onrender.com/api/auth/google/callback
+      # Leave it empty to derive it from the incoming request.
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      # The role given to somebody signing in with Google for the first time.
+      - key: GOOGLE_DEFAULT_ROLE
+        value: verifier

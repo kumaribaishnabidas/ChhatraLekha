@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.acadentrix.app.settings.ThemePreference
 
 /**
  * Semantic colours that sit outside the Material 3 palette but are required by
@@ -157,9 +158,14 @@ private val DarkScheme = darkColorScheme(
 
 @Composable
 fun ApaarTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    preference: ThemePreference = ThemePreference.SYSTEM,
     content: @Composable () -> Unit
 ) {
+    val darkTheme = when (preference) {
+        ThemePreference.SYSTEM -> isSystemInDarkTheme()
+        ThemePreference.LIGHT -> false
+        ThemePreference.DARK -> true
+    }
     val colorScheme = if (darkTheme) DarkScheme else LightScheme
     val extended = if (darkTheme) DarkExtendedColors else LightExtendedColors
 
@@ -168,7 +174,7 @@ fun ApaarTheme(
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = Color.Transparent.value.toInt()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
 

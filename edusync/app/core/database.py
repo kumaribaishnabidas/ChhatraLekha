@@ -262,6 +262,10 @@ class Mongo:
                 [("email", 1)],
             ),
             (
+                "users",
+                [("google_sub", 1)],
+            ),
+            (
                 "api_keys",
                 [("key_id", 1)],
             ),

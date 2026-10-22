@@ -1,8 +1,10 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 import AppLayout from './components/layout/AppLayout'
 import { useAuth } from './hooks/useAuth'
 import AnomaliesPage from './pages/AnomaliesPage'
+import AuthCallbackPage from './pages/AuthCallbackPage'
 import DashboardPage from './pages/DashboardPage'
 import ImpactPage from './pages/ImpactPage'
 import InstitutionsPage from './pages/InstitutionsPage'
@@ -27,13 +29,13 @@ function Protected({ children }) {
 /** A route that requires a specific permission. */
 function Guarded({ permission, children }) {
   const { can } = useAuth()
+  const { t } = useTranslation()
   if (!can(permission)) {
     return (
       <div className="card p-8 text-center">
-        <h2 className="m-0">Not available for your role</h2>
+        <h2 className="m-0">{t('common.notAvailable')}</h2>
         <p className="m-0 mt-2 text-sm text-muted">
-          Your account does not hold the <code>{permission}</code> permission. The server
-          enforces the same rule independently of this screen.
+          {t('common.permissionMissing', { permission })}
         </p>
       </div>
     )
@@ -45,6 +47,9 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      {/* Where the Google sign-in returns to. The tokens arrive in the URL
+          fragment, which is never sent to a server. */}
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
       {/* The public token verification route. A QR badge resolves to
           {origin}/verify/t/{token}, and the SPA rewrite delivers it here. */}
       <Route path="/verify/t/:token" element={<TokenVerificationPage />} />

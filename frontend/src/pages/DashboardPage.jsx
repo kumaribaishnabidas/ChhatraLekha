@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Bar,
   BarChart,
@@ -20,9 +21,8 @@ import { api } from '../services/api'
 import { formatNumber, formatPercent, riskClass } from '../utils/format'
 import { Badge } from '../components/common'
 
-const QUOTA_COLOURS = ['#1558B8', '#12B886', '#F2A413', '#0F3A8A', '#C62828', '#5A6472', '#14246B']
-
 export default function DashboardPage() {
+  const { t } = useTranslation()
   const kpis = useApi(() => api.get('/dashboard/national').then((r) => r.data), [])
   const intake = useApi(() => api.get('/dashboard/intake').then((r) => r.data), [])
   const quota = useApi(() => api.get('/dashboard/quota').then((r) => r.data), [])
@@ -52,80 +52,80 @@ export default function DashboardPage() {
     [intake.data],
   )
 
-  if (kpis.loading) return <Spinner label="Loading the national picture..." />
+  if (kpis.loading) return <Spinner label={t('dashboard.loading')} />
 
   return (
     <>
       <PageHeader
-        title="AICTE Directorate dashboard"
-        lead="Sanctioned intake against actual enrolment, with the supernumerary ceilings, the duplicates and the programme-level compliance matrix already worked out."
+        title={t('dashboard.title')}
+        lead={t('dashboard.lead')}
       />
 
       {kpis.error && <ErrorState message={kpis.error} onRetry={kpis.reload} />}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
         <KpiCard
-          label="Institutions"
+          label={t('dashboard.institutions')}
           value={formatNumber(kpis.data?.institution_count)}
-          hint="Approved by AICTE"
+          hint={t('dashboard.approved')}
         />
         <KpiCard
-          label="Programmes"
+          label={t('dashboard.programmes')}
           value={formatNumber(kpis.data?.programme_count)}
-          hint="Sanctioned seats tracked"
+          hint={t('dashboard.seats')}
         />
         <KpiCard
-          label="Enrolled"
+          label={t('dashboard.enrolled')}
           value={formatNumber(kpis.data?.total_enrolled)}
-          hint={`${formatPercent(kpis.data?.utilisation_percent)} of the sanctioned intake`}
+          hint={t('dashboard.ofIntake', { percent: formatPercent(kpis.data?.utilisation_percent) })}
           tone="good"
         />
         <KpiCard
-          label="Anomalies in force"
+          label={t('dashboard.anomalies')}
           value={formatNumber(kpis.data?.flagged_anomalies)}
-          hint={`${formatNumber(kpis.data?.critical_anomalies)} critical`}
+          hint={t('dashboard.critical', { count: formatNumber(kpis.data?.critical_anomalies) })}
           tone="critical"
         />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2 mb-6">
         <Card
-          title="Quota distribution"
-          subtitle="Enrolment against the sanctioned seats of every quota bucket"
+          title={t('dashboard.quotaTitle')}
+          subtitle={t('dashboard.quotaLead')}
         >
           {quota.loading ? (
             <Spinner />
           ) : (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={quotaChart}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E4EAF3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--app-line)" />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} angle={-18} textAnchor="end" height={70} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="Enrolled" fill="#12B886" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Sanctioned" fill="#1558B8" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Enrolled" fill="var(--app-accent)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Sanctioned" fill="var(--app-brand-bright)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
         </Card>
 
         <Card
-          title="Intake utilisation"
-          subtitle="The twelve busiest programmes"
+          title={t('dashboard.intakeTitle')}
+          subtitle={t('dashboard.intakeLead')}
         >
           {intake.loading ? (
             <Spinner />
           ) : (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={intakeChart} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#E4EAF3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--app-line)" />
                 <XAxis type="number" tick={{ fontSize: 11 }} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={140} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="Enrolled" fill="#1558B8" radius={[0, 4, 4, 0]} />
-                <Bar dataKey="Sanctioned" fill="#D6DEEA" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="Enrolled" fill="var(--app-brand-bright)" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="Sanctioned" fill="var(--app-line)" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -134,14 +134,14 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card
-          title="Institution risk scores"
-          subtitle="Every contributing anomaly family is listed, so the score is explainable"
+          title={t('dashboard.riskTitle')}
+          subtitle={t('dashboard.riskLead')}
         >
           {risk.loading ? (
             <Spinner />
           ) : (risk.data || []).length === 0 ? (
             <p className="m-0 text-sm text-muted">
-              No institution currently carries an anomaly.
+              {t('dashboard.noRisk')}
             </p>
           ) : (
             <ul className="m-0 p-0 list-none grid gap-3">
@@ -167,8 +167,8 @@ export default function DashboardPage() {
         </Card>
 
         <Card
-          title="Compliance matrix"
-          subtitle="Every institution against its sanctioned intake"
+          title={t('dashboard.matrixTitle')}
+          subtitle={t('dashboard.matrixLead')}
         >
           {compliance.loading ? (
             <Spinner />
@@ -177,11 +177,11 @@ export default function DashboardPage() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Institution</th>
-                    <th>Approved</th>
-                    <th>Enrolled</th>
-                    <th>Utilisation</th>
-                    <th>Risk</th>
+                    <th>{t('common.institution')}</th>
+                    <th>{t('dashboard.approved')}</th>
+                    <th>{t('dashboard.enrolled')}</th>
+                    <th>{t('dashboard.utilisation')}</th>
+                    <th>{t('dashboard.risk')}</th>
                   </tr>
                 </thead>
                 <tbody>

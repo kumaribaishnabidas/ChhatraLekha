@@ -1,18 +1,24 @@
 /** Formatting helpers shared by the pages. */
+import i18n, { LANGUAGE_BY_CODE } from '../i18n'
+
+function activeLocale() {
+  const code = String(i18n.resolvedLanguage || i18n.language || 'en').split('-')[0]
+  return LANGUAGE_BY_CODE[code]?.bcp47 || 'en-IN'
+}
 
 export function formatNumber(value) {
-  return Number(value || 0).toLocaleString('en-IN')
+  return Number(value || 0).toLocaleString(activeLocale())
 }
 
 export function formatPercent(value, digits = 1) {
-  return `${Number(value || 0).toFixed(digits)}%`
+  return new Intl.NumberFormat(activeLocale(), { style: 'percent', maximumFractionDigits: digits, minimumFractionDigits: digits }).format(Number(value || 0) / 100)
 }
 
 export function formatDate(value) {
   if (!value) return '-'
   const date = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(date.getTime())) return String(value)
-  return date.toLocaleDateString('en-IN', {
+  return date.toLocaleDateString(activeLocale(), {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -23,7 +29,7 @@ export function formatDateTime(value) {
   if (!value) return '-'
   const date = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(date.getTime())) return String(value)
-  return date.toLocaleString('en-IN', {
+  return date.toLocaleString(activeLocale(), {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -33,9 +39,9 @@ export function formatDateTime(value) {
 }
 
 export function formatApaar(value) {
-  const digits = String(value || '').replace(/\D/g, '')
-  if (digits.length !== 12) return value || '-'
-  return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8)}`
+  // APAAR IDs are identifiers, not display data. No web screen may reveal one
+  // in full: only a masked form is ever returned to the view or to TTS.
+  return maskApaar(value)
 }
 
 export function maskApaar(value) {

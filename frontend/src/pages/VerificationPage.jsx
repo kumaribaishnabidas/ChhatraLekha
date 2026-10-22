@@ -11,14 +11,14 @@ function VerdictBanner({ result }) {
   return (
     <div
       className={`rounded-2xl p-5 ${
-        valid ? 'bg-[#E2F6EC] text-[#0A6B3D]' : 'bg-[#FDE7E7] text-crimson'
+        valid ? 'bg-success-surface text-success-strong' : 'bg-danger-surface text-danger-strong'
       }`}
     >
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-lg font-extrabold">
           {valid ? 'Credential verified' : 'Credential could not be verified'}
         </span>
-        <Badge className={valid ? 'bg-white/70 text-[#0A6B3D]' : 'bg-white/70 text-crimson'}>
+        <Badge className={valid ? 'bg-surface/70 text-success-strong' : 'bg-surface/70 text-danger-strong'}>
           {result.verdict}
         </Badge>
       </div>

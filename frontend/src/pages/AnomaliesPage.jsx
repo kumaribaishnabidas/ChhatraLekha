@@ -159,7 +159,7 @@ export default function AnomaliesPage() {
                           Start review
                         </button>
                       ) : (
-                        <Badge className="bg-[#E7EFFC] text-mid-blue">
+                        <Badge className="bg-info-surface text-info-strong">
                           {row.review_status}
                         </Badge>
                       )}

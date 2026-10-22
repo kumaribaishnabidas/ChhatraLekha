@@ -65,6 +65,20 @@ async def lifespan(app: FastAPI):
                 summary["students"],
                 summary["anomalies"],
             )
+            # The demo accounts are useless without their password, and the
+            # operator has no other way to learn it. It is printed once, in the
+            # server log, and never in an HTTP response.
+            logger.warning(
+                "DEMO ACCOUNTS (in-memory demo data only, never a real "
+                "deployment):"
+            )
+            for email, role in summary.get("accounts", []):
+                logger.warning("    %-34s %s", email, role)
+            logger.warning(
+                "    password: %s   (from DEMO_PASSWORD; change it in "
+                "edusync/.env)",
+                summary["demo_password"],
+            )
 
     yield
     await mongo.disconnect()

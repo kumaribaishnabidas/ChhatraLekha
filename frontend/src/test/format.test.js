@@ -14,12 +14,12 @@ import {
 import { can, canAny, permissionsFor } from '../utils/permissions'
 
 describe('formatting', () => {
-  it('formats an APAAR ID in groups of four', () => {
-    expect(formatApaar('984210357890')).toBe('9842 1035 7890')
+  it('masks an APAAR ID rather than displaying it in full', () => {
+    expect(formatApaar('984210357890')).toBe('9842 **** ****')
   })
 
-  it('leaves a malformed APAAR ID alone', () => {
-    expect(formatApaar('12345')).toBe('12345')
+  it('does not expose malformed APAAR-like values either', () => {
+    expect(formatApaar('12345')).toBe('1234 **** ****')
   })
 
   it('masks everything but the first group', () => {
