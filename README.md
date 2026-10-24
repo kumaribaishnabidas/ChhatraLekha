@@ -563,18 +563,18 @@ Requirements: **JDK 17+**, Android SDK with **compileSdk 36**.
 
 ```powershell
 cd Acadentrix
-.\gradlew.bat testDebugUnitTest assembleDebug
+.\gradlew.bat :core:test assembleDebug
 ```
 
 or with the convenience launcher (pins JDK 17, sanitises PATH):
 
 ```powershell
 cd Acadentrix
-.\build.cmd testDebugUnitTest assembleDebug
+.\build.cmd :core:test assembleDebug   # 192 passed unit tests, builds app-debug.apk
 ```
 
 Artifacts land in `Acadentrix/app/build/outputs/apk/debug/app-debug.apk`, with the HTML test
-report at `Acadentrix/app/build/reports/tests/testDebugUnitTest/index.html`.
+report at `Acadentrix/core/build/reports/tests/test/index.html`.
 
 ---
 
