@@ -2,6 +2,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 import AppLayout from './components/layout/AppLayout'
+import PublicLayout from './components/layout/PublicLayout'
 import { useAuth } from './hooks/useAuth'
 import AnomaliesPage from './pages/AnomaliesPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
@@ -14,6 +15,14 @@ import StudentsPage from './pages/StudentsPage'
 import TokenVerificationPage from './pages/TokenVerificationPage'
 import UploadPage from './pages/UploadPage'
 import VerificationPage from './pages/VerificationPage'
+import LandingPage from './pages/LandingPage'
+import AboutPage from './pages/AboutPage'
+import FaqPage from './pages/FaqPage'
+import ContactPage from './pages/ContactPage'
+import ThankYouPage from './pages/ThankYouPage'
+import PrivacyPage from './pages/PrivacyPage'
+import TermsPage from './pages/TermsPage'
+import NotFoundPage from './pages/NotFoundPage'
 import { PERMISSIONS } from './utils/permissions'
 
 /** A route that requires a signed-in user. */
@@ -46,6 +55,17 @@ function Guarded({ permission, children }) {
 export default function App() {
   return (
     <Routes>
+      {/* Public Pages */}
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/faq" element={<FaqPage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/thank-you" element={<ThankYouPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+      </Route>
+
       <Route path="/login" element={<LoginPage />} />
       {/* Where the Google sign-in returns to. The tokens arrive in the URL
           fragment, which is never sent to a server. */}
@@ -126,6 +146,8 @@ export default function App() {
         />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
+      {/* Catch-all 404 */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }
