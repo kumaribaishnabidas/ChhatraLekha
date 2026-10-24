@@ -20,7 +20,7 @@ const FAQS = [
   },
   {
     q: 'Can the platform work offline?',
-    a: 'Yes. The Android application (Acadentrix) is fully offline-first. It packages Room database storage and an in-house dependency-free ISO/IEC 18004 QR encoder/decoder with Reed–Solomon error correction, allowing field inspectors to verify credentials without internet access.',
+    a: 'Yes. The Android application (Acadentrix) is fully offline-first. It packages Room database storage and an in-house dependency-free ISO/IEC 18004 QR encoder/decoder with Reed-Solomon error correction, allowing field inspectors to verify credentials without internet access.',
   },
   {
     q: 'Is real student data processed on this site?',

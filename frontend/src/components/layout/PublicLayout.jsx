@@ -31,7 +31,7 @@ export default function PublicLayout() {
       </a>
 
       {/* Public Header */}
-      <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-sm border-b border-line">
+      <header className="sticky top-0 z-40 bg-surface border-b border-line">
         <div className="mx-auto max-w-[1200px] px-5 py-3 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-3 no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
             <img
@@ -183,7 +183,7 @@ export default function PublicLayout() {
           type="button"
           onClick={scrollToTop}
           aria-label="Scroll back to top"
-          className="fixed bottom-6 right-6 z-30 p-3 rounded-full bg-surface border border-line text-ink shadow-md hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          className="fixed bottom-6 right-6 z-30 p-3 rounded bg-surface border border-line text-ink shadow-sm hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />

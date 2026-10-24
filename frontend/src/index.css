@@ -232,19 +232,12 @@
 
 @layer components {
   .card {
-    @apply bg-surface border border-line rounded-2xl;
-    box-shadow:
-      0 1px 2px var(--app-shadow),
-      0 8px 24px var(--app-shadow);
+    @apply bg-surface border border-line rounded;
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
-      transition-transform cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  .btn:hover:not(:disabled) {
-    @apply -translate-y-px;
+    @apply inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-sm font-semibold
+      cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-primary {
@@ -260,7 +253,7 @@
   }
 
   .btn-danger {
-    @apply bg-danger text-on-danger;
+    @apply bg-danger text-on-danger hover:bg-danger-strong;
   }
 
   .btn-ghost {
@@ -268,8 +261,8 @@
   }
 
   .input {
-    @apply w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-ink
-      placeholder:text-muted/70 focus:border-brand-bright focus:ring-4 focus:ring-brand-bright/10 focus:outline-none;
+    @apply w-full rounded border border-line bg-surface px-3 py-2 text-sm text-ink
+      placeholder:text-muted/70 focus:border-brand-bright focus:ring-1 focus:ring-brand-bright focus:outline-none;
   }
 
   .label {
@@ -277,7 +270,7 @@
   }
 
   .table-wrap {
-    @apply overflow-x-auto rounded-2xl border border-line bg-surface;
+    @apply overflow-x-auto rounded border border-line bg-surface;
   }
 
   .data-table {
@@ -301,6 +294,19 @@
    * payload (the CSV template, the audit chain).
    */
   .code-panel {
-    @apply mt-2 overflow-x-auto rounded-xl bg-surface-2 p-3 text-xs;
+    @apply mt-2 overflow-x-auto rounded bg-surface-2 p-3 text-xs;
+  }
+
+  /*
+   * Skeleton loader utility with reduced-motion support.
+   */
+  .skeleton {
+    @apply bg-surface-3 rounded animate-pulse;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none !important;
   }
 }

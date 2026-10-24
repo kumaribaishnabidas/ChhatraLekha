@@ -39,7 +39,7 @@ export function KpiCard({ label, value, hint, tone = 'default' }) {
 export function Badge({ children, className = '' }) {
   return (
     <span
-      className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-wide ${className}`}
+      className={`inline-block rounded px-2 py-0.5 text-[11px] font-bold tracking-wide ${className}`}
     >
       {children}
     </span>
@@ -56,12 +56,32 @@ export function Spinner({ label = 'Loading...' }) {
   )
 }
 
+export function Skeleton({ className = 'h-4 w-full' }) {
+  return <div className={`skeleton ${className}`} aria-hidden="true" />
+}
+
+export function TableSkeleton({ rows = 5, columns = 4 }) {
+  return (
+    <div className="table-wrap p-4" aria-busy="true">
+      <div className="flex flex-col gap-3">
+        {Array.from({ length: rows }).map((_, r) => (
+          <div key={r} className="flex gap-4">
+            {Array.from({ length: columns }).map((_, c) => (
+              <div key={c} className="skeleton h-5 flex-1" />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function ErrorState({ message, onRetry }) {
   const { t } = useTranslation()
   return (
     <div
       role="alert"
-      className="rounded-2xl border border-danger/30 bg-danger-surface p-5 text-sm text-danger-strong"
+      className="rounded border border-danger/30 bg-danger-surface p-5 text-sm text-danger-strong"
     >
       <p className="m-0 font-semibold">{t('common.errorTitle')}</p>
       <p className="m-0 mt-1">{message}</p>
@@ -76,7 +96,7 @@ export function ErrorState({ message, onRetry }) {
 
 export function EmptyState({ title, description, action }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-line bg-surface-2 p-10 text-center">
+    <div className="flex flex-col items-center gap-2 rounded border border-dashed border-line bg-surface-2 p-10 text-center">
       <p className="m-0 font-semibold text-navy">{title}</p>
       {description && <p className="m-0 text-sm text-muted">{description}</p>}
       {action}
@@ -115,3 +135,5 @@ export function Pagination({ page, pageCount, onChange }) {
 export function FilterBar({ children }) {
   return <div className="flex flex-wrap items-end gap-3 mb-4">{children}</div>
 }
+
+export { default as CopyButton, sanitizeCopyPayload } from './CopyButton'

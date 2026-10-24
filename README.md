@@ -18,7 +18,7 @@
 > large, risky change with no functional benefit. The user-facing text is
 > consistent everywhere.
 
-> **APAAR** — the **Automated Permanent Academic Account Registry**, issued under the
+> **APAAR** - the **Automated Permanent Academic Account Registry**, issued under the
 > Ministry of Education's *One Nation, One Student ID* initiative. It is the student's
 > academic passport: every enrolled student is issued a 12-digit APAAR ID that is
 > supposed to travel with them across institutions, employers and degree-awarding
@@ -517,7 +517,7 @@ proves the record behind it is the record that was sealed. The wire format is
 `<ALG>.<keyId>.<signature>`, so a legacy unkeyed SHA-256 seal, an HMAC seal
 and an offline-verifiable Ed25519 signature all coexist without breaking the
 badges already in circulation. The Android client renders the QR matrix with a
-**dependency-free ISO/IEC 18004 encoder and decoder** (Reed–Solomon error
+**dependency-free ISO/IEC 18004 encoder and decoder** (Reed-Solomon error
 correction included) on a Compose `Canvas`; the server uses the `qrcode`
 library and `reportlab` for the printed certificates.
 
@@ -541,8 +541,9 @@ cd edusync
 pip install -r requirements.txt
 cp .env.example .env            # then edit the secrets
 python -m app.scripts.seed
+python -m app.scripts.check_prod_settings # verify 12/12 production safety checks
 uvicorn app.main:app --reload
-pytest -q                       # 258 tests
+pytest -q                       # 262 passed
 ```
 
 ### The web frontend
@@ -550,8 +551,10 @@ pytest -q                       # 258 tests
 ```bash
 cd frontend
 npm install
-npm test                        # 44 tests
-npm run build
+npm test                        # 61 passed (including 7 design system lint tests)
+npm run i18n:check              # 13 locales, 257 keys each
+npm run check:links             # verified internal routes and static assets
+npm run build                   # route-level code splitting
 ```
 
 ### The Android client

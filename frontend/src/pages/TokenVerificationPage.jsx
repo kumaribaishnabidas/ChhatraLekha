@@ -57,7 +57,7 @@ export default function TokenVerificationPage() {
       {!loading && error && (
         <div
           role="alert"
-          className="rounded-2xl border border-danger/30 bg-danger-surface p-5 text-sm text-danger-strong"
+          className="rounded border border-danger/30 bg-danger-surface p-5 text-sm text-danger-strong"
         >
           <p className="m-0 font-semibold">The token could not be checked.</p>
           <p className="m-0 mt-1">{error}</p>
@@ -67,7 +67,7 @@ export default function TokenVerificationPage() {
       {!loading && !error && result && (
         <div className="grid gap-4">
           <div
-            className={`rounded-2xl p-5 ${
+            className={`rounded p-5 ${
               result.valid
                 ? 'bg-success-surface text-success-strong'
                 : 'bg-danger-surface text-danger-strong'
@@ -110,7 +110,7 @@ export default function TokenVerificationPage() {
           )}
 
           {result.notice && (
-            <p className="m-0 rounded-xl border border-line bg-surface p-4 text-sm text-muted">
+            <p className="m-0 rounded border border-line bg-surface p-4 text-sm text-muted">
               {result.notice}
             </p>
           )}

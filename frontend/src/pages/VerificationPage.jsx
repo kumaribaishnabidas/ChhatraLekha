@@ -10,7 +10,7 @@ function VerdictBanner({ result }) {
   const valid = result.verified
   return (
     <div
-      className={`rounded-2xl p-5 ${
+      className={`rounded p-5 ${
         valid ? 'bg-success-surface text-success-strong' : 'bg-danger-surface text-danger-strong'
       }`}
     >
@@ -137,7 +137,7 @@ export default function VerificationPage() {
           <p className="m-0 mb-2 text-sm font-semibold text-navy">Scan the APAAR QR badge</p>
           <video
             ref={videoRef}
-            className="w-full max-w-sm rounded-xl bg-black"
+            className="w-full max-w-sm rounded bg-black"
             playsInline
             muted
             aria-label="QR scanner"

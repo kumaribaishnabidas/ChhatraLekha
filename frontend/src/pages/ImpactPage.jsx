@@ -316,7 +316,7 @@ export default function ImpactPage() {
 
         <div className="flex flex-col gap-4">
           {applied && (
-            <div className="rounded-2xl border border-success/30 bg-success-surface p-5 text-success-strong">
+            <div className="rounded border border-success/30 bg-success-surface p-5 text-success-strong">
               <p className="m-0 font-extrabold">Correction applied</p>
               <p className="m-0 mt-1 text-sm">{applied.notice}</p>
               <p className="m-0 mt-2 text-xs">
@@ -332,7 +332,7 @@ export default function ImpactPage() {
               title="Impact preview"
               subtitle={`${preview.findings.length} finding(s), ${preview.checklist.length} task(s) to review`}
             >
-              <div className="mb-4 rounded-xl border border-brand-bright/30 bg-info-surface p-3 text-sm text-info-strong">
+              <div className="mb-4 rounded border border-brand-bright/30 bg-info-surface p-3 text-sm text-info-strong">
                 <strong>Preview only: nothing has been saved.</strong> No record has been
                 changed and no linked record has been touched. Review the findings, then
                 apply the correction if they are acceptable.
@@ -365,7 +365,7 @@ export default function ImpactPage() {
               ) : (
                 <ul className="m-0 p-0 list-none grid gap-3">
                   {preview.findings.map((finding) => (
-                    <li key={`${finding.rule_id}-${finding.title}`} className="rounded-xl border border-line p-3">
+                    <li key={`${finding.rule_id}-${finding.title}`} className="rounded border border-line p-3">
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge className={severityClass(finding.severity)}>
                           {finding.severity}
@@ -403,7 +403,7 @@ export default function ImpactPage() {
             ) : (
               <ul className="m-0 p-0 list-none grid gap-3">
                 {tasks.data.map((task) => (
-                  <li key={task.task_id} className="rounded-xl border border-line p-3">
+                  <li key={task.task_id} className="rounded border border-line p-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge className={severityClass(task.severity)}>{task.severity}</Badge>
                       <Badge className={CERTAINTY_CLASS[task.certainty] || CERTAINTY_CLASS.suspected}>

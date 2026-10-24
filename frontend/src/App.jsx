@@ -1,29 +1,34 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 import AppLayout from './components/layout/AppLayout'
 import PublicLayout from './components/layout/PublicLayout'
+import { Spinner } from './components/common'
 import { useAuth } from './hooks/useAuth'
-import AnomaliesPage from './pages/AnomaliesPage'
-import AuthCallbackPage from './pages/AuthCallbackPage'
-import DashboardPage from './pages/DashboardPage'
-import ImpactPage from './pages/ImpactPage'
-import InstitutionsPage from './pages/InstitutionsPage'
-import LoginPage from './pages/LoginPage'
-import ReportsPage from './pages/ReportsPage'
-import StudentsPage from './pages/StudentsPage'
-import TokenVerificationPage from './pages/TokenVerificationPage'
-import UploadPage from './pages/UploadPage'
-import VerificationPage from './pages/VerificationPage'
-import LandingPage from './pages/LandingPage'
-import AboutPage from './pages/AboutPage'
-import FaqPage from './pages/FaqPage'
-import ContactPage from './pages/ContactPage'
-import ThankYouPage from './pages/ThankYouPage'
-import PrivacyPage from './pages/PrivacyPage'
-import TermsPage from './pages/TermsPage'
-import NotFoundPage from './pages/NotFoundPage'
+import CookieNotice from './components/common/CookieNotice'
+import KeyboardShortcuts from './components/common/KeyboardShortcuts'
 import { PERMISSIONS } from './utils/permissions'
+
+const AnomaliesPage = lazy(() => import('./pages/AnomaliesPage'))
+const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'))
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const ImpactPage = lazy(() => import('./pages/ImpactPage'))
+const InstitutionsPage = lazy(() => import('./pages/InstitutionsPage'))
+const LoginPage = lazy(() => import('./pages/LoginPage'))
+const ReportsPage = lazy(() => import('./pages/ReportsPage'))
+const StudentsPage = lazy(() => import('./pages/StudentsPage'))
+const TokenVerificationPage = lazy(() => import('./pages/TokenVerificationPage'))
+const UploadPage = lazy(() => import('./pages/UploadPage'))
+const VerificationPage = lazy(() => import('./pages/VerificationPage'))
+const LandingPage = lazy(() => import('./pages/LandingPage'))
+const AboutPage = lazy(() => import('./pages/AboutPage'))
+const FaqPage = lazy(() => import('./pages/FaqPage'))
+const ContactPage = lazy(() => import('./pages/ContactPage'))
+const ThankYouPage = lazy(() => import('./pages/ThankYouPage'))
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
+const TermsPage = lazy(() => import('./pages/TermsPage'))
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 
 /** A route that requires a signed-in user. */
 function Protected({ children }) {
@@ -54,7 +59,10 @@ function Guarded({ permission, children }) {
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      <KeyboardShortcuts />
+      <Suspense fallback={<div className="min-h-[50vh] flex items-center justify-center p-8"><Spinner /></div>}>
+        <Routes>
       {/* Public Pages */}
       <Route element={<PublicLayout />}>
         <Route path="/" element={<LandingPage />} />
@@ -149,5 +157,8 @@ export default function App() {
       {/* Catch-all 404 */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </Suspense>
+    <CookieNotice />
+    </>
   )
 }
