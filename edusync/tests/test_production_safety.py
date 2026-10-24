@@ -187,3 +187,11 @@ def test_production_seeding_is_blocked_by_default():
 def test_production_seeding_can_be_switched_on_deliberately():
     settings = _production(allow_production_seed=True)
     assert settings.allow_production_seed is True
+
+
+def test_production_refuses_debug_true():
+    settings = _production(debug=True)
+    with pytest.raises(RuntimeError) as error:
+        settings.assert_production_safe()
+    assert "DEBUG=true is refused in production" in str(error.value)
+

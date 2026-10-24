@@ -2,7 +2,7 @@
 
 <img src="docs/assets/brand/edusync-lockup.png" alt="EduSynC" height="220" />
 
-# EduSynC
+# APAAR Verify (EduSynC codebase)
 
 **The APAAR ID Student Data Management &amp; Verification Platform**
 
