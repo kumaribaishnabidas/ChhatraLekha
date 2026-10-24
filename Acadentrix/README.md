@@ -116,7 +116,7 @@ behind a QR code is the record that was sealed.
 `core/qr/ApaarQrPayload.kt` builds a link that a scanner (or a human with the URL) can resolve:
 
 ```
-https://apaar.aicte-india.gov.in/verify?apaar=XXXX-XXXX-XXXX&inst=<pid>&prog=<code>&seal=<32hex>&t=<millis>
+https://edusync.vercel.app/verify?apaar=XXXX-XXXX-XXXX&inst=<pid>&prog=<code>&seal=<32hex>&t=<millis>
 ```
 
 The QR matrix itself is produced by `core/qr/QrEncoder.kt` — a **dependency-free ISO/IEC 18004

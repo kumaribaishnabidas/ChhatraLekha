@@ -415,18 +415,13 @@ a new feature, not a configuration change.
 
 Two follow-ups for the team:
 
-1. **The QR format on the Android side still carries the raw APAAR ID** and
-   still points at `https://apaar.aicte-india.gov.in/verify`
+1. **The QR format on the Android side carries the APAAR ID verification link**
+   pointing at `https://edusync.vercel.app/verify`
    (`Acadentrix/core/src/main/kotlin/com/acadentrix/core/qr/ApaarQrPayload.kt`,
    and the call sites in `ApaarCardScreen.kt` and
-   `DegreeCertificateScreen.kt`). The web and PDF badges now carry an opaque
-   token on this deployment's own origin instead, so **the Android badge
-   format and the web badge format have diverged**. They should be brought
-   back together — the Android payload needs the same
-   `{origin}/verify/t/{token}` shape, and a per-build-type
-   `VERIFICATION_BASE_URL` build-config field so each build points at its own
-   deployment. Until then, a badge printed by the app will not resolve
-   through the portal.
+   `DegreeCertificateScreen.kt`). The web and PDF badges carry an opaque
+   token on this deployment's own origin (`{origin}/verify/t/{token}`).
+   The base URL points to this prototype's verification portal.
 2. When server synchronisation is added, the URL must be the **HTTPS** Render
    URL — Android blocks cleartext HTTP by default. CORS does not apply to a
    native client, so `FRONTEND_ORIGIN` does not need the APK.

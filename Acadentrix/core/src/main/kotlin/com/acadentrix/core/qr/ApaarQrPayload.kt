@@ -8,7 +8,7 @@ package com.acadentrix.core.qr
  */
 object ApaarQrPayload {
 
-    const val BASE_URL = "https://apaar.aicte-india.gov.in/verify"
+    const val BASE_URL = "https://edusync.vercel.app/verify"
 
     data class Parsed(
         val apaarId: String,

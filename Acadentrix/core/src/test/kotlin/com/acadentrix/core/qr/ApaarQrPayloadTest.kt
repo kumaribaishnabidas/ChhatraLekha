@@ -40,7 +40,7 @@ class ApaarQrPayloadTest {
     @Test
     fun buildProducesTheCanonicalVerificationLink() {
         assertEquals(
-            "https://apaar.aicte-india.gov.in/verify?apaar=984210357890&inst=INST-0421" +
+            "https://edusync.vercel.app/verify?apaar=984210357890&inst=INST-0421" +
                 "&prog=BTECH_CSE&seal=$seal&t=$timestamp",
             payload()
         )
