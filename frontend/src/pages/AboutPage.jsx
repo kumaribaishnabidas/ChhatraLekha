@@ -4,7 +4,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 export default function AboutPage() {
   usePageMeta({
     title: 'About the Platform',
-    description: 'Overview of the EduSynC APAAR Verification architecture, Smart India Hackathon problem statement SIH26263, and Team Sentinals.',
+    description: 'Overview of the EduSynC APAAR Verification architecture, technical specifications, and system design.',
     canonical: '/about',
   })
 
@@ -12,7 +12,7 @@ export default function AboutPage() {
     <div className="mx-auto max-w-[900px] px-5 py-12 space-y-10">
       <div className="space-y-3">
         <div className="text-xs font-bold uppercase tracking-wider text-accent-strong">
-          Problem Statement SIH26263
+          Academic Record Verification
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-brand tracking-tight m-0">
           About EduSynC
@@ -23,7 +23,7 @@ export default function AboutPage() {
       </div>
 
       <div className="p-4 rounded border border-warning/40 bg-warning-surface text-warning-strong text-sm">
-        <strong>Notice:</strong> EduSynC is a competitive hackathon prototype developed by Team Sentinals. Verification performed through this site is checked against this prototype's synthetic database and is not official APAAR or AICTE verification.
+        <strong>Notice:</strong> EduSynC is an academic verification prototype. Verification performed through this site is checked against this prototype's synthetic database and is not official APAAR or AICTE verification.
       </div>
 
       <div className="space-y-6 text-sm sm:text-base leading-relaxed text-ink">
@@ -59,9 +59,9 @@ export default function AboutPage() {
         </section>
 
         <section className="space-y-3 pt-4 border-t border-line">
-          <h2 className="text-xl font-bold text-ink">Team Sentinals</h2>
+          <h2 className="text-xl font-bold text-ink">Project Information</h2>
           <p className="text-muted">
-            Developed for the Smart India Hackathon (SIH 2026). For queries regarding the system architecture or technical reports, visit our <Link to="/contact" className="text-brand font-medium">contact page</Link>.
+            Built as an academic record reconciliation and fraud prevention platform. For queries regarding the system architecture or technical reports, visit our <Link to="/contact" className="text-brand font-medium">contact page</Link>.
           </p>
         </section>
       </div>

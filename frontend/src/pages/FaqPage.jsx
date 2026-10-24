@@ -8,7 +8,7 @@ const FAQS = [
   },
   {
     q: 'What is EduSynC, and is this an official government registry?',
-    a: 'EduSynC is a prototype platform developed for the Smart India Hackathon (problem SIH26263). It is not an official AICTE or Ministry of Education service. Verification performed on this prototype is checked against its own demonstration database, not the national registry.',
+    a: 'EduSynC is an academic credential verification prototype. It is not an official AICTE or Ministry of Education service. Verification performed on this prototype is checked against its own demonstration database, not the national registry.',
   },
   {
     q: 'What does a public verification token disclose, and what is kept private?',

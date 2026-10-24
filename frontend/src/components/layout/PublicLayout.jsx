@@ -203,7 +203,7 @@ export default function PublicLayout() {
                 </span>
               </div>
               <p className="text-sm text-muted max-w-[50ch] mb-4">
-                Automated Permanent Academic Account Registry (APAAR) verification and reconciliation platform for AICTE-approved institutions (Smart India Hackathon).
+                Automated Permanent Academic Account Registry (APAAR) verification and reconciliation platform for AICTE-approved institutions.
               </p>
               <p className="text-xs text-muted/80">
                 Notice: Verification against this prototype's database, not official APAAR or AICTE verification. Synthetic demo records only.
@@ -213,7 +213,7 @@ export default function PublicLayout() {
             <div>
               <h3 className="text-sm font-bold text-ink uppercase tracking-wider mb-3">Navigation</h3>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/about" className="text-muted hover:text-brand no-underline">About SIH26263</Link></li>
+                <li><Link to="/about" className="text-muted hover:text-brand no-underline">About Platform</Link></li>
                 <li><Link to="/faq" className="text-muted hover:text-brand no-underline">Frequently Asked Questions</Link></li>
                 <li><Link to="/contact" className="text-muted hover:text-brand no-underline">Contact &amp; Issue Report</Link></li>
                 <li><Link to="/login" className="text-muted hover:text-brand no-underline">Sign In / Live Demo</Link></li>
@@ -231,7 +231,7 @@ export default function PublicLayout() {
 
           <div className="pt-6 border-t border-line flex flex-col sm:flex-row items-center justify-between text-xs text-muted gap-3">
             <p className="m-0">
-              &copy; {new Date().getFullYear()} Team Sentinals &middot; Smart India Hackathon 2026.
+              &copy; {new Date().getFullYear()} EduSynC. All rights reserved.
             </p>
             <p className="m-0 text-muted/80">
               No cookies for tracking &middot; Strict privacy &middot; Offline-first verified

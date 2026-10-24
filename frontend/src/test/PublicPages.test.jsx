@@ -27,7 +27,7 @@ describe('Public Pages', () => {
         <AboutPage />
       </MemoryRouter>,
     )
-    expect(screen.getByText(/Problem Statement SIH26263/i)).toBeInTheDocument()
+    expect(screen.getByText(/Academic Record Verification/i)).toBeInTheDocument()
     expect(screen.getByText(/About EduSynC/i)).toBeInTheDocument()
   })
 

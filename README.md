@@ -405,7 +405,7 @@ The client is **offline-first** and currently makes **no API call at all** —
 there is no HTTP client in it (no Retrofit, OkHttp or Ktor). It cannot talk to
 the Render backend, and nothing in the demo requires it to.
 
-**For the hackathon demo, share the APK.** Live backend connectivity would be
+**For demonstrations, share the APK.** Live backend connectivity would be
 a new feature, not a configuration change.
 
 * *Demo* — a signed release APK shared by link or QR code.

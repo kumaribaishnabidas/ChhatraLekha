@@ -4,7 +4,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 export default function ThankYouPage() {
   usePageMeta({
     title: 'Message Transmitted',
-    description: 'Confirmation that your inquiry has been received by Team Sentinals.',
+    description: 'Confirmation that your inquiry has been received by EduSynC.',
     noindex: true,
   })
 
@@ -22,7 +22,7 @@ export default function ThankYouPage() {
           Thank you, {name}!
         </h1>
         <p className="text-muted text-base leading-relaxed">
-          Your inquiry has been successfully transmitted to Team Sentinals. We review technical feedback and issue reports regularly during SIH 2026 evaluation.
+          Your inquiry has been successfully transmitted. We review technical feedback and issue reports regularly.
         </p>
       </div>
 

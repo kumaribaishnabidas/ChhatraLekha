@@ -4,7 +4,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 export default function LandingPage() {
   usePageMeta({
     title: 'Overview',
-    description: 'APAAR ID Student Data Management & Verification Platform for AICTE-approved institutions (Smart India Hackathon).',
+    description: 'APAAR ID Student Data Management & Verification Platform for AICTE-approved institutions.',
     canonical: '/',
   })
 
@@ -16,7 +16,7 @@ export default function LandingPage() {
           <div className="max-w-[70ch] space-y-5">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-accent/15 text-accent-strong border border-accent/30">
               <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-              Smart India Hackathon 2026 &middot; Problem SIH26263
+              Academic Credential Management &middot; Tamper-Evident Verification
             </div>
 
             <h1 className="text-3xl sm:text-5xl font-black text-brand tracking-tight leading-tight">

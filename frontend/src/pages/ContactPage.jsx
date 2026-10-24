@@ -5,12 +5,12 @@ import { usePageMeta } from '../hooks/usePageMeta'
 export default function ContactPage() {
   usePageMeta({
     title: 'Contact & Feedback',
-    description: 'Get in touch with Team Sentinals regarding the EduSynC prototype, bug reports, or feature requests.',
+    description: 'Get in touch regarding the EduSynC prototype, bug reports, or technical inquiries.',
     canonical: '/contact',
   })
 
   const navigate = useNavigate()
-  const contactEmail = import.meta.env.VITE_CONTACT_EMAIL || 'sentinals-sih@edusync.example'
+  const contactEmail = import.meta.env.VITE_CONTACT_EMAIL || 'contact@edusync.example'
   const contactAddress = import.meta.env.VITE_CONTACT_ADDRESS || ''
 
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
@@ -37,7 +37,7 @@ export default function ContactPage() {
     <div className="mx-auto max-w-[850px] px-5 py-12 space-y-8">
       <div className="space-y-3">
         <h1 className="text-3xl sm:text-4xl font-extrabold text-brand tracking-tight m-0">
-          Contact Team Sentinals
+          Contact Us
         </h1>
         <p className="text-base text-muted">
           Have questions regarding the EduSynC verification prototype or need to report a defect? Send us a note below.
@@ -93,7 +93,7 @@ export default function ContactPage() {
                 value={form.subject}
                 onChange={(e) => setForm({ ...form, subject: e.target.value })}
                 className="w-full px-3 py-2 rounded border border-line bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-brand text-sm"
-                placeholder="Inquiry / Feedback regarding SIH26263"
+                placeholder="Inquiry / Technical feedback"
               />
             </div>
 
@@ -142,7 +142,7 @@ export default function ContactPage() {
           <div className="p-5 rounded border border-line bg-surface-2 space-y-2">
             <h2 className="text-sm font-bold uppercase tracking-wider text-ink m-0">Prototype Status</h2>
             <p className="text-xs text-muted m-0">
-              Developed for AICTE SIH26263. Messages are reviewed by the engineering team.
+              Academic verification prototype. Messages are reviewed by the engineering team.
             </p>
           </div>
         </div>

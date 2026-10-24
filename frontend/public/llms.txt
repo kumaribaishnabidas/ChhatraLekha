@@ -3,7 +3,7 @@
 > Product Prototype: Verification against this prototype's database, not official APAAR or AICTE verification.
 
 ## Summary
-EduSynC is an academic credential verification and reconciliation platform developed for AICTE-approved institutions under Smart India Hackathon problem statement SIH26263. It automates APAAR (Automated Permanent Academic Account Registry) student record validation, anomaly detection, change impact analysis, and privacy-preserving credential verification.
+EduSynC is an academic credential verification and reconciliation platform developed for AICTE-approved institutions. It automates APAAR (Automated Permanent Academic Account Registry) student record validation, anomaly detection, change impact analysis, and privacy-preserving credential verification.
 
 ## Core Capabilities
 1. 10-Layer Anomaly Detection Engine: Deterministic rule-based validation checking format syntax, cross-institution duplicate enrollment, duplicate roll numbers, sanctioned intake ceilings, supernumerary quotas (NRI, OCI/FN, TFW, PMSSS), impossible dates, missing mandatory fields, and unsanctioned programmes.

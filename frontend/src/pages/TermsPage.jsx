@@ -23,7 +23,7 @@ export default function TermsPage() {
         <section className="space-y-2">
           <h2 className="text-lg font-bold text-ink">1. Acceptance of Prototype Conditions</h2>
           <p className="text-muted">
-            By accessing or interacting with the EduSynC demonstration portal, you acknowledge that this software is an architectural prototype created for technical review at Smart India Hackathon (SIH 2026).
+            By accessing or interacting with the EduSynC demonstration portal, you acknowledge that this software is an architectural prototype created for technical demonstration and evaluation.
           </p>
         </section>
 

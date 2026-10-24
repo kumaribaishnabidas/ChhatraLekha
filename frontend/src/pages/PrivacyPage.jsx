@@ -23,7 +23,7 @@ export default function PrivacyPage() {
         <section className="space-y-2">
           <h2 className="text-lg font-bold text-ink">1. Nature of the System</h2>
           <p className="text-muted">
-            EduSynC is a software prototype developed for the Smart India Hackathon (problem SIH26263). All citizen records, student enrollments, institution profiles, and anomaly markers stored within the system database are synthetic data generated for architectural validation.
+            EduSynC is a software verification prototype. All citizen records, student enrollments, institution profiles, and anomaly markers stored within the system database are synthetic data generated for architectural validation.
           </p>
         </section>
 
