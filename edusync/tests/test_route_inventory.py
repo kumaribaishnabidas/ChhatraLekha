@@ -81,9 +81,10 @@ def test_route_inventory_all_routes_are_protected_or_explicitly_public():
 
 
 async def test_security_headers_present_on_response(client):
-    """Responses must carry secure headers."""
+    """Responses must carry secure headers and request correlation ID."""
     response = await client.get("/api/health")
     assert response.status_code == 200
+    assert response.headers.get("X-Request-ID")
     assert response.headers.get("X-Content-Type-Options") == "nosniff"
     assert response.headers.get("X-Frame-Options") == "DENY"
     assert response.headers.get("Referrer-Policy") == "strict-origin-when-cross-origin"

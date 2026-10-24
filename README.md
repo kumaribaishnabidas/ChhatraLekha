@@ -159,7 +159,7 @@ APAAR QR badges, PDF certificates carrying the APAAR ID, CSV/PDF regulatory
 reports, an explainable per-institution risk score, versioned seat policy, and
 a hash-chained audit trail.
 
-**258 pytest tests, all passing.** See [`edusync/README.md`](edusync/README.md)
+**262 pytest tests, all passing.** See [`edusync/README.md`](edusync/README.md)
 and [`edusync/docs/architecture.md`](edusync/docs/architecture.md).
 
 #### Google sign-in
@@ -186,34 +186,37 @@ Requirements: **JDK 17+**, Android SDK with **compileSdk 36**.
 
 ```powershell
 cd Acadentrix
-.\gradlew.bat testDebugUnitTest assembleDebug
+.\gradlew.bat :core:test assembleDebug
 ```
 
 or with the convenience launcher (pins JDK 17, sanitises PATH):
 
 ```powershell
 cd Acadentrix
-.\build.cmd testDebugUnitTest assembleDebug
+.\build.cmd :core:test assembleDebug
 ```
 
-**Current status: 185 unit tests, 185 passing, 0 failing** — and the debug APK
-builds clean.
+**Current status: 204 unit tests, 204 passing, 0 failing** — and the debug APK
+builds clean (`app-debug.apk`).
 
 | Suite | Tests |
 | --- | --- |
-| `AnomalyEngineTest` | 40 |
-| `SignedSealTest` | 30 |
-| `CsvExportTest` | 19 |
-| `QrRoundTripTest` | 13 |
-| `CsvIngestionTest` | 13 |
+| `AnomalyEngineTest` | 39 |
+| `SignedSealTest` | 28 |
+| `CsvIngestionTest` | 21 |
+| `ApaarIdValidatorTest` | 15 |
+| `QrRoundTripTest` | 14 |
+| `CsvExportTest` | 13 |
+| `SealGeneratorTest` | 11 |
 | `ConsentPolicyTest` | 10 |
-| `AccessControlTest` | 9 |
-| `AuditChainTest` | 8 |
-| `ApaarIdValidatorTest` | 8 |
-| `SealGeneratorTest` | 6 |
-| `ApaarQrPayloadTest` | 6 |
-| `CredentialsTest` | 6 |
-| *(core module total)* | **185** |
+| `CredentialsTest` | 10 |
+| `ApaarQrPayloadTest` | 10 |
+| `EduSyncApiClientTest` | 9 |
+| `AuditChainTest` | 9 |
+| `AccessControlTest` | 8 |
+| `VoiceIntentMatcherTest` | 5 |
+| `PrivacyMaskTest` | 2 |
+| *(core module total)* | **204** |
 
 The `:core` Kotlin module holds the shared logic — the APAAR validator, the
 anomaly engine, the signed seal, the QR encoder/decoder and the CSV
@@ -236,7 +239,7 @@ docker compose up --build     # MongoDB + the API + the React frontend
 | Frontend (React 19 + Vite + Tailwind 4) | **Vercel** | Root directory `frontend/`, output `dist` |
 | Backend (FastAPI + Motor) | **Render** (web service) | `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, health check `/health` |
 | Database (MongoDB) | **MongoDB Atlas** | An Atlas cluster is a replica set, so multi-document transactions are available |
-| Android client (`Acadentrix/`) | Direct APK / Play Internal Testing | Offline-first; no API call yet (see below) |
+| Android client (`Acadentrix/`) | Direct APK / Play Internal Testing | Offline-capable with Room database, pure Java runtime HTTP client (`EduSyncApiClient`), two-way sync (`SyncManager`), and optimistic concurrency (HTTP 409 conflict handling) |
 
 The configuration files are [`render.yaml`](render.yaml) and
 [`frontend/vercel.json`](frontend/vercel.json).
