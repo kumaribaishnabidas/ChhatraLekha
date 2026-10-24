@@ -107,4 +107,37 @@ class ApaarQrPayloadTest {
             SealGenerator.verify(tampered, apaarId, institutionId, programId, academicYear, enrollmentDate)
         )
     }
+
+    @Test
+    fun buildTokenProducesTheCanonicalTokenUrl() {
+        val token = "tok_sec_984210357890_test"
+        val url = ApaarQrPayload.buildToken(token)
+        assertEquals("https://edusync.vercel.app/verify/t/tok_sec_984210357890_test", url)
+    }
+
+    @Test
+    fun parseExtractsOpaqueTokenPayloads() {
+        val token = "tok_sec_984210357890_test"
+        val parsedT = ApaarQrPayload.parse("https://edusync.vercel.app/verify/t/$token")
+        assertNotNull(parsedT)
+        assertTrue(parsedT?.isTokenPayload == true)
+        assertEquals(token, parsedT?.token)
+
+        val parsedToken = ApaarQrPayload.parse("https://edusync.vercel.app/verify/token/$token")
+        assertNotNull(parsedToken)
+        assertTrue(parsedToken?.isTokenPayload == true)
+        assertEquals(token, parsedToken?.token)
+    }
+
+    @Test
+    fun tokenPayloadSurvivesAQrRoundTrip() {
+        val tokenUrl = ApaarQrPayload.buildToken("tok_abc_123")
+        val matrix = QrEncoder.encode(tokenUrl)
+        val decoded = QrDecoder.decode(matrix)
+        assertEquals(tokenUrl, decoded)
+        val parsed = ApaarQrPayload.parse(decoded)
+        assertNotNull(parsed)
+        assertEquals("tok_abc_123", parsed?.token)
+    }
 }
+

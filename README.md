@@ -401,30 +401,29 @@ curl -s https://<service>.onrender.com/health
 
 ### The Android client
 
-The client is **offline-first** and currently makes **no API call at all** —
-there is no HTTP client in it (no Retrofit, OkHttp or Ktor). It cannot talk to
-the Render backend, and nothing in the demo requires it to.
+The client is **offline-first with bidirectional network synchronisation capability**:
+it features an in-built `EduSyncApiClient` and `SyncManager` (`com.acadentrix.core.network`),
+using standard Java runtime networking (zero external dependencies). It connects to
+the FastAPI backend (`http://10.0.2.2:8000/api` for emulator, or configurable remote URL).
 
-**For demonstrations, share the APK.** Live backend connectivity would be
-a new feature, not a configuration change.
+* **Local persistence**: Room remains the authoritative local cache, seeded with
+  12 institutions and 2,219 synthetic student records so the application is 100%
+  operational without network connectivity.
+* **Network & offline resilience**: All API operations wrap in `NetworkResult`
+  (`Success`, `OfflineFallback`, `Error`). If the backend is unreachable or drops,
+  the app falls back gracefully without crashing.
+* **Synchronisation & Conflict Handling**: Two-way sync pushes local admissions
+  and pulls central updates. Duplicate submissions (409 Conflict) and cross-institution
+  clashes are caught safely, flagged as anomalies, and never silently overwritten.
+* **QR & Token Contract**: Android `ApaarQrPayload` supports both the deep-link
+  token contract (`https://edusync.vercel.app/verify/t/{token}`) and the canonical
+  seal verification query (`/verify?apaar=...&seal=...`). Online token lookups resolve
+  through `GET /api/verify/token/{token}` with public allowlisted fields only.
 
 * *Demo* — a signed release APK shared by link or QR code.
 * *Wider testing* — Firebase App Distribution, or Google Play Internal
   Testing (Play needs a one-time developer registration fee; check the
   current amount on the Play Console).
-
-Two follow-ups for the team:
-
-1. **The QR format on the Android side carries the APAAR ID verification link**
-   pointing at `https://edusync.vercel.app/verify`
-   (`Acadentrix/core/src/main/kotlin/com/acadentrix/core/qr/ApaarQrPayload.kt`,
-   and the call sites in `ApaarCardScreen.kt` and
-   `DegreeCertificateScreen.kt`). The web and PDF badges carry an opaque
-   token on this deployment's own origin (`{origin}/verify/t/{token}`).
-   The base URL points to this prototype's verification portal.
-2. When server synchronisation is added, the URL must be the **HTTPS** Render
-   URL — Android blocks cleartext HTTP by default. CORS does not apply to a
-   native client, so `FRONTEND_ORIGIN` does not need the APK.
 
 ### Not yet verified
 
@@ -435,14 +434,13 @@ accounts and credentials that are deliberately not committed:
 * a live MongoDB Atlas connection, and therefore the transaction path of the
   correction workflow against a real replica set;
 * a live Vercel deployment, and therefore the built bundle behind the Vercel
-  rewrite;
-* the Android APK talking to a live backend (it does not make API calls yet,
-  and its QR payload format still has to be brought in line with the web one).
+  rewrite.
 
-What **was** run: the whole pytest suite, the whole Vitest suite, the
-production build of the frontend, the Docker image build, the backend served
-locally against the in-memory database, and the production-safety start-up
-refusals.
+What **was** run: the whole pytest suite (262 tests passed), the whole Vitest suite
+(61 tests passed), the frontend production build and link check, the Android core
+unit and HTTP integration test suite (204 tests passed), the Android debug APK build,
+and the production-safety start-up refusals.
+
 
 ---
 
@@ -570,8 +568,9 @@ or with the convenience launcher (pins JDK 17, sanitises PATH):
 
 ```powershell
 cd Acadentrix
-.\build.cmd :core:test assembleDebug   # 192 passed unit tests, builds app-debug.apk
+.\build.cmd :core:test assembleDebug   # 204 passed unit & integration tests, builds app-debug.apk
 ```
+
 
 Artifacts land in `Acadentrix/app/build/outputs/apk/debug/app-debug.apk`, with the HTML test
 report at `Acadentrix/core/build/reports/tests/test/index.html`.

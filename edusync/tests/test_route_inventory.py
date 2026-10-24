@@ -29,6 +29,7 @@ PUBLIC_ROUTE_PATHS = {
     "/api/auth/check-password",
     "/api/verify/token/{token}",
     "/api/verify/redirect/{apaar_id}",
+    "/api/verify/public-key",
 }
 
 

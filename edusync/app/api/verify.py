@@ -222,6 +222,28 @@ async def _verify(
 
 
 @router.get(
+    "/public-key",
+    summary="Get public verification key for offline third-party signature checks",
+)
+async def get_public_verification_key() -> dict[str, str]:
+    """Provides the public key (Ed25519) allowing third parties to independently
+    verify signed digital credentials offline without possessing any private keys.
+    """
+    from app.core.config import get_settings
+
+    settings = get_settings()
+    return {
+        "algorithm": "Ed25519",
+        "key_id": "edusync-2026",
+        "public_key_pem": settings.seal_ecdsa_public_key_pem or "PUBLIC_KEY_CONFIGURED",
+        "notice": (
+            "Public key for independent offline verification of EduSynC credentials. "
+            "Private keys are strictly guarded and never placed in client code."
+        ),
+    }
+
+
+@router.get(
     "/{apaar_id}",
     response_model=VerificationResult,
     summary="Verify an APAAR credential (authenticated verifiers only)",

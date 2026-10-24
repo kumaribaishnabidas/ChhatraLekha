@@ -21,9 +21,17 @@ import com.acadentrix.app.data.local.entity.AuditLogEntity
 import com.acadentrix.app.data.local.entity.InstitutionEntity
 import com.acadentrix.app.data.local.entity.ProgramIntakeEntity
 import com.acadentrix.app.data.local.entity.StudentEntity
+import com.acadentrix.core.network.EduSyncApiClient
+import com.acadentrix.core.network.NetworkResult
+import com.acadentrix.core.network.RemoteStudentDto
+import com.acadentrix.core.network.RemoteTokenVerification
+import com.acadentrix.core.network.SyncManager
+import com.acadentrix.core.network.SyncSummary
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 
 /**
  * Mediates every read and write against the local APAAR registry and keeps the
@@ -281,9 +289,111 @@ class ApaarRepository(private val database: ApaarDatabase) {
     suspend fun programsOf(institutionId: String): List<ProgramIntake> =
         programDao.getByInstitution(institutionId).map { it.toDomain() }
 
+    private val apiClient = EduSyncApiClient()
+    private val syncManager = SyncManager(apiClient)
+
+    /**
+     * Synchronizes local Room database with the remote EduSynC FastAPI server.
+     * Keeps Room as the authoritative local persistence layer and gracefully
+     * handles offline mode and conflicts.
+     */
+    suspend fun syncWithBackend(
+        baseUrl: String = EduSyncApiClient.DEFAULT_BASE_URL,
+        authToken: String? = null
+    ): SyncSummary = withContext(Dispatchers.IO) {
+        val localEntities = studentDao.getAll()
+        val localDtos = localEntities.map { entity ->
+            RemoteStudentDto(
+                recordId = entity.recordId.toString(),
+                apaarId = entity.apaarId,
+                studentName = entity.studentName,
+                dateOfBirth = entity.dateOfBirth,
+                gender = entity.gender,
+                institutionId = entity.institutionId,
+                programId = entity.programId,
+                academicYear = entity.academicYear,
+                admissionQuota = entity.admissionQuota,
+                enrollmentDate = entity.enrollmentDate,
+                studentInstituteRollNo = entity.studentInstituteRollNo,
+                nationality = entity.nationality,
+                passportNumber = entity.passportNumber,
+                visaValidity = entity.visaValidity,
+                countryOfOrigin = entity.countryOfOrigin,
+                verificationStatus = entity.verificationStatus,
+                isActive = entity.isActive
+            )
+        }
+
+        val summary = syncManager.performSync(
+            baseUrl = baseUrl,
+            authToken = authToken,
+            localStudents = localDtos
+        )
+
+        // If records were pulled, insert non-duplicates into Room
+        if (!summary.isOffline && summary.pulledCount > 0) {
+            val remoteResult = apiClient.fetchStudents(authToken, limit = 100, baseUrl = baseUrl)
+            if (remoteResult is NetworkResult.Success) {
+                val existingApaarIds = localEntities.map { it.apaarId }.toSet()
+                val toInsert = remoteResult.data
+                    .filter { it.apaarId !in existingApaarIds }
+                    .map { dto ->
+                        StudentEntity(
+                            apaarId = dto.apaarId,
+                            studentName = dto.studentName,
+                            dateOfBirth = dto.dateOfBirth,
+                            gender = dto.gender,
+                            institutionId = dto.institutionId,
+                            programId = dto.programId,
+                            academicYear = dto.academicYear,
+                            admissionQuota = dto.admissionQuota,
+                            enrollmentDate = dto.enrollmentDate,
+                            studentInstituteRollNo = dto.studentInstituteRollNo,
+                            nationality = dto.nationality,
+                            passportNumber = dto.passportNumber,
+                            visaValidity = dto.visaValidity,
+                            countryOfOrigin = dto.countryOfOrigin,
+                            abcAccountId = null,
+                            verificationStatus = dto.verificationStatus,
+                            isActive = dto.isActive,
+                            photoSeed = dto.apaarId.filter { it.isDigit() }.sumOf { it.digitToInt() } % 6
+                        )
+                    }
+                if (toInsert.isNotEmpty()) {
+                    studentDao.insertAll(toInsert)
+                    recomputeAnomalies()
+                }
+            }
+        }
+
+        auditDao.insert(
+            AuditLogEntity(
+                timestamp = System.currentTimeMillis(),
+                actor = "Android Sync Client",
+                action = if (summary.isOffline) "SYNC_OFFLINE" else "SYNC_COMPLETED",
+                subject = "National APAAR Registry",
+                details = summary.message,
+                category = if (summary.isOffline) "OFFLINE" else "SYNC"
+            )
+        )
+
+        summary
+    }
+
+    /**
+     * Verifies an opaque token online via the API, falling back gracefully if offline.
+     */
+    suspend fun verifyTokenRemote(
+        token: String,
+        baseUrl: String = EduSyncApiClient.DEFAULT_BASE_URL
+    ): NetworkResult<RemoteTokenVerification> = withContext(Dispatchers.IO) {
+        apiClient.verifyToken(token, baseUrl)
+    }
+
     private fun today(): String = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.ENGLISH)
         .format(java.util.Date())
 }
+
 
 data class BatchCommitResult(
     val committed: Int,
