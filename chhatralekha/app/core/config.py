@@ -107,6 +107,10 @@ class Settings(BaseSettings):
     # -------------------------------------------------------------- session
     session_cookie_name: str = "chhatralekha_session"
     session_max_age: int = 60 * 60 * 8
+    #: Whether the application should trust the reverse-proxy ``X-Forwarded-For``
+    #: header. This must remain off unless the deployment runs behind a trusted
+    #: proxy that strips spoofed values before they reach the app.
+    trust_forwarded_headers: bool = False
 
     # ----------------------------------------------------------- demo data
     #: The password given to the seeded demo accounts. When it is empty the

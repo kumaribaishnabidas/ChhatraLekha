@@ -153,6 +153,17 @@ async def get_principal(
                 detail="Invalid API key.",
                 headers={"WWW-Authenticate": "ApiKey"},
             )
+
+        owner_user_id = api_key.get("user_id")
+        if owner_user_id:
+            user = await repository.by_user_id(owner_user_id)
+            if user is None or not user.get("is_active", True):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="The API key owner account is not active.",
+                    headers={"WWW-Authenticate": "ApiKey"},
+                )
+
         principal = Principal(
             subject=api_key["key_id"],
             role=api_key.get("role", "institution_admin"),
@@ -224,8 +235,13 @@ def require_any_permission(*permissions: rbac.Permission):
 
 
 def client_ip(request: Request) -> Optional[str]:
-    """The caller's IP address, honouring a reverse proxy header."""
-    forwarded = request.headers.get("X-Forwarded-For")
+    """The caller's IP address.
+
+    ``X-Forwarded-For`` is treated as untrusted unless the deployment explicitly
+    enables it via ``TRUST_FORWARDED_HEADERS=true``. This prevents a client from
+    spoofing its IP in audit logs or rate-limit decisions.
+    """
+    forwarded = request.headers.get("X-Forwarded-For") if settings.trust_forwarded_headers else None
     if forwarded:
         return forwarded.split(",")[0].strip()
     return request.client.host if request.client else None

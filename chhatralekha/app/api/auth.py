@@ -269,10 +269,21 @@ async def google_callback(
     fragment = urlencode(
         {"access_token": access, "refresh_token": refresh, "role": account.get("role", "")}
     )
-    return RedirectResponse(
+    response = RedirectResponse(
         url=f"{settings.frontend_origin.rstrip('/')}/auth/callback#{fragment}",
         status_code=status.HTTP_307_TEMPORARY_REDIRECT,
     )
+    response.set_cookie(
+        google.STATE_COOKIE,
+        "",
+        max_age=0,
+        expires=0,
+        httponly=True,
+        samesite="lax",
+        secure=request.url.scheme == "https",
+        path="/",
+    )
+    return response
 
 
 def _google_redirect_uri(request: Request) -> str:
@@ -286,10 +297,21 @@ def _google_failure(request: Request, message: str) -> RedirectResponse:
     """Return the browser to the portal with an explanation."""
     logger.warning("Google sign-in failed: %s", message)
     fragment = urlencode({"error": message})
-    return RedirectResponse(
+    response = RedirectResponse(
         url=f"{settings.frontend_origin.rstrip('/')}/login#{fragment}",
         status_code=status.HTTP_307_TEMPORARY_REDIRECT,
     )
+    response.set_cookie(
+        google.STATE_COOKIE,
+        "",
+        max_age=0,
+        expires=0,
+        httponly=True,
+        samesite="lax",
+        secure=request.url.scheme == "https",
+        path="/",
+    )
+    return response
 
 
 async def users_repo_set_last_login(db, user_id: str) -> None:
