@@ -5,7 +5,7 @@ package com.acadentrix.core.network
  * Implements deduplication, duplicate conflict detection, and offline resilience.
  */
 class SyncManager(
-    private val apiClient: EduSyncApiClient = EduSyncApiClient()
+    private val apiClient: ChhatraLekhaApiClient = ChhatraLekhaApiClient()
 ) {
     enum class ConflictResolution {
         SERVER_WINS,

@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets
  * Uses zero third-party dependencies, leveraging standard Java runtime networking
  * to ensure deterministic, crash-free execution across all Android API levels.
  */
-class EduSyncApiClient(
+class ChhatraLekhaApiClient(
     val defaultBaseUrl: String = DEFAULT_BASE_URL,
     private val connectTimeoutMs: Int = 8000,
     private val readTimeoutMs: Int = 12000

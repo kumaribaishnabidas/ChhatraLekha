@@ -26,7 +26,7 @@ import com.acadentrix.core.validation.ApaarIdValidator
 import com.acadentrix.core.validation.DetectedAnomaly
 import com.acadentrix.core.validation.RegistrySnapshot
 import com.acadentrix.app.data.repository.ApaarRepository
-import com.acadentrix.core.network.EduSyncApiClient
+import com.acadentrix.core.network.ChhatraLekhaApiClient
 import com.acadentrix.core.network.NetworkResult
 import com.acadentrix.core.qr.ApaarQrPayload
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -647,7 +647,7 @@ class ApaarViewModel(private val repository: ApaarRepository) : ViewModel() {
 
      * Synchronizes local Room database with the remote ChhatraLekha backend.
      */
-    fun syncWithServer(baseUrl: String = EduSyncApiClient.DEFAULT_BASE_URL) {
+    fun syncWithServer(baseUrl: String = ChhatraLekhaApiClient.DEFAULT_BASE_URL) {
         viewModelScope.launch {
             controls.update { it.copy(working = true) }
             val summary = repository.syncWithBackend(baseUrl)

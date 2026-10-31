@@ -212,7 +212,7 @@ Outputs:
 
 | Suite | Tests | Covers |
 | --- | --- | --- |
-| `EduSyncApiClientTest` | 9 | Real HTTP request/response handling, token verification, conflict 409, offline fallback |
+| `ChhatraLekhaApiClientTest` | 9 | Real HTTP request/response handling, token verification, conflict 409, offline fallback |
 | `CsvIngestionTest` | 21 | Header/row validation, date normalisation, in-batch duplicate quarantine, impact summary |
 | `AnomalyEngineTest` | 16 | All anomaly layers, severity assignment, escalation, intake snapshots |
 | `SignedSealTest` | 24 | HMAC, ECDSA asymmetric signatures, tamper rejection, key ring |

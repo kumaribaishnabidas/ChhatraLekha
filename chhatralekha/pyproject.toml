@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "edusync"
+name = "chhatralekha"
 version = "1.0.0"
 description = "ChhatraLekha - APAAR ID Student Data Management & Verification Platform"
 requires-python = ">=3.11"

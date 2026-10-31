@@ -4,22 +4,22 @@ on:
   push:
     branches: [main]
     paths:
-      - "edusync/**"
+      - "chhatralekha/**"
       - "frontend/**"
       - "Acadentrix/**"
       - "docker-compose.yml"
-      - ".github/workflows/edusync.yml"
+      - ".github/workflows/chhatralekha.yml"
   pull_request:
     branches: [main]
     paths:
-      - "edusync/**"
+      - "chhatralekha/**"
       - "frontend/**"
       - "Acadentrix/**"
       - "docker-compose.yml"
-      - ".github/workflows/edusync.yml"
+      - ".github/workflows/chhatralekha.yml"
 
 concurrency:
-  group: edusync-${{ github.ref }}
+  group: chhatralekha-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: edusync
+        working-directory: chhatralekha
     strategy:
       fail-fast: false
       matrix:
@@ -43,7 +43,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-          cache-dependency-path: edusync/requirements.txt
+          cache-dependency-path: chhatralekha/requirements.txt
 
       - name: Install the dependencies
         run: |
@@ -63,7 +63,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pytest-report-python-${{ matrix.python-version }}
-          path: edusync/pytest-report.xml
+          path: chhatralekha/pytest-report.xml
           if-no-files-found: ignore
 
   frontend:
@@ -150,7 +150,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build the image
-        run: docker build -f edusync/Dockerfile -t edusync:${{ github.sha }} .
+        run: docker build -f chhatralekha/Dockerfile -t chhatralekha:${{ github.sha }} .
 
       - name: Start MongoDB and the API
         run: |

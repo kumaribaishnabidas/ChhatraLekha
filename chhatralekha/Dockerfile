@@ -31,7 +31,7 @@ RUN apt-get update \
     && apt-get install --no-install-recommends -y build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-COPY edusync/requirements.txt .
+COPY chhatralekha/requirements.txt .
 RUN python -m venv /opt/venv \
     && /opt/venv/bin/pip install --upgrade pip \
     && /opt/venv/bin/pip install -r requirements.txt
@@ -50,15 +50,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN apt-get update \
     && apt-get install --no-install-recommends -y libpq5 curl \
     && rm -rf /var/lib/apt/lists/* \
-    && useradd --create-home --uid 10001 edusync
+    && useradd --create-home --uid 10001 chhatralekha
 
 COPY --from=backend /opt/venv /opt/venv
 
 WORKDIR /app
-COPY --chown=edusync:edusync edusync/app ./app
-COPY --from=frontend --chown=edusync:edusync /build/dist /app/frontend/dist
+COPY --chown=chhatralekha:chhatralekha chhatralekha/app ./app
+COPY --from=frontend --chown=chhatralekha:chhatralekha /build/dist /app/frontend/dist
 
-USER edusync
+USER chhatralekha
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
