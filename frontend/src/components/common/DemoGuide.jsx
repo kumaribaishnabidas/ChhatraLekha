@@ -5,38 +5,60 @@ import { useAuth } from '../../hooks/useAuth'
 import { api } from '../../services/api'
 import { Badge } from './index'
 
-const DEMO_PERSONAS = [
-  {
-    key: 'aicte',
-    labelKey: 'demo.roleAicte',
-    email: 'aicte.admin@chhatralekha.gov.in',
-    role: 'aicte_admin',
-    target: '/dashboard',
-    badge: 'Directorate',
-  },
-  {
-    key: 'institution',
-    labelKey: 'demo.roleInstitution',
-    email: 'principal@vidyavikas.edu.in',
-    role: 'institution_admin',
-    target: '/institution',
-    badge: 'INST-0421',
-  },
+export const DEMO_PERSONAS = [
   {
     key: 'student',
-    labelKey: 'demo.roleStudent',
-    email: 'student@vidyavikas.edu.in',
+    role_key: 'student',
+    label: 'Student',
+    email: 'student.demo@example.com',
     role: 'student',
     target: '/me',
     badge: 'Student ID',
   },
   {
-    key: 'verifier',
-    labelKey: 'demo.roleVerifier',
-    email: 'verifier@acme-corp.com',
-    role: 'verifier',
-    target: '/verify',
-    badge: 'Verifier',
+    key: 'parent',
+    role_key: 'parent',
+    label: 'Parent',
+    email: 'parent.demo@example.com',
+    role: 'parent',
+    target: '/parent',
+    badge: 'Parent Portal',
+  },
+  {
+    key: 'teacher',
+    role_key: 'teacher',
+    label: 'Teacher',
+    email: 'teacher.demo@example.com',
+    role: 'teacher',
+    target: '/teacher',
+    badge: 'Faculty',
+  },
+  {
+    key: 'school_admin',
+    role_key: 'school_admin',
+    label: 'School Admin',
+    email: 'schooladmin.demo@example.com',
+    role: 'institution_admin',
+    target: '/institution',
+    badge: 'School',
+  },
+  {
+    key: 'college_admin',
+    role_key: 'college_admin',
+    label: 'College Admin',
+    email: 'collegeadmin.demo@example.com',
+    role: 'institution_admin',
+    target: '/institution',
+    badge: 'College',
+  },
+  {
+    key: 'university_admin',
+    role_key: 'university_admin',
+    label: 'University Admin',
+    email: 'universityadmin.demo@example.com',
+    role: 'aicte_admin',
+    target: '/dashboard',
+    badge: 'National',
   },
 ]
 
@@ -50,18 +72,18 @@ export default function DemoGuide() {
   const handleSwitch = async (persona) => {
     try {
       setSwitching(true)
-      const res = await api.post('/auth/login', {
-        email: persona.email,
-        password: 'demo-password-2024',
+      // First attempt dedicated instant demo session endpoint
+      const res = await api.post('/auth/demo-login', {
+        role: persona.role_key,
       }).catch(async () => {
-        // Fallback demo password try
+        // Fallback to standard login
         return await api.post('/auth/login', {
           email: persona.email,
           password: 'Password@123',
         }).catch(async () => {
           return await api.post('/auth/login', {
             email: persona.email,
-            password: 'Test@1234',
+            password: 'ChhatraLekha2026!',
           })
         })
       })
@@ -71,7 +93,7 @@ export default function DemoGuide() {
         navigate(persona.target, { replace: true })
       }
     } catch {
-      // If server seed uses dynamic password, navigate to persona destination
+      // If server seed uses dynamic session, navigate to persona destination
       navigate(persona.target)
     } finally {
       setSwitching(false)
@@ -85,6 +107,7 @@ export default function DemoGuide() {
           <span className="font-bold uppercase tracking-wider text-accent text-[11px]">{t('demo.title')}</span>
           <span className="text-white/70">|</span>
           <span className="text-white/90">{user?.display_name || user?.email || 'Guest'}</span>
+          <span className="rounded bg-accent/20 text-accent px-1.5 py-0.5 text-[10px] font-bold">DEMO MODE</span>
         </div>
         <button
           type="button"
@@ -99,15 +122,18 @@ export default function DemoGuide() {
 
   return (
     <aside aria-label="Interactive Demo Guide" className="w-full bg-surface-2 border-b border-line px-4 py-2 text-xs">
-      <div className="mx-auto max-w-[1240px] flex flex-wrap items-center justify-between gap-3">
+      <div className="w-full flex flex-wrap items-center justify-between gap-3 px-2">
         <div className="flex items-center gap-2">
           <Badge className="bg-accent text-on-accent font-bold uppercase">{t('demo.title')}</Badge>
           <span className="text-muted hidden sm:inline">{t('demo.switchRole')}:</span>
+          <span className="rounded bg-accent/15 text-accent-strong border border-accent/30 px-1.5 py-0.5 text-[10px] font-bold">
+            DEMO DATA
+          </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">
           {DEMO_PERSONAS.map((p) => {
-            const active = user?.email === p.email || user?.role === p.role
+            const active = user?.email === p.email || (user?.role === p.role && (p.role !== 'institution_admin' || user?.institution_id === p.email.includes('school') ? 'SCH-DEL-001' : 'INST-0421'))
             return (
               <button
                 key={p.key}
@@ -116,11 +142,11 @@ export default function DemoGuide() {
                 onClick={() => handleSwitch(p)}
                 className={`px-2.5 py-1 rounded text-xs font-semibold cursor-pointer transition-colors ${
                   active
-                    ? 'bg-brand text-on-brand shadow-sm font-bold'
+                    ? 'bg-brand text-on-brand shadow-xs font-bold'
                     : 'bg-surface text-ink border border-line hover:border-brand'
                 }`}
               >
-                {t(p.labelKey)}
+                {p.label}
                 <span className="ml-1 opacity-75 text-[10px]">({p.badge})</span>
               </button>
             )

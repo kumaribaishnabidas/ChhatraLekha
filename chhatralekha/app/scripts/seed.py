@@ -92,11 +92,17 @@ STATES = [
 ]
 
 DEMO_USERS = [
-    ("aicte.admin@chhatralekha.gov.in", "Dr. Ananya Iyer", "aicte_admin", None),
-    ("principal@vidyavikas.edu.in", "Prof. Ramesh Kulkarni", "institution_admin", "INST-0421"),
-    ("principal@bhartiya.edu.in", "Prof. Sunil Mehta", "institution_admin", "INST-0422"),
-    ("verifier@acme-corp.com", "Maya Krishnan", "verifier", None),
-    ("student@vidyavikas.edu.in", "Aakash Verma", "student", None),
+    ("student.demo@example.com", "Aarav Sharma", "student", "INST-0421", "Student@Demo123"),
+    ("parent.demo@example.com", "Sunita Sharma", "parent", "INST-0421", "Parent@Demo123"),
+    ("teacher.demo@example.com", "Prof. Rajesh Kumar", "teacher", "INST-0421", "Teacher@Demo123"),
+    ("schooladmin.demo@example.com", "Principal Meera Nair", "institution_admin", "SCH-DEL-001", "School@Demo123"),
+    ("collegeadmin.demo@example.com", "Director Ramesh Kulkarni", "institution_admin", "INST-0421", "College@Demo123"),
+    ("universityadmin.demo@example.com", "Dr. Ananya Iyer", "aicte_admin", None, "University@Demo123"),
+    ("aicte.admin@chhatralekha.gov.in", "Dr. Ananya Iyer", "aicte_admin", None, None),
+    ("principal@vidyavikas.edu.in", "Prof. Ramesh Kulkarni", "institution_admin", "INST-0421", None),
+    ("principal@bhartiya.edu.in", "Prof. Sunil Mehta", "institution_admin", "INST-0422", None),
+    ("verifier@acme-corp.com", "Maya Krishnan", "verifier", None, None),
+    ("student@vidyavikas.edu.in", "Aakash Verma", "student", None, None),
 ]
 
 #: The published AICTE Approval Process Handbook ceilings, stored as a
@@ -160,7 +166,7 @@ def _collection(db, name: str):
     return db[name]
 
 
-async def seed(student_count: int = 2219, reset: bool = True) -> dict:
+async def seed(student_count: int = 5000, reset: bool = True) -> dict:
     """Populate the registry with the synthetic demo dataset."""
     from app.core.database import mongo
 
@@ -513,9 +519,16 @@ async def seed(student_count: int = 2219, reset: bool = True) -> dict:
         }
     )
 
+    # Ensure at least student_count synthetic records are generated
+    cycle_prog = 0
+    while len(students) < student_count and programmes:
+        _add(programmes[cycle_prog % len(programmes)], AdmissionQuota.MERIT)
+        cycle_prog += 1
+
     for student in students:
         student.setdefault("apaar_id_hmac", match_token(student.get("apaar_id")))
         student.setdefault("version", 1)
+        student.setdefault("is_demo", True)
     await db["students"].insert_many(students)
 
     # ------------------------------------ the change-impact demo scenarios
@@ -523,20 +536,24 @@ async def seed(student_count: int = 2219, reset: bool = True) -> dict:
 
     # ---------------------------------------------------------------- users
     password = _demo_password()
-    users = [
-        {
-            "user_id": f"USR-{index:02d}-{role.upper().replace('_', '-')}",
-            "email": email,
-            "full_name": full_name,
-            "role": role,
-            "institution_id": institution_id,
-            "password_hash": hash_password(password),
-            "is_active": True,
-        }
-        for index, (email, full_name, role, institution_id) in enumerate(
-            DEMO_USERS, start=1
+    users = []
+    for index, entry in enumerate(DEMO_USERS, start=1):
+        email = entry[0]
+        full_name = entry[1]
+        role = entry[2]
+        institution_id = entry[3]
+        user_pw = entry[4] if len(entry) > 4 and entry[4] else password
+        users.append(
+            {
+                "user_id": f"USR-{index:02d}-{role.upper().replace('_', '-')}",
+                "email": email,
+                "full_name": full_name,
+                "role": role,
+                "institution_id": institution_id,
+                "password_hash": hash_password(user_pw),
+                "is_active": True,
+            }
         )
-    ]
     await db["users"].insert_many(users)
 
     # ------------------------------------------------------------- policy
@@ -569,7 +586,7 @@ async def seed(student_count: int = 2219, reset: bool = True) -> dict:
         "students": len(students),
         "anomalies": len(anomalies),
         "users": len(users),
-        "accounts": [(email, role) for email, _, role, _ in DEMO_USERS],
+        "accounts": [(entry[0], entry[2]) for entry in DEMO_USERS],
         "scenarios": scenarios,
         "demo_password": password,
         "api_key": api_key_plain,
@@ -741,7 +758,7 @@ async def _seed_impact_scenarios(
 
 async def main() -> None:
     parser = argparse.ArgumentParser(description="Seed the ChhatraLekha registry.")
-    parser.add_argument("--students", type=int, default=2219)
+    parser.add_argument("--students", type=int, default=5000)
     parser.add_argument("--no-reset", action="store_true")
     args = parser.parse_args()
 
