@@ -84,6 +84,15 @@ async def lifespan(app: FastAPI):
     await mongo.disconnect()
 
 
+if settings.is_production:
+    _docs_url = None
+    _redoc_url = None
+    _openapi_url = None
+else:
+    _docs_url = "/docs"
+    _redoc_url = "/redoc"
+    _openapi_url = "/openapi.json"
+
 app = FastAPI(
     title="EduSynC - APAAR ID Platform",
     description=(
@@ -93,18 +102,33 @@ app = FastAPI(
     ),
     version="2.0.0",
     lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc",
-    openapi_url="/openapi.json",
+    docs_url=_docs_url,
+    redoc_url=_redoc_url,
+    openapi_url=_openapi_url,
 )
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "no-referrer")
+    response.headers.setdefault("Permissions-Policy", "camera=(self), microphone=(self), geolocation=()")
+    if settings.is_production:
+        response.headers.setdefault(
+            "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+        )
+    return response
+
 
 for router in ALL_ROUTERS:
     app.include_router(router, prefix=settings.api_prefix)

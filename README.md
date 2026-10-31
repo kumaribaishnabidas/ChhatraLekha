@@ -2,7 +2,7 @@
 
 <img src="docs/assets/brand/edusync-lockup.png" alt="EduSynC" height="220" />
 
-# EduSynC
+# APAAR Verify (EduSynC codebase)
 
 **The APAAR ID Student Data Management &amp; Verification Platform**
 
@@ -555,7 +555,7 @@ pytest -q                       # 258 tests
 ```bash
 cd frontend
 npm install
-npm test                        # 44 tests
+npm test                        # 48 tests
 npm run build
 ```
 
