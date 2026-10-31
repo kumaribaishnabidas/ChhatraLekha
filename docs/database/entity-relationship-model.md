@@ -87,13 +87,18 @@ erDiagram
 - `status`: Enum (`INVITED`, `ACTIVE`, `SUSPENDED`, `ALUMNI`).
 - `start_date`: Date.
 
-### 4. `ROLE_AND_PERMISSION`
-- `role_id` (PK): Role name string.
+### 4. `ROLE`
+- `role_id` (PK): Role name string (e.g. `STUDENT`, `PARENT`, `TEACHER`, `INSTITUTION_ADMIN`, `SUPPORT_STAFF`).
 - `display_name`: Human-readable label.
-- `scopes`: List of permitted operation strings (`attendance:record`, `marks:enter`, etc.).
-- `is_system_role`: Boolean.
+- `description`: Textual summary of role scope.
+- `is_system_role`: Boolean flag for protected platform roles.
 
-### 5. `STUDENT_PROFILE`
+### 5. `PERMISSION`
+- `permission_key` (PK): Granular scope string (e.g., `attendance:record`, `marks:moderate`, `records:view`).
+- `module`: Target module boundary (e.g., `Academics`, `Attendance`, `Examinations`).
+- `description`: Textual explanation of authorization grant.
+
+### 6. `STUDENT_PROFILE`
 - `student_id` (PK): Unique student profile ID (`STU-XXXX`).
 - `user_id` (FK, Nullable): Linked user account once claimed.
 - `student_name`: String.
@@ -103,7 +108,7 @@ erDiagram
 - `apaar_id_hmac`: SHA-256 HMAC for internal matching.
 - `social_category`: Enum (`GENERAL`, `OBC`, `SC`, `ST`, `EWS`).
 
-### 6. `STAFF_PROFILE`
+### 7. `STAFF_PROFILE`
 - `staff_id` (PK): Staff profile ID (`STF-XXXX`).
 - `user_id` (FK): Linked user account.
 - `institution_id` (FK): Employer institution.
@@ -111,7 +116,7 @@ erDiagram
 - `department_id`: Nullable FK (`DEPARTMENT.department_id`).
 - `is_active`: Boolean.
 
-### 7. `GUARDIAN_RELATIONSHIP`
+### 8. `GUARDIAN_RELATIONSHIP`
 - `relationship_id` (PK): Relationship ID (`REL-XXXX`).
 - `guardian_user_id` (FK): Parent/Guardian user ID.
 - `student_id` (FK): Student profile ID.
@@ -119,7 +124,7 @@ erDiagram
 - `verification_status`: Enum (`PENDING`, `VERIFIED`, `REJECTED`, `REVOKED`).
 - `verified_by_staff_id`: Nullable staff ID.
 
-### 8. `ACADEMIC_YEAR`
+### 9. `ACADEMIC_YEAR`
 - `year_id` (PK): Academic year ID (`AY-2024-25`).
 - `institution_id` (FK): Institution identifier.
 - `label`: String (`"2024-25"`).
@@ -127,37 +132,37 @@ erDiagram
 - `end_date`: Date.
 - `is_current`: Boolean.
 
-### 9. `DEPARTMENT`
+### 10. `DEPARTMENT`
 - `department_id` (PK): Department ID (`DEPT-CSE`).
 - `institution_id` (FK): Institution identifier.
 - `name`: String (`"Computer Science & Engineering"`).
 - `head_of_department_id`: Nullable staff ID.
 
-### 10. `PROGRAMME`
+### 11. `PROGRAMME`
 - `programme_id` (PK): Programme code (`BTECH_CSE`, `CLASS_10`).
 - `institution_id` (FK): Institution identifier.
 - `programme_name`: String.
 - `level`: Enum (`PRIMARY`, `SECONDARY`, `UG`, `PG`, `DIPLOMA`).
 - `approved_intake`: Integer sanctioned cap.
 
-### 11. `COURSE`
+### 12. `COURSE`
 - `course_id` (PK): Course identifier (`CS301`).
 - `programme_id` (FK): Programme identifier.
 - `title`: String (`"Database Systems"`).
 - `credits`: Float.
 
-### 12. `CLASS_GROUP`
+### 13. `CLASS_GROUP`
 - `class_id` (PK): Class group ID (`CLS-10A`, `CLS-CSE-SEM5`).
 - `institution_id` (FK): Institution identifier.
 - `academic_year_id` (FK): Academic year.
 - `name`: String (`"Grade 10 - Section A"`).
 
-### 13. `SECTION`
+### 14. `SECTION`
 - `section_id` (PK): Section ID (`SEC-A`).
 - `class_id` (FK): Class group ID.
 - `label`: String (`"A"`).
 
-### 14. `ENROLMENT`
+### 15. `ENROLMENT`
 - `enrolment_id` (PK): Enrolment ID (`ENR-XXXX`).
 - `student_id` (FK): Student profile ID.
 - `institution_id` (FK): Institution identifier.
@@ -168,7 +173,7 @@ erDiagram
 - `admission_quota`: Enum (`MERIT`, `MANAGEMENT`, `PMSSS`, `NRI`, `OCI`, `FN`, `TFW`).
 - `status`: Enum (`ACTIVE`, `TRANSFERRED`, `GRADUATED`, `WITHDRAWN`).
 
-### 15. `TEACHER_ASSIGNMENT`
+### 16. `TEACHER_ASSIGNMENT`
 - `assignment_id` (PK): Assignment ID (`TAS-XXXX`).
 - `staff_id` (FK): Faculty ID.
 - `class_id` (FK): Class group ID.
@@ -176,14 +181,14 @@ erDiagram
 - `academic_year_id` (FK): Academic year.
 - `is_class_teacher`: Boolean.
 
-### 16. `ATTENDANCE_RECORD`
+### 17. `ATTENDANCE_RECORD`
 - `record_id` (PK): Attendance entry ID (`ATT-REC-XXXX`).
 - `session_id` (FK): Attendance session ID.
 - `student_id` (FK): Student profile ID.
 - `status`: Enum (`PRESENT`, `ABSENT`, `LATE`, `EXCUSED`).
 - `recorded_at`: UTC Datetime.
 
-### 17. `ASSIGNMENT`
+### 18. `ASSIGNMENT`
 - `assignment_id` (PK): Assignment ID (`ASG-XXXX`).
 - `institution_id` (FK): Institution identifier.
 - `class_id` (FK): Class group ID.
@@ -193,7 +198,7 @@ erDiagram
 - `due_date`: UTC Datetime.
 - `max_marks`: Float.
 
-### 18. `SUBMISSION`
+### 19. `SUBMISSION`
 - `submission_id` (PK): Submission ID (`SUB-XXXX`).
 - `assignment_id` (FK): Assignment ID.
 - `student_id` (FK): Student profile ID.
@@ -202,7 +207,7 @@ erDiagram
 - `marks_awarded`: Nullable Float.
 - `feedback`: Nullable Text.
 
-### 19. `ASSESSMENT`
+### 20. `ASSESSMENT`
 - `assessment_id` (PK): Assessment ID (`ASM-XXXX`).
 - `institution_id` (FK): Institution identifier.
 - `class_id` (FK): Class group ID.
@@ -211,7 +216,7 @@ erDiagram
 - `max_marks`: Float.
 - `moderation_status`: Enum (`DRAFT`, `SUBMITTED`, `MODERATED`, `APPROVED`, `PUBLISHED`).
 
-### 20. `RESULT`
+### 21. `RESULT`
 - `result_id` (PK): Result record ID (`RES-XXXX`).
 - `student_id` (FK): Student profile ID.
 - `academic_year_id` (FK): Academic year ID.
@@ -219,7 +224,7 @@ erDiagram
 - `cgpa`: Float.
 - `publication_token`: Opaque verification string.
 
-### 21. `ANNOUNCEMENT`
+### 22. `ANNOUNCEMENT`
 - `announcement_id` (PK): Notice ID (`ANC-XXXX`).
 - `institution_id` (FK): Institution identifier.
 - `title`: String.
@@ -227,7 +232,7 @@ erDiagram
 - `audience`: Enum (`ALL`, `STUDENTS`, `TEACHERS`, `PARENTS`).
 - `published_at`: UTC Datetime.
 
-### 22. `NOTIFICATION`
+### 23. `NOTIFICATION`
 - `notification_id` (PK): Notification ID (`NTF-XXXX`).
 - `user_id` (FK): Recipient user ID.
 - `title`: String.
@@ -235,14 +240,14 @@ erDiagram
 - `category`: Enum (`ATTENDANCE`, `EXAMINATION`, `ASSIGNMENT`, `NOTICE`).
 - `is_read`: Boolean.
 
-### 23. `DOCUMENT`
+### 24. `DOCUMENT`
 - `document_id` (PK): Document ID (`DOC-XXXX`).
 - `student_id` (FK): Student profile ID.
 - `document_type`: Enum (`MARKSHEET`, `DEGREE`, `BONAFIDE_CERTIFICATE`, `TRANSFER_CERTIFICATE`).
 - `storage_path`: Private object storage path.
 - `verification_token`: Opaque revocable cryptographic token.
 
-### 24. `CONSENT_RECORD`
+### 25. `CONSENT_RECORD`
 - `consent_id` (PK): Consent ID (`CST-XXXX`).
 - `student_id` (FK): Student profile ID.
 - `authorized_entity`: String.
@@ -250,7 +255,7 @@ erDiagram
 - `granted_at`: UTC Datetime.
 - `revoked_at`: Nullable UTC Datetime.
 
-### 25. `AUDIT_EVENT`
+### 26. `AUDIT_EVENT`
 - `event_id` (PK): Audit log ID (`AUD-XXXX`).
 - `institution_id` (FK, Nullable): Associated institution context.
 - `actor`: User ID or system identifier.
