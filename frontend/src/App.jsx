@@ -38,6 +38,8 @@ const AnnouncementsPage = lazy(() => import('./pages/AnnouncementsPage'))
 const AssessmentsPage = lazy(() => import('./pages/AssessmentsPage'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage'))
+const EarlyAccessPage = lazy(() => import('./pages/EarlyAccessPage'))
+const HelpPage = lazy(() => import('./pages/HelpPage'))
 const FaqPage = lazy(() => import('./pages/FaqPage'))
 const ContactPage = lazy(() => import('./pages/ContactPage'))
 const ThankYouPage = lazy(() => import('./pages/ThankYouPage'))
@@ -103,6 +105,8 @@ export default function App() {
       <Route element={<PublicLayout />}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/early-access" element={<EarlyAccessPage />} />
+        <Route path="/help" element={<HelpPage />} />
         <Route path="/faq" element={<FaqPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/thank-you" element={<ThankYouPage />} />

@@ -68,6 +68,26 @@ export default function PublicLayout() {
               About
             </NavLink>
             <NavLink
+              to="/early-access"
+              className={({ isActive }) =>
+                `text-sm font-medium transition-colors no-underline ${
+                  isActive ? 'text-brand font-semibold' : 'text-muted hover:text-ink'
+                }`
+              }
+            >
+              Early Access
+            </NavLink>
+            <NavLink
+              to="/help"
+              className={({ isActive }) =>
+                `text-sm font-medium transition-colors no-underline ${
+                  isActive ? 'text-brand font-semibold' : 'text-muted hover:text-ink'
+                }`
+              }
+            >
+              Help
+            </NavLink>
+            <NavLink
               to="/faq"
               className={({ isActive }) =>
                 `text-sm font-medium transition-colors no-underline ${
@@ -151,6 +171,20 @@ export default function PublicLayout() {
                 About
               </Link>
               <Link
+                to="/early-access"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2 text-sm font-medium text-ink hover:text-brand"
+              >
+                Early Access
+              </Link>
+              <Link
+                to="/help"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2 text-sm font-medium text-ink hover:text-brand"
+              >
+                Help Center
+              </Link>
+              <Link
                 to="/faq"
                 onClick={() => setMobileMenuOpen(false)}
                 className="py-2 text-sm font-medium text-ink hover:text-brand"
@@ -210,10 +244,10 @@ export default function PublicLayout() {
                 </span>
               </div>
               <p className="text-sm text-muted max-w-[50ch] mb-4">
-                Automated Permanent Academic Account Registry (APAAR) verification and reconciliation platform for AICTE-approved institutions.
+                Unified digital academic identity and operations platform for schools and colleges across India, connecting students, families, teachers, and verified institutions.
               </p>
               <p className="text-xs text-muted/80">
-                Notice: Verification against this prototype's database, not official APAAR or AICTE verification. Synthetic demo records only.
+                Notice: Educational prototype demonstration with synthetic records. Not affiliated with government registries.
               </p>
             </div>
 
@@ -221,6 +255,8 @@ export default function PublicLayout() {
               <h3 className="text-sm font-bold text-ink uppercase tracking-wider mb-3">Navigation</h3>
               <ul className="space-y-2 text-sm">
                 <li><Link to="/about" className="text-muted hover:text-brand no-underline">About Platform</Link></li>
+                <li><Link to="/early-access" className="text-muted hover:text-brand no-underline">Early Access Application</Link></li>
+                <li><Link to="/help" className="text-muted hover:text-brand no-underline">Help &amp; Support Center</Link></li>
                 <li><Link to="/faq" className="text-muted hover:text-brand no-underline">Frequently Asked Questions</Link></li>
                 <li><Link to="/contact" className="text-muted hover:text-brand no-underline">Contact &amp; Issue Report</Link></li>
                 <li><Link to="/login" className="text-muted hover:text-brand no-underline">Sign In / Live Demo</Link></li>

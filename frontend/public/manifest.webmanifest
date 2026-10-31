@@ -1,7 +1,7 @@
 {
-  "name": "ChhatraLekha - Authenticate, Verify, Empower",
+  "name": "ChhatraLekha - Unified Academic Operations & Identity Platform",
   "short_name": "ChhatraLekha",
-  "description": "APAAR ID student data management, validation and verification for AICTE-approved institutions.",
+  "description": "Free, privacy-first academic operations and digital identity platform for schools and colleges across India.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

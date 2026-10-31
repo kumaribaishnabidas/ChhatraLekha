@@ -35,6 +35,7 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-wrap gap-3">
               <Link to="/verify/t/demo" className="no-underline"><Button variant="accent">Verify a credential</Button></Link>
+              <Link to="/early-access" className="no-underline"><Button variant="secondary">Apply for early access</Button></Link>
               <Link to="/login" className="no-underline"><Button variant="primary">Sign in</Button></Link>
             </div>
             <p className="m-0 text-xs text-muted">Prototype only - not official government or registry verification.</p>
@@ -100,6 +101,7 @@ export default function LandingPage() {
             <p className="m-0 mt-2 text-sm text-muted">Try the prototype with a seeded demo account or scan a sample credential.</p>
           </div>
           <div className="flex flex-wrap gap-3">
+            <Link to="/early-access" className="no-underline"><Button variant="accent">Request early access</Button></Link>
             <Link to="/login" className="no-underline"><Button>Open the workspace</Button></Link>
             <Link to="/verify/t/demo" className="no-underline"><Button variant="secondary">Try verification</Button></Link>
           </div>
