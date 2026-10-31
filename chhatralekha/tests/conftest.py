@@ -43,6 +43,11 @@ COLLECTIONS = (
     "api_keys",
     "revoked_credentials",
     "submissions",
+    "claim_codes",
+    "uploads",
+    "results",
+    "notifications",
+    "verification_tokens",
 )
 
 #: The password hash of the test accounts, computed once for the whole suite.

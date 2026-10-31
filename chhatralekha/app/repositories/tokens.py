@@ -77,6 +77,7 @@ class VerificationTokenRepository:
         *,
         issued_by: str,
         minutes: int = 60,
+        allowed_fields: list[str] | None = None,
     ) -> tuple[Doc, str]:
         """Issue a token and return the stored document with the plaintext."""
         raw, token_hash = generate_token()
@@ -86,6 +87,7 @@ class VerificationTokenRepository:
             "token_hash": token_hash,
             "student_record_id": student_record_id,
             "claims_snapshot": claims_snapshot,
+            "allowed_fields": allowed_fields,
             "issued_at": now,
             "expires_at": now + timedelta(minutes=minutes),
             "revoked": False,

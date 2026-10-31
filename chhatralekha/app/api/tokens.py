@@ -58,6 +58,7 @@ def _token_out(row: Doc) -> TokenOut:
         revoked=bool(row.get("revoked")),
         needs_reissue=bool(row.get("needs_reissue")),
         issued_by=row.get("issued_by", ""),
+        allowed_fields=row.get("allowed_fields"),
     )
 
 
@@ -292,15 +293,21 @@ async def verify_token(
         ConsentPurpose.CREDENTIAL_VERIFICATION, consents
     )
 
+    allowed = document.get("allowed_fields")
+    inst_val = str(student.get("institution_id", "")) if (not allowed or "institution" in allowed) else ""
+    prog_val = str(student.get("program_id", "")) if (not allowed or "programme" in allowed) else ""
+    year_val = str(student.get("academic_year", "")) if (not allowed or "academic_year" in allowed) else ""
+    status_val = str(student.get("record_status", "ACTIVE")) if (not allowed or "status" in allowed) else ""
+
     return await _answer(
         True,
         "VALID",
         "The credential is present in this prototype's registry and is active."
         + (f" Consent: {decision.reason}" if not decision.allowed else ""),
-        record_status=str(student.get("record_status", "ACTIVE")),
-        institution=str(student.get("institution_id", "")),
-        programme=str(student.get("program_id", "")),
-        academic_year=str(student.get("academic_year", "")),
+        record_status=status_val,
+        institution=inst_val,
+        programme=prog_val,
+        academic_year=year_val,
         issued_at=document.get("issued_at"),
         expires_at=document.get("expires_at"),
     )

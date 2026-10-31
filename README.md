@@ -535,7 +535,7 @@ cp .env.example .env            # then edit the secrets
 python -m app.scripts.seed
 python -m app.scripts.check_prod_settings # verify 12/12 production safety checks
 uvicorn app.main:app --reload
-pytest -q                       # 271 passed
+pytest -q                       # 285 passed
 ```
 
 ### The web frontend
@@ -544,7 +544,7 @@ pytest -q                       # 271 passed
 cd frontend
 npm install
 npm test                        # 61 passed (including 7 design system lint tests)
-npm run i18n:check              # 13 locales, 336 keys each
+npm run i18n:check              # 13 locales, 417 keys each
 npm run check:links             # verified internal routes and static assets
 npm run build                   # route-level code splitting
 ```
