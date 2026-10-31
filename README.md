@@ -118,10 +118,7 @@ npm run dev      # http://localhost:5173, proxies /api to the backend
 npm run build    # production bundle, served by the backend from the same origin
 ```
 
-Eight pages: sign-in, the AICTE Directorate dashboard, institutions and their
-sanctioned capacity, the student register, the CSV batch uploader with a
-row-by-row validation preview, the anomaly inspector with a review workflow,
-the **change impact** page, the credential verifier, and the report centre.
+Dedicated pages: the AICTE Directorate dashboard, the **Institution Principal Dashboard** with review queue, the **Student Academic Wallet** with digital ID card and consent switches, institutions and their sanctioned capacity, the student register, the CSV batch uploader, **pluggable OCR document verification**, the anomaly inspector with a review workflow, the **change impact** page, the token credential verifier, the report centre, and an **interactive persona-guided tour**.
 
 ### 2. The Python backend (`chhatralekha/`)
 
@@ -153,7 +150,7 @@ APAAR QR badges, PDF certificates carrying the APAAR ID, CSV/PDF regulatory
 reports, an explainable per-institution risk score, versioned seat policy, and
 a hash-chained audit trail.
 
-**262 pytest tests, all passing.** See [`chhatralekha/README.md`](chhatralekha/README.md)
+**271 pytest tests, all passing.** See [`chhatralekha/README.md`](chhatralekha/README.md)
 and [`chhatralekha/docs/architecture.md`](chhatralekha/docs/architecture.md).
 
 #### Google sign-in
@@ -538,7 +535,7 @@ cp .env.example .env            # then edit the secrets
 python -m app.scripts.seed
 python -m app.scripts.check_prod_settings # verify 12/12 production safety checks
 uvicorn app.main:app --reload
-pytest -q                       # 262 passed
+pytest -q                       # 271 passed
 ```
 
 ### The web frontend
@@ -547,7 +544,7 @@ pytest -q                       # 262 passed
 cd frontend
 npm install
 npm test                        # 61 passed (including 7 design system lint tests)
-npm run i18n:check              # 13 locales, 257 keys each
+npm run i18n:check              # 13 locales, 336 keys each
 npm run check:links             # verified internal routes and static assets
 npm run build                   # route-level code splitting
 ```

@@ -15,10 +15,10 @@ Every command below has been executed on the local workspace and confirmed passi
 
 | Component | Test / Build Command | Result | Duration / Scope |
 | :--- | :--- | :--- | :--- |
-| **API Backend** | `pytest --tb=no` (in `chhatralekha/`) | **262 passed**, 0 failures, 1 warning | ~10.2s across 26 test suites |
+| **API Backend** | `pytest --tb=no` (in `chhatralekha/`) | **271 passed**, 0 failures, 1 warning | ~10.5s across 28 test suites |
 | **Frontend Unit Tests** | `npm.cmd test -- --run` (in `frontend/`) | **61 passed**, 0 failures | 8 test files, 19.88s |
-| **Frontend Route Links** | `npm.cmd run check:links` (in `frontend/`) | **Passed** | 19 declared router paths verified |
-| **Frontend Translations** | `npm.cmd run i18n:check` (in `frontend/`) | **Passed** | 13 languages, 257 translation keys |
+| **Frontend Route Links** | `npm.cmd run check:links` (in `frontend/`) | **Passed** | 21 declared router paths verified |
+| **Frontend Translations** | `npm.cmd run i18n:check` (in `frontend/`) | **Passed** | 13 languages, 336 translation keys |
 | **Frontend Production Build** | `npm.cmd run build` (in `frontend/`) | **Passed** | `dist/` bundle created in 11.07s |
 | **Android Core Unit Tests** | `.\gradlew.bat :core:test` (in `android/`) | **204 passed**, 0 failures | 15 test XML suites in 29s |
 | **Android Debug APK Build** | `.\gradlew.bat assembleDebug` (in `android/`) | **Passed** | `app-debug.apk` built (22.5 MB) |
@@ -64,10 +64,10 @@ Every command below has been executed on the local workspace and confirmed passi
 ### 3.3 Test Totals Alignment
 - **Discrepancy**: Prior notes in various drafts claimed conflicting test numbers (ranging from 160 to 250).
 - **Verified Ground Truth**:
-  - Backend pytest: **262 tests passed** (0 failures).
+  - Backend pytest: **271 tests passed** (0 failures).
   - Frontend vitest: **61 tests passed** (0 failures).
   - Android core unit tests: **204 tests passed** across 15 XML test suites (0 failures).
-  - Total automated unit/integration tests across the entire repository: **527 tests passed**.
+  - Total automated unit/integration tests across the entire repository: **536 tests passed**.
 
 ### 3.4 CI Pipeline Status
 - **Prior State**: `.github/workflows/chhatralekha.yml` tested only backend and frontend, omitting the Android app entirely and missing `android/**` in triggers.
