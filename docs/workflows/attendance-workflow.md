@@ -47,3 +47,4 @@ sequenceDiagram
    - A cryptographic audit event (`ATTENDANCE_CORRECTED`) is immediately logged.
 3. **Threshold Alerts:**
    - When a student's cumulative attendance drops below the institution threshold (typically 75%), automated warning notifications are flagged on both the student's personal dashboard and the verified parent portal.
+

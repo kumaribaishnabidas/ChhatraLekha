@@ -5,16 +5,46 @@
 
 ---
 
-## 1. Global Headers & Tenant Context
+## 1. Global Conventions, Headers & Versioning
 
-All authenticated requests to `/api/v1/` endpoints must supply:
+### 1.1 Versioning Strategy
+All APIs are versioned under `/api/v1/`. Breaking changes will be introduced under `/api/v2/` without altering active `/api/v1/` contracts.
 
+### 1.2 Global Request Headers
 | Header | Required | Example | Description |
 | :--- | :--- | :--- | :--- |
 | `Authorization` | Yes | `Bearer eyJhbGci...` | User JWT access token |
-| `X-Institution-ID` | Scoped | `INST-0421` | Active institution tenant context |
+| `X-Institution-ID` | Yes (for tenant routes) | `INST-0421` | Active institution tenant context |
 | `X-Request-ID` | No | `req_9a8b7c6d` | Distributed tracing identifier |
 | `Accept-Language` | No | `or`, `hi`, `en` | Preferred response localization |
+
+### 1.3 Pagination & Filtering Conventions
+- **Offset/Limit:** `?offset=0&limit=25` (Maximum limit: 100).
+- **Sorting:** `?sort=-created_at` (Prefix with `-` for descending).
+- **Search:** `?q=Sharma` (Case-insensitive substring / full-text match).
+- **Envelope Response:**
+  ```json
+  {
+    "items": [...],
+    "total": 1420,
+    "offset": 0,
+    "limit": 25,
+    "has_more": true
+  }
+  ```
+
+### 1.4 Standardized Error Handling (RFC 7807)
+All errors return consistent structure:
+```json
+{
+  "type": "https://chhatralekha.edu.in/errors/permission-denied",
+  "title": "Forbidden",
+  "status": 403,
+  "detail": "User lacks 'attendance:record' permission for INST-0421.",
+  "instance": "/api/v1/attendance/session/submit",
+  "request_id": "req_9a8b7c6d"
+}
+```
 
 ---
 

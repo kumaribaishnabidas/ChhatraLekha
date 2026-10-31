@@ -40,6 +40,10 @@ erDiagram
     ATTENDANCE_SESSION ||--o{ ATTENDANCE_RECORD : "records"
     STUDENT_PROFILE ||--o{ ATTENDANCE_RECORD : "status_for"
     
+    TEACHER_ASSIGNMENT ||--o{ ASSIGNMENT : "assigns"
+    ASSIGNMENT ||--o{ SUBMISSION : "receives"
+    STUDENT_PROFILE ||--o{ SUBMISSION : "submits"
+    
     TEACHER_ASSIGNMENT ||--o{ ASSESSMENT : "creates"
     ASSESSMENT ||--o{ ASSESSMENT_MARKS : "scores"
     STUDENT_PROFILE ||--o{ ASSESSMENT_MARKS : "awarded_to"
@@ -49,123 +53,217 @@ erDiagram
     INSTITUTION ||--o{ ANNOUNCEMENT : "publishes"
     USER ||--o{ NOTIFICATION : "receives"
     STUDENT_PROFILE ||--o{ VERIFIABLE_DOCUMENT : "owns"
-    
+    STUDENT_PROFILE ||--o{ CONSENT_RECORD : "grants"
     INSTITUTION ||--o{ AUDIT_EVENT : "logs"
 ```
 
 ---
 
-## 2. Core Entity Definitions & Schemas
+## 2. All 25 Required Domain Entities Specification
 
-### 2.1 Identity & Membership Domain
+### 1. `USER`
+- `user_id` (PK): Central account identifier (`USR-XXXX-XXXX`).
+- `email`: Indexed unique string.
+- `phone`: Nullable normalized phone number.
+- `password_hash`: String (bcrypt hashed).
+- `full_name`: String.
+- `preferred_language`: ISO code (`en`, `hi`, `or`, `ta`, etc.).
+- `is_active`: Boolean.
 
-#### `USER`
-- `user_id`: Primary Key (String `USR-XXXX-XXXX`)
-- `email`: Indexed unique string (lower-cased)
-- `phone`: Nullable string (+91 format)
-- `password_hash`: String (bcrypt hashed)
-- `full_name`: String
-- `preferred_language`: String (ISO-639-1 code e.g. `en`, `hi`, `or`, `ta`)
-- `is_active`: Boolean
-- `created_at`: UTC Datetime
-- `updated_at`: UTC Datetime
+### 2. `INSTITUTION`
+- `institution_id` (PK): Institution identifier (`INST-0421`, `SCH-DEL-001`).
+- `institution_name`: String.
+- `category`: Enum (`SCHOOL`, `COLLEGE`, `UNIVERSITY`, `DIRECTORATE`).
+- `kind`: Enum (`K12_SCHOOL`, `POLYTECHNIC`, `ENGINEERING`, `UNIVERSITY`).
+- `management_type`: Enum (`GOVERNMENT`, `GOVERNMENT_AIDED`, `PRIVATE_UNAIDED`).
+- `state`: String.
 
-#### `INSTITUTION_MEMBERSHIP`
-- `membership_id`: Primary Key (String `MEM-XXXX-XXXX`)
-- `user_id`: Foreign Key (`USER.user_id`)
-- `institution_id`: Foreign Key (`INSTITUTION.institution_id`)
-- `role`: Enum (`STUDENT`, `PARENT`, `TEACHER`, `SCHOOL_ADMIN`, `COLLEGE_ADMIN`, `UNIV_ADMIN`, `VERIFIER`)
-- `permissions`: Array of strings
-- `status`: Enum (`INVITED`, `ACTIVE`, `SUSPENDED`, `ALUMNI`, `WITHDRAWN`)
-- `start_date`: Date
-- `end_date`: Nullable Date
-- `metadata`: JSON object (Roll number, Staff ID, Department ID, Quota)
+### 3. `INSTITUTION_MEMBERSHIP`
+- `membership_id` (PK): Unique membership identifier (`MEM-XXXX`).
+- `user_id` (FK): Central user identity.
+- `institution_id` (FK): Tenant context.
+- `role`: Enum (`STUDENT`, `PARENT`, `TEACHER`, `SCHOOL_ADMIN`, `COLLEGE_ADMIN`, `UNIV_ADMIN`, `VERIFIER`).
+- `permissions`: Array of string keys.
+- `status`: Enum (`INVITED`, `ACTIVE`, `SUSPENDED`, `ALUMNI`).
+- `start_date`: Date.
 
-#### `GUARDIAN_RELATIONSHIP`
-- `relationship_id`: Primary Key (`REL-XXXX-XXXX`)
-- `guardian_user_id`: Foreign Key (`USER.user_id`)
-- `student_id`: Foreign Key (`STUDENT_PROFILE.student_id`)
-- `relationship_type`: Enum (`FATHER`, `MOTHER`, `LEGAL_GUARDIAN`, `OTHER`)
-- `verification_status`: Enum (`PENDING_VERIFICATION`, `VERIFIED`, `REJECTED`, `REVOKED`)
-- `verified_by_staff_id`: Nullable Foreign Key (`STAFF_PROFILE.staff_id`)
-- `verified_at`: Nullable UTC Datetime
+### 4. `ROLE_AND_PERMISSION`
+- `role_id` (PK): Role name string.
+- `display_name`: Human-readable label.
+- `scopes`: List of permitted operation strings (`attendance:record`, `marks:enter`, etc.).
+- `is_system_role`: Boolean.
+
+### 5. `STUDENT_PROFILE`
+- `student_id` (PK): Unique student profile ID (`STU-XXXX`).
+- `user_id` (FK, Nullable): Linked user account once claimed.
+- `student_name`: String.
+- `date_of_birth`: ISO Date string (`YYYY-MM-DD`).
+- `gender`: Enum (`MALE`, `FEMALE`, `OTHER`).
+- `apaar_id_masked`: Masked display format (`****-****-1234`).
+- `apaar_id_hmac`: SHA-256 HMAC for internal matching.
+- `social_category`: Enum (`GENERAL`, `OBC`, `SC`, `ST`, `EWS`).
+
+### 6. `STAFF_PROFILE`
+- `staff_id` (PK): Staff profile ID (`STF-XXXX`).
+- `user_id` (FK): Linked user account.
+- `institution_id` (FK): Employer institution.
+- `designation`: String (e.g. "Assistant Professor", "Senior Teacher").
+- `department_id`: Nullable FK (`DEPARTMENT.department_id`).
+- `is_active`: Boolean.
+
+### 7. `GUARDIAN_RELATIONSHIP`
+- `relationship_id` (PK): Relationship ID (`REL-XXXX`).
+- `guardian_user_id` (FK): Parent/Guardian user ID.
+- `student_id` (FK): Student profile ID.
+- `relationship_type`: Enum (`FATHER`, `MOTHER`, `LEGAL_GUARDIAN`).
+- `verification_status`: Enum (`PENDING`, `VERIFIED`, `REJECTED`, `REVOKED`).
+- `verified_by_staff_id`: Nullable staff ID.
+
+### 8. `ACADEMIC_YEAR`
+- `year_id` (PK): Academic year ID (`AY-2024-25`).
+- `institution_id` (FK): Institution identifier.
+- `label`: String (`"2024-25"`).
+- `start_date`: Date.
+- `end_date`: Date.
+- `is_current`: Boolean.
+
+### 9. `DEPARTMENT`
+- `department_id` (PK): Department ID (`DEPT-CSE`).
+- `institution_id` (FK): Institution identifier.
+- `name`: String (`"Computer Science & Engineering"`).
+- `head_of_department_id`: Nullable staff ID.
+
+### 10. `PROGRAMME`
+- `programme_id` (PK): Programme code (`BTECH_CSE`, `CLASS_10`).
+- `institution_id` (FK): Institution identifier.
+- `programme_name`: String.
+- `level`: Enum (`PRIMARY`, `SECONDARY`, `UG`, `PG`, `DIPLOMA`).
+- `approved_intake`: Integer sanctioned cap.
+
+### 11. `COURSE`
+- `course_id` (PK): Course identifier (`CS301`).
+- `programme_id` (FK): Programme identifier.
+- `title`: String (`"Database Systems"`).
+- `credits`: Float.
+
+### 12. `CLASS_GROUP`
+- `class_id` (PK): Class group ID (`CLS-10A`, `CLS-CSE-SEM5`).
+- `institution_id` (FK): Institution identifier.
+- `academic_year_id` (FK): Academic year.
+- `name`: String (`"Grade 10 - Section A"`).
+
+### 13. `SECTION`
+- `section_id` (PK): Section ID (`SEC-A`).
+- `class_id` (FK): Class group ID.
+- `label`: String (`"A"`).
+
+### 14. `ENROLMENT`
+- `enrolment_id` (PK): Enrolment ID (`ENR-XXXX`).
+- `student_id` (FK): Student profile ID.
+- `institution_id` (FK): Institution identifier.
+- `academic_year_id` (FK): Academic year ID.
+- `programme_id` (FK): Programme code.
+- `class_id` (FK): Class group ID.
+- `roll_number`: String (Unique per institution/programme/year).
+- `admission_quota`: Enum (`MERIT`, `MANAGEMENT`, `PMSSS`, `NRI`, `OCI`, `FN`, `TFW`).
+- `status`: Enum (`ACTIVE`, `TRANSFERRED`, `GRADUATED`, `WITHDRAWN`).
+
+### 15. `TEACHER_ASSIGNMENT`
+- `assignment_id` (PK): Assignment ID (`TAS-XXXX`).
+- `staff_id` (FK): Faculty ID.
+- `class_id` (FK): Class group ID.
+- `subject_id` (FK): Subject identifier.
+- `academic_year_id` (FK): Academic year.
+- `is_class_teacher`: Boolean.
+
+### 16. `ATTENDANCE_RECORD`
+- `record_id` (PK): Attendance entry ID (`ATT-REC-XXXX`).
+- `session_id` (FK): Attendance session ID.
+- `student_id` (FK): Student profile ID.
+- `status`: Enum (`PRESENT`, `ABSENT`, `LATE`, `EXCUSED`).
+- `recorded_at`: UTC Datetime.
+
+### 17. `ASSIGNMENT`
+- `assignment_id` (PK): Assignment ID (`ASG-XXXX`).
+- `institution_id` (FK): Institution identifier.
+- `class_id` (FK): Class group ID.
+- `subject_id` (FK): Subject identifier.
+- `title`: String.
+- `instructions`: Text.
+- `due_date`: UTC Datetime.
+- `max_marks`: Float.
+
+### 18. `SUBMISSION`
+- `submission_id` (PK): Submission ID (`SUB-XXXX`).
+- `assignment_id` (FK): Assignment ID.
+- `student_id` (FK): Student profile ID.
+- `submitted_at`: UTC Datetime.
+- `file_url`: String.
+- `marks_awarded`: Nullable Float.
+- `feedback`: Nullable Text.
+
+### 19. `ASSESSMENT`
+- `assessment_id` (PK): Assessment ID (`ASM-XXXX`).
+- `institution_id` (FK): Institution identifier.
+- `class_id` (FK): Class group ID.
+- `subject_id` (FK): Subject identifier.
+- `title`: String (`"Mid-Term Examination"`).
+- `max_marks`: Float.
+- `moderation_status`: Enum (`DRAFT`, `SUBMITTED`, `MODERATED`, `APPROVED`, `PUBLISHED`).
+
+### 20. `RESULT`
+- `result_id` (PK): Result record ID (`RES-XXXX`).
+- `student_id` (FK): Student profile ID.
+- `academic_year_id` (FK): Academic year ID.
+- `sgpa`: Float.
+- `cgpa`: Float.
+- `publication_token`: Opaque verification string.
+
+### 21. `ANNOUNCEMENT`
+- `announcement_id` (PK): Notice ID (`ANC-XXXX`).
+- `institution_id` (FK): Institution identifier.
+- `title`: String.
+- `content`: Text.
+- `audience`: Enum (`ALL`, `STUDENTS`, `TEACHERS`, `PARENTS`).
+- `published_at`: UTC Datetime.
+
+### 22. `NOTIFICATION`
+- `notification_id` (PK): Notification ID (`NTF-XXXX`).
+- `user_id` (FK): Recipient user ID.
+- `title`: String.
+- `message`: Text.
+- `category`: Enum (`ATTENDANCE`, `EXAMINATION`, `ASSIGNMENT`, `NOTICE`).
+- `is_read`: Boolean.
+
+### 23. `DOCUMENT`
+- `document_id` (PK): Document ID (`DOC-XXXX`).
+- `student_id` (FK): Student profile ID.
+- `document_type`: Enum (`MARKSHEET`, `DEGREE`, `BONAFIDE_CERTIFICATE`, `TRANSFER_CERTIFICATE`).
+- `storage_path`: Private object storage path.
+- `verification_token`: Opaque revocable cryptographic token.
+
+### 24. `CONSENT_RECORD`
+- `consent_id` (PK): Consent ID (`CST-XXXX`).
+- `student_id` (FK): Student profile ID.
+- `authorized_entity`: String.
+- `purpose`: String.
+- `granted_at`: UTC Datetime.
+- `revoked_at`: Nullable UTC Datetime.
+
+### 25. `AUDIT_EVENT`
+- `event_id` (PK): Audit log ID (`AUD-XXXX`).
+- `institution_id` (FK, Nullable): Associated institution context.
+- `actor`: User ID or system identifier.
+- `action`: String (`ENROLMENT_CREATED`, `ATTENDANCE_RECORDED`, `RESULT_PUBLISHED`).
+- `subject`: Entity ID altered.
+- `previous_hash`: SHA-256 hash of prior event (Hash-chained).
+- `current_hash`: SHA-256 hash of this event record.
+- `timestamp`: UTC Datetime.
 
 ---
 
-### 2.2 Academic Structure & Enrolment Domain
+## 3. Database Engine Evaluation & Migration Strategy
 
-#### `INSTITUTION`
-- `institution_id`: Primary Key (`INST-XXXX` or `SCH-XXXX`)
-- `institution_name`: String
-- `category`: Enum (`SCHOOL`, `COLLEGE`, `UNIVERSITY`, `DIRECTORATE`)
-- `kind`: Enum (`K12_SCHOOL`, `SENIOR_SECONDARY`, `POLYTECHNIC`, `ENGINEERING`, `MANAGEMENT`, `UNIVERSITY`)
-- `management_type`: Enum (`GOVERNMENT`, `GOVERNMENT_AIDED`, `PRIVATE_UNAIDED`, `CENTRAL_GOVERNMENT`)
-- `state`: String
-- `city`: String
-- `is_active`: Boolean
-
-#### `STUDENT_ENROLMENT`
-- `enrolment_id`: Primary Key (`ENR-XXXX-XXXX`)
-- `student_id`: Foreign Key (`STUDENT_PROFILE.student_id`)
-- `institution_id`: Foreign Key (`INSTITUTION.institution_id`)
-- `academic_year_id`: Foreign Key (`ACADEMIC_YEAR.year_id`)
-- `programme_id`: Foreign Key (`PROGRAMME.programme_id`)
-- `class_id`: Foreign Key (`CLASS_GROUP.class_id`)
-- `section_id`: Nullable Foreign Key (`SECTION.section_id`)
-- `roll_number`: String (Unique per institution/programme/academic_year)
-- `admission_quota`: Enum (`REGULAR_MERIT`, `MANAGEMENT`, `PMSSS`, `NRI`, `OCI`, `FN`, `TFW`)
-- `enrolment_status`: Enum (`ACTIVE`, `TRANSFERRED`, `GRADUATED`, `SUSPENDED`, `WITHDRAWN`)
-- `enrolled_date`: Date
-
-#### `TEACHER_ASSIGNMENT`
-- `assignment_id`: Primary Key (`TAS-XXXX-XXXX`)
-- `staff_id`: Foreign Key (`STAFF_PROFILE.staff_id`)
-- `institution_id`: Foreign Key (`INSTITUTION.institution_id`)
-- `academic_year_id`: Foreign Key (`ACADEMIC_YEAR.year_id`)
-- `subject_id`: Foreign Key (`SUBJECT.subject_id`)
-- `class_id`: Foreign Key (`CLASS_GROUP.class_id`)
-- `section_id`: Nullable Foreign Key (`SECTION.section_id`)
-- `is_class_teacher`: Boolean
-
----
-
-### 2.3 Operations & Academic Workflows
-
-#### `ATTENDANCE_SESSION`
-- `session_id`: Primary Key (`ATT-SESS-XXXX`)
-- `institution_id`: Foreign Key (`INSTITUTION.institution_id`)
-- `subject_id`: Foreign Key (`SUBJECT.subject_id`)
-- `class_id`: Foreign Key (`CLASS_GROUP.class_id`)
-- `section_id`: Nullable Foreign Key (`SECTION.section_id`)
-- `teacher_id`: Foreign Key (`STAFF_PROFILE.staff_id`)
-- `session_date`: Date
-- `period_slot`: Integer
-- `is_locked`: Boolean
-- `recorded_at`: UTC Datetime
-
-#### `ATTENDANCE_RECORD`
-- `record_id`: Primary Key (`ATT-REC-XXXX`)
-- `session_id`: Foreign Key (`ATTENDANCE_SESSION.session_id`)
-- `student_id`: Foreign Key (`STUDENT_PROFILE.student_id`)
-- `status`: Enum (`PRESENT`, `ABSENT`, `LATE`, `EXCUSED`)
-- `remarks`: Nullable String
-
-#### `ASSESSMENT` & `ASSESSMENT_MARKS`
-- `assessment_id`: Primary Key (`ASM-XXXX`)
-- `institution_id`: Foreign Key (`INSTITUTION.institution_id`)
-- `subject_id`: Foreign Key (`SUBJECT.subject_id`)
-- `class_id`: Foreign Key (`CLASS_GROUP.class_id`)
-- `title`: String
-- `max_marks`: Float
-- `passing_marks`: Float
-- `assessment_date`: Date
-- `moderation_status`: Enum (`DRAFT`, `SUBMITTED`, `MODERATED`, `APPROVED`, `PUBLISHED`)
-
----
-
-## 3. Detailed Database Decision: MongoDB vs. PostgreSQL
-
-### Evaluation & Migration Strategy
-- **Stage 0–4:** Retain the proven Motor async MongoDB setup. All existing 24 test suites run in-memory with zero Docker dependency.
-- **Repository Pattern Abstraction:** All application logic calls abstract repository methods (`get_by_id`, `find_enrolments`, `record_attendance`) rather than raw database drivers.
-- **PostgreSQL Target (Stage 11):** At Stage 11 (Finance, Admissions & Scaling), an Alembic relational schema is introduced alongside the established repository interfaces. Relational constraints and Row-Level Security (`RLS`) will be enabled for kernel-level tenant isolation.
+- **Motor MongoDB (Stages 0–10):** Maintained for rapid iterative execution and in-memory test suites without Docker dependency.
+- **Abstract Repository Interface:** Applied in Stage 1 to isolate business logic from database query syntax.
+- **PostgreSQL Relational Target (Stage 11):** Planned migration mapping collections to strict relational tables with Row-Level Security (`RLS`) for kernel-level tenant isolation.
