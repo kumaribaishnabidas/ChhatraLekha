@@ -14,7 +14,9 @@
     "verify": "Verify",
     "reports": "Reports",
     "settings": "Settings",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "wallet": "Wallet",
+    "institutionDashboard": "Institution"
   },
   "settings": {
     "language": "Language",
@@ -342,5 +344,37 @@
     "contactTitle": "Questions or feedback?",
     "contactLead": "Use the contact page and the maintainers will get back to you.",
     "contactButton": "Contact page"
+  },
+  "wallet": {
+    "title": "Academic identity and wallet",
+    "lead": "Your verifiable academic ID, credential archive, and privacy consent controls.",
+    "idCard": "Digital student ID",
+    "credentials": "Verifiable credentials",
+    "consent": "Privacy and consent",
+    "ocrUpload": "Upload document for OCR",
+    "ocrPrompt": "Select a marksheet or certificate to extract fields and submit for review.",
+    "ocrExtracting": "Extracting academic data...",
+    "ocrSubmit": "Submit for approval",
+    "ocrReviewNotice": "Decision support only. An authorized administrator must review and approve before a credential is valid.",
+    "toggleApaar": "Toggle APAAR ID visibility",
+    "downloadCertificate": "Download certificate PDF",
+    "qrNotice": "Scan to verify opaque token. No personal data is embedded in this QR code."
+  },
+  "institution": {
+    "title": "Institution dashboard",
+    "lead": "Enrolment intake status, quota compliance, and academic record review queue.",
+    "reviewQueue": "Review queue",
+    "pendingReviews": "Pending approvals",
+    "approve": "Approve record",
+    "dismiss": "Dismiss finding",
+    "noTasks": "No pending review tasks."
+  },
+  "demo": {
+    "title": "Guided interactive demo",
+    "switchRole": "Switch persona",
+    "roleAicte": "AICTE Admin",
+    "roleInstitution": "Institution Admin",
+    "roleStudent": "Student",
+    "roleVerifier": "Verifier"
   }
 }

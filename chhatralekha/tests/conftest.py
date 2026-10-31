@@ -181,3 +181,8 @@ async def institution_token(client):
 @pytest.fixture
 async def verifier_token(client):
     return await login(client, "verifier@chhatralekha.test")
+
+
+@pytest.fixture
+async def student_token(client):
+    return await login(client, "student@chhatralekha.test")

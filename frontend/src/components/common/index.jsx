@@ -188,4 +188,108 @@ export function Field({ label, hint, error, children }) {
   )
 }
 
+export function Input({ label, hint, error, id, className = '', ...props }) {
+  const inputId = id || (label ? `input-${label.toLowerCase().replace(/[^a-z0-9]/g, '-')}` : undefined)
+  return (
+    <div className="w-full">
+      {label && <label htmlFor={inputId} className="label">{label}</label>}
+      <input id={inputId} className={`input ${error ? 'border-danger' : ''} ${className}`} {...props} />
+      {hint && !error && <span className="mt-1 block text-xs text-muted">{hint}</span>}
+      {error && <span className="mt-1 block text-xs text-danger-strong">{error}</span>}
+    </div>
+  )
+}
+
+export function Select({ label, hint, error, id, options = [], className = '', children, ...props }) {
+  const selectId = id || (label ? `select-${label.toLowerCase().replace(/[^a-z0-9]/g, '-')}` : undefined)
+  return (
+    <div className="w-full">
+      {label && <label htmlFor={selectId} className="label">{label}</label>}
+      <select id={selectId} className={`input cursor-pointer ${error ? 'border-danger' : ''} ${className}`} {...props}>
+        {options.map((opt) => (
+          <option key={opt.value ?? opt} value={opt.value ?? opt}>
+            {opt.label ?? opt}
+          </option>
+        ))}
+        {children}
+      </select>
+      {hint && !error && <span className="mt-1 block text-xs text-muted">{hint}</span>}
+      {error && <span className="mt-1 block text-xs text-danger-strong">{error}</span>}
+    </div>
+  )
+}
+
+export function Modal({ open, onClose, title, children, footer, className = '' }) {
+  if (!open) return null
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+      <div className="fixed inset-0 bg-ink/40 transition-opacity" onClick={onClose} aria-hidden="true" />
+      <div className={`relative z-10 w-full max-w-lg rounded-lg border border-line bg-surface p-6 shadow-md ${className}`}>
+        {title && (
+          <div className="flex items-center justify-between pb-3 mb-4 border-b border-line">
+            <h3 className="m-0 text-lg font-bold text-ink">{title}</h3>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-muted hover:text-ink text-sm p-1 cursor-pointer font-bold"
+              aria-label="Close"
+            >
+              x
+            </button>
+          </div>
+        )}
+        <div className="space-y-4">{children}</div>
+        {footer && <div className="mt-6 flex justify-end gap-2 pt-3 border-t border-line">{footer}</div>}
+      </div>
+    </div>
+  )
+}
+
+export function Table({ headers = [], children, className = '' }) {
+  return (
+    <div className={`table-wrap ${className}`}>
+      <table className="data-table">
+        {headers.length > 0 && (
+          <thead>
+            <tr>
+              {headers.map((h, i) => (
+                <th key={i}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+        )}
+        <tbody>{children}</tbody>
+      </table>
+    </div>
+  )
+}
+
+export function Tabs({ tabs = [], activeTab, onChange, className = '' }) {
+  return (
+    <div className={`flex items-center gap-1 border-b border-line ${className}`} role="tablist">
+      {tabs.map((tab) => {
+        const id = tab.id ?? tab
+        const label = tab.label ?? tab
+        const active = activeTab === id
+        return (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(id)}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 cursor-pointer transition-colors ${
+              active
+                ? 'border-brand text-brand font-bold bg-surface-2'
+                : 'border-transparent text-muted hover:text-ink hover:border-line'
+            }`}
+          >
+            {label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 export { default as CopyButton, sanitizeCopyPayload } from './CopyButton'
