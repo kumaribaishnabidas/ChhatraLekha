@@ -2,11 +2,11 @@
 
 <img src="docs/assets/brand/chhatralekha-logo.png" alt="ChhatraLekha" height="220" />
 
-# ChhatraLekha — APAAR ID Student Data Management & Verification Platform
+# ChhatraLekha — Unified Student Academic Identity & Campus Platform for Schools and Colleges Across India
 
-**The APAAR ID Student Data Management &amp; Verification Platform**
+**The Unified Student Academic Identity &amp; Campus Platform for Schools and Colleges Across India**
 
-[Website &amp; landing page →](https://kumaribaishnabidas.github.io/ChhatraLekha/) · [Source code](https://github.com/kumaribaishnabidas/ChhatraLekha) · [Backend documentation](chhatralekha/README.md) · [App documentation](android/README.md)
+[Website &amp; landing page →](https://kumaribaishnabidas.github.io/ChhatraLekha/) · [Source code](https://github.com/kumaribaishnabidas/ChhatraLekha) · [Backend documentation](chhatralekha/README.md) · [App documentation](android/README.md) · [iOS Architecture](docs/IOS_ARCHITECTURE_AND_ROADMAP.md)
 
 </div>
 
@@ -14,13 +14,11 @@
 
 > **APAAR** — the **Automated Permanent Academic Account Registry**, issued under the
 > Ministry of Education's *One Nation, One Student ID* initiative. It is the student's
-> academic passport: every enrolled student is issued a 12-digit APAAR ID that is
-> supposed to travel with them across institutions, employers and degree-awarding
-> bodies. In practice it is issued and reconciled by hand, which is where the
-> fraud starts.
+> lifelong academic passport across schools, higher education colleges, polytechnics,
+> and universities.
 >
-> APAAR is **not** an AICTE registry, and nothing in this prototype is an official
-> APAAR or AICTE verification.
+> ChhatraLekha is an independent educational prototype. Nothing in this prototype is an official
+> APAAR, AICTE, CBSE, or government registry verification.
 
 ---
 
@@ -540,7 +538,7 @@ cp .env.example .env            # then edit the secrets
 python -m app.scripts.seed
 python -m app.scripts.check_prod_settings # verify 12/12 production safety checks
 uvicorn app.main:app --reload
-pytest -q                       # 300 passed
+pytest -q                       # 305 passed across 33 test suites
 ```
 
 ### The web frontend

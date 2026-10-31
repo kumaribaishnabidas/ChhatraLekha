@@ -30,6 +30,7 @@ PUBLIC_ROUTE_PATHS = {
     "/api/verify/public-key",
     "/api/verify/jwks",
     "/api/institutions/register",
+    "/api/schools/template",
     "/api/transparency",
 }
 

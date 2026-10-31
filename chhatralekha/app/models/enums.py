@@ -19,6 +19,126 @@ class InstitutionCategory(str, Enum):
         }[self]
 
 
+class EducationLevel(str, Enum):
+    """Education levels spanning primary to higher education."""
+
+    PRE_PRIMARY = "PRE_PRIMARY"
+    PRIMARY = "PRIMARY"
+    UPPER_PRIMARY = "UPPER_PRIMARY"
+    SECONDARY = "SECONDARY"
+    SENIOR_SECONDARY = "SENIOR_SECONDARY"
+    DIPLOMA_VOCATIONAL = "DIPLOMA_VOCATIONAL"
+    UNDERGRADUATE = "UNDERGRADUATE"
+    POSTGRADUATE = "POSTGRADUATE"
+    DOCTORAL = "DOCTORAL"
+
+    @property
+    def label(self) -> str:
+        return {
+            EducationLevel.PRE_PRIMARY: "Pre-Primary",
+            EducationLevel.PRIMARY: "Primary (Grades 1-5)",
+            EducationLevel.UPPER_PRIMARY: "Upper Primary / Middle (Grades 6-8)",
+            EducationLevel.SECONDARY: "Secondary (Grades 9-10)",
+            EducationLevel.SENIOR_SECONDARY: "Senior Secondary (Grades 11-12)",
+            EducationLevel.DIPLOMA_VOCATIONAL: "Diploma / Vocational / ITI",
+            EducationLevel.UNDERGRADUATE: "Undergraduate (UG)",
+            EducationLevel.POSTGRADUATE: "Postgraduate (PG)",
+            EducationLevel.DOCTORAL: "Doctoral / Research",
+        }[self]
+
+
+class InstitutionKind(str, Enum):
+    """Specific kind of academic institution."""
+
+    SCHOOL = "SCHOOL"
+    JUNIOR_COLLEGE = "JUNIOR_COLLEGE"
+    SENIOR_SECONDARY_SCHOOL = "SENIOR_SECONDARY_SCHOOL"
+    COLLEGE = "COLLEGE"
+    UNIVERSITY = "UNIVERSITY"
+    POLYTECHNIC = "POLYTECHNIC"
+    VOCATIONAL_ITI = "VOCATIONAL_ITI"
+    ENGINEERING = "ENGINEERING"
+    MANAGEMENT = "MANAGEMENT"
+
+    @property
+    def label(self) -> str:
+        return {
+            InstitutionKind.SCHOOL: "School (K-10)",
+            InstitutionKind.JUNIOR_COLLEGE: "Junior College (11-12)",
+            InstitutionKind.SENIOR_SECONDARY_SCHOOL: "Senior Secondary School (K-12)",
+            InstitutionKind.COLLEGE: "Higher Education College",
+            InstitutionKind.UNIVERSITY: "University / Deemed University",
+            InstitutionKind.POLYTECHNIC: "Polytechnic Institute",
+            InstitutionKind.VOCATIONAL_ITI: "Industrial Training Institute (ITI)",
+            InstitutionKind.ENGINEERING: "Engineering Institution",
+            InstitutionKind.MANAGEMENT: "Management Institution",
+        }[self]
+
+
+class ManagementType(str, Enum):
+    """Ownership/management model of the institution."""
+
+    GOVERNMENT = "GOVERNMENT"
+    GOVERNMENT_AIDED = "GOVERNMENT_AIDED"
+    PRIVATE_UNAIDED = "PRIVATE_UNAIDED"
+    CENTRAL_GOVERNMENT = "CENTRAL_GOVERNMENT"
+    OTHER = "OTHER"
+
+
+class SchoolStream(str, Enum):
+    """Senior secondary academic stream."""
+
+    GENERAL = "GENERAL"
+    SCIENCE = "SCIENCE"
+    COMMERCE = "COMMERCE"
+    ARTS_HUMANITIES = "ARTS_HUMANITIES"
+    VOCATIONAL = "VOCATIONAL"
+
+
+class CredentialType(str, Enum):
+    """Type of academic credential issued or verified."""
+
+    REPORT_CARD = "REPORT_CARD"
+    TRANSFER_CERTIFICATE = "TRANSFER_CERTIFICATE"
+    BONAFIDE_CERTIFICATE = "BONAFIDE_CERTIFICATE"
+    MIGRATION_CERTIFICATE = "MIGRATION_CERTIFICATE"
+    MARKSHEET = "MARKSHEET"
+    PASSING_CERTIFICATE = "PASSING_CERTIFICATE"
+    PROVISIONAL_CERTIFICATE = "PROVISIONAL_CERTIFICATE"
+    DEGREE_CERTIFICATE = "DEGREE_CERTIFICATE"
+    TRANSCRIPT = "TRANSCRIPT"
+
+
+class TransitionEventType(str, Enum):
+    """Academic lifecycle transitions."""
+
+    ADMISSION = "ADMISSION"
+    PROMOTION = "PROMOTION"
+    TRANSFER = "TRANSFER"
+    MIGRATION = "MIGRATION"
+    DROPOUT = "DROPOUT"
+    REENTRY = "REENTRY"
+    GRADUATION = "GRADUATION"
+
+
+class IdentifierScheme(str, Enum):
+    """Standard institutional identifier registry schemes."""
+
+    UDISE_PLUS = "UDISE_PLUS"
+    AISHE = "AISHE"
+    AICTE = "AICTE"
+    BOARD_AFFILIATION = "BOARD_AFFILIATION"
+    INTERNAL = "INTERNAL"
+
+
+class RulePackType(str, Enum):
+    """Regulatory validation rule pack bound to an institution."""
+
+    TECHNICAL_HIGHER_ED = "technical_higher_ed"
+    SCHOOL_BASIC = "school_basic"
+    UNIVERSITY_GENERAL = "university_general"
+
+
 class InstitutionType(str, Enum):
     ENGINEERING = "ENGINEERING"
     MANAGEMENT = "MANAGEMENT"
@@ -303,6 +423,14 @@ class AnomalyType(str, Enum):
     MISSING_REQUIRED_FIELD = "MISSING_REQUIRED_FIELD"
     UNSANCTIONED_PROGRAM = "UNSANCTIONED_PROGRAM"
 
+    # School & General Education Rule Pack types:
+    MINOR_GUARDIAN_REQUIRED = "MINOR_GUARDIAN_REQUIRED"
+    INVALID_AGE_FOR_GRADE = "INVALID_AGE_FOR_GRADE"
+    DUPLICATE_SCHOOL_ENROLMENT = "DUPLICATE_SCHOOL_ENROLMENT"
+    SECTION_CAPACITY_EXCEEDED = "SECTION_CAPACITY_EXCEEDED"
+    PROMOTION_WITHOUT_RESULT = "PROMOTION_WITHOUT_RESULT"
+    MISSING_UDISE_CODE = "MISSING_UDISE_CODE"
+
     @property
     def label(self) -> str:
         return {
@@ -316,6 +444,12 @@ class AnomalyType(str, Enum):
             AnomalyType.IMPOSSIBLE_DATE: "Impossible Date",
             AnomalyType.MISSING_REQUIRED_FIELD: "Missing Mandatory Field",
             AnomalyType.UNSANCTIONED_PROGRAM: "Unsanctioned Programme",
+            AnomalyType.MINOR_GUARDIAN_REQUIRED: "Guardian Information Missing for Minor",
+            AnomalyType.INVALID_AGE_FOR_GRADE: "Incompatible Age for Grade / Class",
+            AnomalyType.DUPLICATE_SCHOOL_ENROLMENT: "Concurrent Multi-School Enrolment",
+            AnomalyType.SECTION_CAPACITY_EXCEEDED: "Class Section Capacity Exceeded",
+            AnomalyType.PROMOTION_WITHOUT_RESULT: "Grade Promotion Without Result",
+            AnomalyType.MISSING_UDISE_CODE: "Missing UDISE+ School Code",
         }[self]
 
     @property
@@ -331,6 +465,12 @@ class AnomalyType(str, Enum):
             AnomalyType.IMPOSSIBLE_DATE: "Date conflict",
             AnomalyType.MISSING_REQUIRED_FIELD: "Incomplete record",
             AnomalyType.UNSANCTIONED_PROGRAM: "Unregistered course",
+            AnomalyType.MINOR_GUARDIAN_REQUIRED: "Minor guardian missing",
+            AnomalyType.INVALID_AGE_FOR_GRADE: "Age-grade mismatch",
+            AnomalyType.DUPLICATE_SCHOOL_ENROLMENT: "School cross-enrolment",
+            AnomalyType.SECTION_CAPACITY_EXCEEDED: "Section capacity breach",
+            AnomalyType.PROMOTION_WITHOUT_RESULT: "Unverified promotion",
+            AnomalyType.MISSING_UDISE_CODE: "UDISE+ missing",
         }[self]
 
 

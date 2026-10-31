@@ -115,6 +115,8 @@ class Principal:
         self.email = email
         self.user = user
         self.apaar_id = apaar_id or (user.get("apaar_id") if isinstance(user, dict) else None)
+        self.state = user.get("state") if isinstance(user, dict) else None
+        self.district = user.get("district") if isinstance(user, dict) else None
 
     def require(self, permission: rbac.Permission) -> None:
         """Raise ``403`` when the principal lacks the permission."""
@@ -129,7 +131,7 @@ class Principal:
 
     def require_scope(self, institution_id: str) -> None:
         """Raise ``403`` when the principal may not touch that institution."""
-        if self.role in {"aicte_admin", "platform_operator"}:
+        if self.role in {"national_admin", "aicte_admin", "platform_operator", "regulator_admin", "state_admin", "district_admin"}:
             return
         if self.institution_id and self.institution_id == institution_id:
             return

@@ -102,7 +102,7 @@ export default function StudentIdCardPage() {
                 />
               </div>
               <span className="rounded bg-accent/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-accent-strong border border-accent/40">
-                AICTE Prototype
+                Academic Prototype
               </span>
             </div>
             <p className="m-0 mt-2 text-xs font-bold uppercase tracking-wider text-white/80">

@@ -23,7 +23,7 @@ const PURPOSE_META = {
   ANALYTICS_AND_REPORTING: {
     title: 'Regulatory Reporting',
     description: 'Statutory compliance tracking and seat matrix auditing by regulatory bodies.',
-    revokedWarning: 'Statutory reporting is mandated for active AICTE-approved institution enrolments.',
+    revokedWarning: 'Statutory reporting is mandated for active registered institution enrolments.',
   },
 }
 

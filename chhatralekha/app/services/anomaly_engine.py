@@ -188,6 +188,23 @@ class AnomalyEngine:
         anomalies += self.detect_inconsistencies(snapshot)
         anomalies += self.detect_impossible_dates(snapshot)
         anomalies += self.detect_missing_required_fields(snapshot)
+
+        # Dispatch to school rule pack when school institutions or grade levels are present
+        has_school = any(
+            getattr(inst, "rule_pack", None) == "school_basic"
+            or str(getattr(inst, "category", "")).upper() == "SCHOOL"
+            or str(getattr(inst, "institution_type", "")).upper() in ("SCHOOL", "K12")
+            for inst in getattr(snapshot, "institutions", ())
+        ) or any(
+            getattr(st, "grade_level", None) is not None
+            or getattr(st, "is_minor", None) is not None
+            for st in getattr(snapshot, "students", ())
+        )
+        if has_school:
+            from app.services.rule_packs.school_basic import SchoolBasicPack
+
+            anomalies += SchoolBasicPack().evaluate(snapshot)
+
         return anomalies
 
     # ------------------------------------------------------------ layer 10

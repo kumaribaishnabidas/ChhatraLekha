@@ -120,8 +120,12 @@ const PARENT = [
 ]
 
 export const ROLE_PERMISSIONS = {
+  national_admin: DIRECTORATE,
   aicte_admin: DIRECTORATE,
   platform_operator: DIRECTORATE,
+  state_admin: DIRECTORATE,
+  district_admin: DIRECTORATE,
+  regulator_admin: DIRECTORATE,
   institution_admin: INSTITUTION,
   academic_admin: ACADEMIC_ADMIN,
   teacher: TEACHER,
@@ -131,8 +135,12 @@ export const ROLE_PERMISSIONS = {
 }
 
 export const ROLE_LABELS = {
+  national_admin: 'National Administrator',
   aicte_admin: 'Platform Operator / Directorate',
   platform_operator: 'Platform Operator',
+  state_admin: 'State Education Authority',
+  district_admin: 'District Education Officer',
+  regulator_admin: 'Board / Affiliation Regulator',
   institution_admin: 'Institution Owner / Admin',
   academic_admin: 'Academic Administrator',
   teacher: 'Teacher / Faculty',

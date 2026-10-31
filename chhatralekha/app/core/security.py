@@ -23,8 +23,12 @@ settings = get_settings()
 
 # --------------------------------------------------------------------- types
 
-ROLE_AICTE = "aicte_admin"
+ROLE_NATIONAL_ADMIN = "national_admin"
+ROLE_AICTE = "aicte_admin"  # Backward-compatibility alias for national authority
 ROLE_PLATFORM_OPERATOR = "platform_operator"
+ROLE_STATE_ADMIN = "state_admin"
+ROLE_DISTRICT_ADMIN = "district_admin"
+ROLE_REGULATOR_ADMIN = "regulator_admin"
 ROLE_INSTITUTION = "institution_admin"
 ROLE_ACADEMIC_ADMIN = "academic_admin"
 ROLE_TEACHER = "teacher"
@@ -33,8 +37,12 @@ ROLE_PARENT = "parent"
 ROLE_VERIFIER = "verifier"
 
 ALL_ROLES = (
+    ROLE_NATIONAL_ADMIN,
     ROLE_AICTE,
     ROLE_PLATFORM_OPERATOR,
+    ROLE_STATE_ADMIN,
+    ROLE_DISTRICT_ADMIN,
+    ROLE_REGULATOR_ADMIN,
     ROLE_INSTITUTION,
     ROLE_ACADEMIC_ADMIN,
     ROLE_TEACHER,

@@ -8,7 +8,7 @@ const FAQS = [
   },
   {
     q: 'What is ChhatraLekha, and is this an official government registry?',
-    a: 'ChhatraLekha is an academic credential verification prototype. It is not an official AICTE or Ministry of Education service. Verification performed on this prototype is checked against its own demonstration database, not the national registry.',
+    a: 'ChhatraLekha is an independent educational platform prototype for schools and colleges across India. It is not an official government service. Verification performed on this prototype is checked against its own demonstration database, not the national registry.',
   },
   {
     q: 'What does a public verification token disclose, and what is kept private?',

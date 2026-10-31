@@ -77,7 +77,7 @@ export default function ReportsPage() {
     <>
       <PageHeader
         title="Regulatory reports"
-        lead="Download the registers the AICTE Directorate and the regional offices ask for. Every export is written to the audit trail."
+        lead="Download official academic registers and reports. Every export is written to the audit trail."
       />
 
       {error && <ErrorState message={error} />}

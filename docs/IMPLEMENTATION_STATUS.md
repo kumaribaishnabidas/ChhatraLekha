@@ -15,7 +15,7 @@ Every command below has been executed on the local workspace and confirmed passi
 
 | Component | Test / Build Command | Result | Duration / Scope |
 | :--- | :--- | :--- | :--- |
-| **API Backend** | `pytest --tb=no` (in `chhatralekha/`) | **300 passed**, 0 failures, 1 warning | ~11s across 32 test suites |
+| **API Backend** | `pytest --tb=no` (in `chhatralekha/`) | **305 passed**, 0 failures, 1 warning | ~11s across 33 test suites |
 | **Frontend Unit Tests** | `npm.cmd test -- --run` (in `frontend/`) | **68 passed**, 0 failures | 9 test files |
 | **Frontend Route Links** | `npm.cmd run check:links` (in `frontend/`) | **Passed** | 34 configured application routes, 25 verified internal routes |
 | **Frontend Translations** | `npm.cmd run i18n:check` (in `frontend/`) | **Passed** | 13 languages, 423 translation keys each |
@@ -72,10 +72,10 @@ Every command below has been executed on the local workspace and confirmed passi
 ### 3.3 Test Totals Alignment
 - **Discrepancy**: Prior notes in various drafts claimed conflicting test numbers (ranging from 160 to 250).
 - **Verified Ground Truth**:
-  - Backend pytest: **300 tests passed** (0 failures).
+  - Backend pytest: **305 tests passed** (0 failures).
   - Frontend vitest: **68 tests passed** (0 failures).
   - Android core unit tests: **204 tests passed** across 15 XML test suites (0 failures).
-  - Total automated unit/integration tests across the entire repository: **572 tests passed**.
+  - Total automated unit/integration tests across the entire repository: **577 tests passed**.
 
 ### 3.4 CI Pipeline Status
 - **Prior State**: `.github/workflows/chhatralekha.yml` tested only backend and frontend, omitting the Android app entirely and missing `android/**` in triggers.

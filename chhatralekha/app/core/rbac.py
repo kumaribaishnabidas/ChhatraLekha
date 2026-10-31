@@ -14,9 +14,13 @@ from typing import Iterable
 from app.core.security import (
     ROLE_ACADEMIC_ADMIN,
     ROLE_AICTE,
+    ROLE_DISTRICT_ADMIN,
     ROLE_INSTITUTION,
+    ROLE_NATIONAL_ADMIN,
     ROLE_PARENT,
     ROLE_PLATFORM_OPERATOR,
+    ROLE_REGULATOR_ADMIN,
+    ROLE_STATE_ADMIN,
     ROLE_STUDENT,
     ROLE_TEACHER,
     ROLE_VERIFIER,
@@ -158,8 +162,12 @@ _PARENT = frozenset(
 )
 
 ROLE_PERMISSIONS: dict[str, frozenset[Permission]] = {
+    ROLE_NATIONAL_ADMIN: _DIRECTORATE,
     ROLE_AICTE: _DIRECTORATE,
     ROLE_PLATFORM_OPERATOR: _DIRECTORATE,
+    ROLE_STATE_ADMIN: _DIRECTORATE,
+    ROLE_DISTRICT_ADMIN: _DIRECTORATE,
+    ROLE_REGULATOR_ADMIN: _DIRECTORATE,
     ROLE_INSTITUTION: _INSTITUTION,
     ROLE_ACADEMIC_ADMIN: _ACADEMIC_ADMIN,
     ROLE_TEACHER: _TEACHER,
@@ -169,8 +177,12 @@ ROLE_PERMISSIONS: dict[str, frozenset[Permission]] = {
 }
 
 ROLE_LABELS: dict[str, str] = {
+    ROLE_NATIONAL_ADMIN: "National Administrator",
     ROLE_AICTE: "Platform Operator / Directorate",
     ROLE_PLATFORM_OPERATOR: "Platform Operator",
+    ROLE_STATE_ADMIN: "State Education Authority",
+    ROLE_DISTRICT_ADMIN: "District Education Officer",
+    ROLE_REGULATOR_ADMIN: "Board / Affiliation Regulator",
     ROLE_INSTITUTION: "Institution Owner / Admin",
     ROLE_ACADEMIC_ADMIN: "Academic Administrator",
     ROLE_TEACHER: "Teacher / Faculty",
