@@ -37,7 +37,7 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-40 bg-navy text-white shadow-lg">
+      <header className="sticky top-0 z-40 bg-navy text-white border-b border-navy-deep">
         <div className="mx-auto max-w-[1240px] px-5 py-3 flex items-center gap-5">
           <NavLink to="/dashboard" className="flex items-center gap-3 no-underline">
             <img
@@ -80,7 +80,7 @@ export default function AppLayout() {
             <button
               type="button"
               onClick={handleLogout}
-              className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white cursor-pointer"
+              className="rounded border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white cursor-pointer hover:bg-white/20"
             >
               {t('nav.signOut')}
             </button>
@@ -104,7 +104,7 @@ export default function AppLayout() {
       {voiceOpen && <VoicePanel onClose={() => setVoiceOpen(false)} />}
 
       <footer className="border-t border-line bg-surface py-5 text-center text-xs text-muted">
-        <strong>{t('app.name')}</strong> &mdash; {t('app.prototypeNotice')}
+        <strong>{t('app.name')}</strong> - {t('app.prototypeNotice')}
       </footer>
     </div>
   )

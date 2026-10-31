@@ -1,0 +1,19 @@
+# EduSynC - APAAR ID Student Data Management & Verification Platform
+
+> Product Prototype: Verification against this prototype's database, not official APAAR or AICTE verification.
+
+## Summary
+EduSynC is an academic credential verification and reconciliation platform developed for AICTE-approved institutions. It automates APAAR (Automated Permanent Academic Account Registry) student record validation, anomaly detection, change impact analysis, and privacy-preserving credential verification.
+
+## Core Capabilities
+1. 10-Layer Anomaly Detection Engine: Deterministic rule-based validation checking format syntax, cross-institution duplicate enrollment, duplicate roll numbers, sanctioned intake ceilings, supernumerary quotas (NRI, OCI/FN, TFW, PMSSS), impossible dates, missing mandatory fields, and unsanctioned programmes.
+2. Academic Record Change Impact Detector: Previews corrections and assesses downstream effects (seat recalculations, stale credentials, reviewer checklists) before committing.
+3. Cryptographic Tamper-Evident Verification: HMAC-SHA256 and Ed25519 digital seals bound to academic facts.
+4. Opaque Token Verification: High-entropy, expiring, revocable verification tokens that allow public verification without exposing raw APAAR IDs or sensitive personal data.
+5. Offline-First Android Client: Standalone native verification engine with dependency-free ISO/IEC 18004 QR generation and offline Room database.
+
+## Architecture
+- Frontend: React 19, Vite 6, Tailwind CSS 4, React Router 7.
+- Backend: Python 3.11+, FastAPI, Motor (MongoDB async driver), Pydantic v2.
+- Mobile: Kotlin 2.2, Jetpack Compose, Material 3, Room 2.8.5.
+- Data Policy: Synthetic demo dataset only. No real APAAR IDs or personal data are stored or processed.

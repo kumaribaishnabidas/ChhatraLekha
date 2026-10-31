@@ -26,11 +26,15 @@ import com.acadentrix.core.validation.ApaarIdValidator
 import com.acadentrix.core.validation.DetectedAnomaly
 import com.acadentrix.core.validation.RegistrySnapshot
 import com.acadentrix.app.data.repository.ApaarRepository
+import com.acadentrix.core.network.EduSyncApiClient
+import com.acadentrix.core.network.NetworkResult
+import com.acadentrix.core.qr.ApaarQrPayload
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
@@ -508,6 +512,47 @@ class ApaarViewModel(private val repository: ApaarRepository) : ViewModel() {
         }
         viewModelScope.launch {
             controls.update { it.copy(working = true) }
+
+            // Check if query is an opaque token or verification URL
+            val parsedQr = ApaarQrPayload.parse(trimmed)
+            if (parsedQr?.isTokenPayload == true) {
+                val token = parsedQr.token!!
+                when (val remoteResult = repository.verifyTokenRemote(token)) {
+                    is NetworkResult.Success -> {
+                        val data = remoteResult.data
+                        verification.value = VerificationDossier(
+                            query = trimmed,
+                            found = data.valid,
+                            sealValid = data.valid,
+                            timestamp = System.currentTimeMillis(),
+                            message = if (data.valid) {
+                                "Credential verified via token: ${data.institution ?: "AICTE"} (${data.programme ?: "Approved"}). Verdict: ${data.verdict}"
+                            } else {
+                                "Token verification failed: ${data.verdict}. ${data.reason}"
+                            }
+                        )
+                    }
+                    is NetworkResult.OfflineFallback -> {
+                        verification.value = VerificationDossier(
+                            query = trimmed,
+                            found = false,
+                            timestamp = System.currentTimeMillis(),
+                            message = "Backend server unreachable. Token verification requires server access."
+                        )
+                    }
+                    is NetworkResult.Error -> {
+                        verification.value = VerificationDossier(
+                            query = trimmed,
+                            found = false,
+                            timestamp = System.currentTimeMillis(),
+                            message = "Verification error (HTTP ${remoteResult.statusCode}): ${remoteResult.message}"
+                        )
+                    }
+                }
+                controls.update { it.copy(working = false) }
+                return@launch
+            }
+
             val state = uiState.value
             val digits = trimmed.filter { it.isDigit() }
             val matches = when {
@@ -518,6 +563,7 @@ class ApaarViewModel(private val repository: ApaarRepository) : ViewModel() {
                     state.students.firstOrNull { it.studentInstituteRollNo.equals(trimmed, ignoreCase = true) }
                 )
             }
+
 
             val timestamp = System.currentTimeMillis()
             if (matches.isEmpty()) {
@@ -595,6 +641,23 @@ class ApaarViewModel(private val repository: ApaarRepository) : ViewModel() {
             pool[pool.size / 2].apaarId,
             pool.first().studentInstituteRollNo
         )
+    }
+
+    /**
+
+     * Synchronizes local Room database with the remote EduSynC backend.
+     */
+    fun syncWithServer(baseUrl: String = EduSyncApiClient.DEFAULT_BASE_URL) {
+        viewModelScope.launch {
+            controls.update { it.copy(working = true) }
+            val summary = repository.syncWithBackend(baseUrl)
+            controls.update {
+                it.copy(
+                    working = false,
+                    message = summary.message
+                )
+            }
+        }
     }
 
     companion object {

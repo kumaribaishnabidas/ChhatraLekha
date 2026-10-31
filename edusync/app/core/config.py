@@ -191,6 +191,10 @@ class Settings(BaseSettings):
                 "MONGODB_URL to a real MongoDB server (a mongodb+srv:// Atlas "
                 "connection string, for example)."
             )
+        if self.debug:
+            raise RuntimeError(
+                "DEBUG=true is refused in production. Set DEBUG=false."
+            )
         if len(self.secret_key) < 32 or _is_placeholder(self.secret_key):
             raise RuntimeError(
                 "SECRET_KEY must be a fresh random value of at least 32 characters "

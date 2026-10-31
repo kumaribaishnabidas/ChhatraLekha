@@ -169,7 +169,7 @@ export default function UploadPage() {
                 description="Choose a CSV and validate it to see the row-by-row verdicts and the seat impact."
               />
             ) : preview.header_errors?.length ? (
-              <div className="rounded-xl border border-danger/30 bg-danger-surface p-4 text-sm text-danger-strong">
+              <div className="rounded border border-danger/30 bg-danger-surface p-4 text-sm text-danger-strong">
                 <p className="m-0 font-semibold">The file header was rejected.</p>
                 <ul className="mt-2 mb-0 pl-5">
                   {preview.header_errors.map((item) => (

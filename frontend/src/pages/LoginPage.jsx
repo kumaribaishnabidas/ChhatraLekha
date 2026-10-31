@@ -15,6 +15,7 @@ export default function LoginPage() {
   const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [googleEnabled, setGoogleEnabled] = useState(false)
 
@@ -59,7 +60,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-canvas">
-      <section className="hidden lg:flex flex-col justify-between bg-gradient-to-br from-navy via-mid-blue to-bright-blue text-white p-12">
+      <section className="hidden lg:flex flex-col justify-between bg-brand text-white p-12 border-r border-line">
         <div className="flex items-center gap-3">
           <img src="/brand/edusync-lockup.png" alt="EduSynC" className="h-11 w-auto" />
         </div>
@@ -114,16 +115,26 @@ export default function LoginPage() {
             <label className="label mt-4" htmlFor="password">
               {t('login.password')}
             </label>
-            <input
-              id="password"
-              className="input"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder={t('login.passwordPlaceholder')}
-            />
+            <div className="relative">
+              <input
+                id="password"
+                className="input pr-16"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder={t('login.passwordPlaceholder')}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? t('login.hide', 'Hide') : t('login.show', 'Show')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs font-semibold text-muted hover:text-ink cursor-pointer focus-visible:outline-none"
+              >
+                {showPassword ? t('login.hide', 'Hide') : t('login.show', 'Show')}
+              </button>
+            </div>
 
             {error && (
               <p role="alert" className="mt-3 mb-0 text-sm text-crimson">

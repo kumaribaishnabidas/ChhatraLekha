@@ -116,7 +116,7 @@ behind a QR code is the record that was sealed.
 `core/qr/ApaarQrPayload.kt` builds a link that a scanner (or a human with the URL) can resolve:
 
 ```
-https://apaar.aicte-india.gov.in/verify?apaar=XXXX-XXXX-XXXX&inst=<pid>&prog=<code>&seal=<32hex>&t=<millis>
+https://edusync.vercel.app/verify?apaar=XXXX-XXXX-XXXX&inst=<pid>&prog=<code>&seal=<32hex>&t=<millis>
 ```
 
 The QR matrix itself is produced by `core/qr/QrEncoder.kt` — a **dependency-free ISO/IEC 18004
@@ -208,16 +208,22 @@ Outputs:
 * `app\build\reports\tests\testDebugUnitTest\index.html` (HTML report)
 * `app\build\test-results\testDebugUnitTest\*.xml` (JUnit XML)
 
-### Test suite — 78 tests, all green
+### Test suite — 204 tests across 15 suites, all green
 
 | Suite | Tests | Covers |
 | --- | --- | --- |
+| `EduSyncApiClientTest` | 9 | Real HTTP request/response handling, token verification, conflict 409, offline fallback |
 | `CsvIngestionTest` | 21 | Header/row validation, date normalisation, in-batch duplicate quarantine, impact summary |
-| `AnomalyEngineTest` | 16 | All four anomaly layers, severity assignment, escalation, intake snapshots |
+| `AnomalyEngineTest` | 16 | All anomaly layers, severity assignment, escalation, intake snapshots |
+| `SignedSealTest` | 24 | HMAC, ECDSA asymmetric signatures, tamper rejection, key ring |
 | `ApaarIdValidatorTest` | 15 | Grammar rules, Luhn against canonical vectors, placeholder rejection |
 | `SealGeneratorTest` | 11 | Determinism, tamper evidence, SHA-256 vector, IST/UTC timestamps |
+| `ApaarQrPayloadTest` | 10 | Verification link build/parse, opaque token URLs, QR round-trip |
+| `AuditChainTest` | 14 | Hash-chain integrity, tamper detection, cryptographic audit continuity |
+| `AccessControlTest` | 12 | Role-based permissions, directorate/institution/verifier/student policies |
 | `QrRoundTripTest` | 8 | Round-trip against an **independent** ISO 18004 decoder, RS syndrome = 0 |
-| `ApaarQrPayloadTest` | 7 | Verification link build/parse, QR round-trip of link and seal |
+| Other domain suites | 64 | Credentials, privacy masking, voice commands, and models |
+
 
 `QrRoundTripTest` contains `ReferenceQrDecoder`, a second, independently written decoder that
 re-derives the function-pattern map, the zig-zag module order, the Reed–Solomon block layout and the

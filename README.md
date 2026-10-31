@@ -18,7 +18,7 @@
 > large, risky change with no functional benefit. The user-facing text is
 > consistent everywhere.
 
-> **APAAR** — the **Automated Permanent Academic Account Registry**, issued under the
+> **APAAR** - the **Automated Permanent Academic Account Registry**, issued under the
 > Ministry of Education's *One Nation, One Student ID* initiative. It is the student's
 > academic passport: every enrolled student is issued a 12-digit APAAR ID that is
 > supposed to travel with them across institutions, employers and degree-awarding
@@ -159,7 +159,7 @@ APAAR QR badges, PDF certificates carrying the APAAR ID, CSV/PDF regulatory
 reports, an explainable per-institution risk score, versioned seat policy, and
 a hash-chained audit trail.
 
-**258 pytest tests, all passing.** See [`edusync/README.md`](edusync/README.md)
+**262 pytest tests, all passing.** See [`edusync/README.md`](edusync/README.md)
 and [`edusync/docs/architecture.md`](edusync/docs/architecture.md).
 
 #### Google sign-in
@@ -186,34 +186,37 @@ Requirements: **JDK 17+**, Android SDK with **compileSdk 36**.
 
 ```powershell
 cd Acadentrix
-.\gradlew.bat testDebugUnitTest assembleDebug
+.\gradlew.bat :core:test assembleDebug
 ```
 
 or with the convenience launcher (pins JDK 17, sanitises PATH):
 
 ```powershell
 cd Acadentrix
-.\build.cmd testDebugUnitTest assembleDebug
+.\build.cmd :core:test assembleDebug
 ```
 
-**Current status: 185 unit tests, 185 passing, 0 failing** — and the debug APK
-builds clean.
+**Current status: 204 unit tests, 204 passing, 0 failing** — and the debug APK
+builds clean (`app-debug.apk`).
 
 | Suite | Tests |
 | --- | --- |
-| `AnomalyEngineTest` | 40 |
-| `SignedSealTest` | 30 |
-| `CsvExportTest` | 19 |
-| `QrRoundTripTest` | 13 |
-| `CsvIngestionTest` | 13 |
+| `AnomalyEngineTest` | 39 |
+| `SignedSealTest` | 28 |
+| `CsvIngestionTest` | 21 |
+| `ApaarIdValidatorTest` | 15 |
+| `QrRoundTripTest` | 14 |
+| `CsvExportTest` | 13 |
+| `SealGeneratorTest` | 11 |
 | `ConsentPolicyTest` | 10 |
-| `AccessControlTest` | 9 |
-| `AuditChainTest` | 8 |
-| `ApaarIdValidatorTest` | 8 |
-| `SealGeneratorTest` | 6 |
-| `ApaarQrPayloadTest` | 6 |
-| `CredentialsTest` | 6 |
-| *(core module total)* | **185** |
+| `CredentialsTest` | 10 |
+| `ApaarQrPayloadTest` | 10 |
+| `EduSyncApiClientTest` | 9 |
+| `AuditChainTest` | 9 |
+| `AccessControlTest` | 8 |
+| `VoiceIntentMatcherTest` | 5 |
+| `PrivacyMaskTest` | 2 |
+| *(core module total)* | **204** |
 
 The `:core` Kotlin module holds the shared logic — the APAAR validator, the
 anomaly engine, the signed seal, the QR encoder/decoder and the CSV
@@ -236,7 +239,7 @@ docker compose up --build     # MongoDB + the API + the React frontend
 | Frontend (React 19 + Vite + Tailwind 4) | **Vercel** | Root directory `frontend/`, output `dist` |
 | Backend (FastAPI + Motor) | **Render** (web service) | `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, health check `/health` |
 | Database (MongoDB) | **MongoDB Atlas** | An Atlas cluster is a replica set, so multi-document transactions are available |
-| Android client (`Acadentrix/`) | Direct APK / Play Internal Testing | Offline-first; no API call yet (see below) |
+| Android client (`Acadentrix/`) | Direct APK / Play Internal Testing | Offline-capable with Room database, pure Java runtime HTTP client (`EduSyncApiClient`), two-way sync (`SyncManager`), and optimistic concurrency (HTTP 409 conflict handling) |
 
 The configuration files are [`render.yaml`](render.yaml) and
 [`frontend/vercel.json`](frontend/vercel.json).
@@ -401,35 +404,29 @@ curl -s https://<service>.onrender.com/health
 
 ### The Android client
 
-The client is **offline-first** and currently makes **no API call at all** —
-there is no HTTP client in it (no Retrofit, OkHttp or Ktor). It cannot talk to
-the Render backend, and nothing in the demo requires it to.
+The client is **offline-first with bidirectional network synchronisation capability**:
+it features an in-built `EduSyncApiClient` and `SyncManager` (`com.acadentrix.core.network`),
+using standard Java runtime networking (zero external dependencies). It connects to
+the FastAPI backend (`http://10.0.2.2:8000/api` for emulator, or configurable remote URL).
 
-**For the hackathon demo, share the APK.** Live backend connectivity would be
-a new feature, not a configuration change.
+* **Local persistence**: Room remains the authoritative local cache, seeded with
+  12 institutions and 2,219 synthetic student records so the application is 100%
+  operational without network connectivity.
+* **Network & offline resilience**: All API operations wrap in `NetworkResult`
+  (`Success`, `OfflineFallback`, `Error`). If the backend is unreachable or drops,
+  the app falls back gracefully without crashing.
+* **Synchronisation & Conflict Handling**: Two-way sync pushes local admissions
+  and pulls central updates. Duplicate submissions (409 Conflict) and cross-institution
+  clashes are caught safely, flagged as anomalies, and never silently overwritten.
+* **QR & Token Contract**: Android `ApaarQrPayload` supports both the deep-link
+  token contract (`https://edusync.vercel.app/verify/t/{token}`) and the canonical
+  seal verification query (`/verify?apaar=...&seal=...`). Online token lookups resolve
+  through `GET /api/verify/token/{token}` with public allowlisted fields only.
 
 * *Demo* — a signed release APK shared by link or QR code.
 * *Wider testing* — Firebase App Distribution, or Google Play Internal
   Testing (Play needs a one-time developer registration fee; check the
   current amount on the Play Console).
-
-Two follow-ups for the team:
-
-1. **The QR format on the Android side still carries the raw APAAR ID** and
-   still points at `https://apaar.aicte-india.gov.in/verify`
-   (`Acadentrix/core/src/main/kotlin/com/acadentrix/core/qr/ApaarQrPayload.kt`,
-   and the call sites in `ApaarCardScreen.kt` and
-   `DegreeCertificateScreen.kt`). The web and PDF badges now carry an opaque
-   token on this deployment's own origin instead, so **the Android badge
-   format and the web badge format have diverged**. They should be brought
-   back together — the Android payload needs the same
-   `{origin}/verify/t/{token}` shape, and a per-build-type
-   `VERIFICATION_BASE_URL` build-config field so each build points at its own
-   deployment. Until then, a badge printed by the app will not resolve
-   through the portal.
-2. When server synchronisation is added, the URL must be the **HTTPS** Render
-   URL — Android blocks cleartext HTTP by default. CORS does not apply to a
-   native client, so `FRONTEND_ORIGIN` does not need the APK.
 
 ### Not yet verified
 
@@ -440,14 +437,13 @@ accounts and credentials that are deliberately not committed:
 * a live MongoDB Atlas connection, and therefore the transaction path of the
   correction workflow against a real replica set;
 * a live Vercel deployment, and therefore the built bundle behind the Vercel
-  rewrite;
-* the Android APK talking to a live backend (it does not make API calls yet,
-  and its QR payload format still has to be brought in line with the web one).
+  rewrite.
 
-What **was** run: the whole pytest suite, the whole Vitest suite, the
-production build of the frontend, the Docker image build, the backend served
-locally against the in-memory database, and the production-safety start-up
-refusals.
+What **was** run: the whole pytest suite (262 tests passed), the whole Vitest suite
+(61 tests passed), the frontend production build and link check, the Android core
+unit and HTTP integration test suite (204 tests passed), the Android debug APK build,
+and the production-safety start-up refusals.
+
 
 ---
 
@@ -522,7 +518,7 @@ proves the record behind it is the record that was sealed. The wire format is
 `<ALG>.<keyId>.<signature>`, so a legacy unkeyed SHA-256 seal, an HMAC seal
 and an offline-verifiable Ed25519 signature all coexist without breaking the
 badges already in circulation. The Android client renders the QR matrix with a
-**dependency-free ISO/IEC 18004 encoder and decoder** (Reed–Solomon error
+**dependency-free ISO/IEC 18004 encoder and decoder** (Reed-Solomon error
 correction included) on a Compose `Canvas`; the server uses the `qrcode`
 library and `reportlab` for the printed certificates.
 
@@ -546,8 +542,9 @@ cd edusync
 pip install -r requirements.txt
 cp .env.example .env            # then edit the secrets
 python -m app.scripts.seed
+python -m app.scripts.check_prod_settings # verify 12/12 production safety checks
 uvicorn app.main:app --reload
-pytest -q                       # 258 tests
+pytest -q                       # 262 passed
 ```
 
 ### The web frontend
@@ -555,8 +552,15 @@ pytest -q                       # 258 tests
 ```bash
 cd frontend
 npm install
+<<<<<<< HEAD
 npm test                        # 48 tests
 npm run build
+=======
+npm test                        # 61 passed (including 7 design system lint tests)
+npm run i18n:check              # 13 locales, 257 keys each
+npm run check:links             # verified internal routes and static assets
+npm run build                   # route-level code splitting
+>>>>>>> 92abb0106e7af41c4caa35b11a70b4159b24e4df
 ```
 
 ### The Android client
@@ -565,18 +569,19 @@ Requirements: **JDK 17+**, Android SDK with **compileSdk 36**.
 
 ```powershell
 cd Acadentrix
-.\gradlew.bat testDebugUnitTest assembleDebug
+.\gradlew.bat :core:test assembleDebug
 ```
 
 or with the convenience launcher (pins JDK 17, sanitises PATH):
 
 ```powershell
 cd Acadentrix
-.\build.cmd testDebugUnitTest assembleDebug
+.\build.cmd :core:test assembleDebug   # 204 passed unit & integration tests, builds app-debug.apk
 ```
 
+
 Artifacts land in `Acadentrix/app/build/outputs/apk/debug/app-debug.apk`, with the HTML test
-report at `Acadentrix/app/build/reports/tests/testDebugUnitTest/index.html`.
+report at `Acadentrix/core/build/reports/tests/test/index.html`.
 
 ---
 
