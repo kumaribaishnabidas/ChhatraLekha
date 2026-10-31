@@ -14,14 +14,14 @@ import java.net.InetSocketAddress
 import java.nio.charset.StandardCharsets
 
 /**
- * Real integration test testing EduSyncApiClient and SyncManager over real TCP HTTP requests
+ * Real integration test testing ChhatraLekhaApiClient and SyncManager over real TCP HTTP requests
  * using an in-process local HTTP server on an ephemeral port.
  */
-class EduSyncApiClientTest {
+class ChhatraLekhaApiClientTest {
 
     private lateinit var server: HttpServer
     private var baseUrl: String = ""
-    private val client = EduSyncApiClient(connectTimeoutMs = 2000, readTimeoutMs = 2000)
+    private val client = ChhatraLekhaApiClient(connectTimeoutMs = 2000, readTimeoutMs = 2000)
 
     @Before
     fun setUp() {

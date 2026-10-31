@@ -25,7 +25,7 @@ credentials that the web frontend and the Android client consume.
 ### 1. The backend
 
 ```bash
-cd edusync
+cd chhatralekha
 python -m venv .venv
 # Windows
 .venv\Scripts\activate
@@ -289,7 +289,7 @@ button in React is not a security control.
 ## Tests
 
 ```bash
-cd edusync && pytest -q     # 258 tests
+cd chhatralekha && pytest -q     # 258 tests
 ```
 
 The suite runs against the in-memory MongoDB, so it needs no server and no
