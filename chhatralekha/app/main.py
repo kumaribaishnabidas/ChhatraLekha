@@ -77,7 +77,7 @@ async def lifespan(app: FastAPI):
                 logger.warning("    %-34s %s", email, role)
             logger.warning(
                 "    password: %s   (from DEMO_PASSWORD; change it in "
-                "edusync/.env)",
+                "chhatralekha/.env)",
                 summary["demo_password"],
             )
 
