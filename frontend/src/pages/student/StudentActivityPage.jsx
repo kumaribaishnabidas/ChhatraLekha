@@ -21,7 +21,7 @@ export default function StudentActivityPage() {
         setLoading(true)
         setError('')
         const { data } = await api.get('/me/activity')
-        setActivities(data)
+        setActivities(Array.isArray(data) ? data : data?.events || data?.activity || [])
       } catch (err) {
         setError(errorMessage(err, 'Unable to load activity logs.'))
       } finally {
