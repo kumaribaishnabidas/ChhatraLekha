@@ -1,149 +1,109 @@
 import { Link } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
+import { Button, Card } from '../components/common'
+
+const features = [
+  ['01', 'Digital ID', 'A portable academic identity that keeps the student record clear, current, and easy to present.'],
+  ['02', 'Academic Wallet', 'Keep credentials, certificates, and verification history together in one trusted place.'],
+  ['03', 'QR Verification', 'Share a time-bound QR credential without exposing personal data on the public page.'],
+  ['04', 'Fraud Detection', 'Surface duplicate enrolments, quota breaches, and suspicious changes before they spread.'],
+  ['05', 'Audit Trail', 'Every consent, review, correction, and verification stays traceable for accountable decisions.'],
+]
 
 export default function LandingPage() {
   usePageMeta({
-    title: 'Overview',
-    description: 'APAAR ID Student Data Management & Verification Platform for AICTE-approved institutions.',
+    title: 'Authenticate · Verify · Empower',
+    description: 'ChhatraLekha is a trusted digital academic identity for every student.',
     canonical: '/',
   })
 
   return (
-    <div className="space-y-16 py-8">
-      {/* Hero Section */}
-      <section className="mx-auto max-w-[1200px] px-5">
-        <div className="bg-surface border border-line rounded p-8 sm:p-12 shadow-sm relative overflow-hidden">
-          <div className="max-w-[70ch] space-y-5">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-accent/15 text-accent-strong border border-accent/30">
-              <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-              Academic Credential Management &middot; Tamper-Evident Verification
+    <div className="space-y-16 pb-10">
+      <section className="relative overflow-hidden bg-surface-2">
+        <div className="mx-auto grid max-w-[1200px] gap-10 px-5 py-14 sm:py-20 lg:grid-cols-[1.15fr_.85fr] lg:items-center">
+          <div className="relative z-10 space-y-6">
+            <img src="/brand/chhatralekha-logo.png" alt="ChhatraLekha - Authenticate, Verify, Empower" className="h-auto w-full max-w-[420px] object-contain object-left" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent-strong">
+              <span className="h-2 w-2 rounded-full bg-accent" aria-hidden="true" />
+              Trusted digital academic identity
             </div>
-
-            <h1 className="text-3xl sm:text-5xl font-black text-brand tracking-tight leading-tight">
-              Automated Permanent Academic Account Registry Verification
+            <h1 className="m-0 max-w-[12ch] text-4xl font-black leading-tight text-brand-deep sm:text-6xl">
+              One trusted record for every student.
             </h1>
-
-            <p className="text-base sm:text-lg text-muted leading-relaxed">
-              ChhatraLekha eliminates academic reconciliation fraud across institutions with a 10-layer anomaly engine, cryptographic tamper-evident seals, and an Academic Record Change Impact Detector.
+            <p className="m-0 max-w-[60ch] text-base leading-relaxed text-muted sm:text-lg">
+              Authenticate academic records, verify credentials, and empower students to share proof of learning with confidence.
             </p>
-
-            <div className="p-4 rounded border border-warning/40 bg-warning-surface text-warning-strong text-xs sm:text-sm">
-              <strong>Notice:</strong> Verification against this prototype's database, not official APAAR or AICTE verification. Synthetic demo records only.
+            <div className="flex flex-wrap gap-3">
+              <Link to="/verify/t/demo" className="no-underline"><Button variant="accent">Verify a credential</Button></Link>
+              <Link to="/login" className="no-underline"><Button variant="primary">Sign in</Button></Link>
             </div>
-
-            <div className="flex flex-wrap items-center gap-4 pt-2">
-              <Link
-                to="/login"
-                className="px-6 py-3 rounded bg-brand text-on-brand font-semibold text-sm hover:opacity-95 transition-opacity no-underline shadow-sm"
-              >
-                Sign In &amp; Try Live Demo
-              </Link>
-              <Link
-                to="/verify/t/demo"
-                className="px-6 py-3 rounded border border-line bg-surface-2 text-ink font-semibold text-sm hover:bg-surface-3 transition-colors no-underline"
-              >
-                Verify a Token Badge
-              </Link>
+            <p className="m-0 text-xs text-muted">Prototype only - not official APAAR or AICTE verification.</p>
+          </div>
+          <div className="relative">
+            <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-accent/15 blur-3xl" aria-hidden="true" />
+            <div className="relative rounded-lg border border-line bg-surface p-6 shadow-[0_24px_70px_var(--app-shadow-strong)]">
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <p className="m-0 text-xs font-bold uppercase tracking-widest text-muted">Credential journey</p>
+                  <p className="m-0 mt-1 text-lg font-bold text-brand-deep">Upload → Verify → Share</p>
+                </div>
+                <span className="rounded-full bg-success-surface px-3 py-1 text-xs font-bold text-success-strong">Protected</span>
+              </div>
+              <div className="grid gap-3">
+                {['Upload academic proof', 'Run a trusted verification', 'Share a private QR credential'].map((step, index) => (
+                  <div key={step} className="flex items-center gap-3 rounded-lg border border-line bg-surface-2 p-4">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-black text-on-brand">{index + 1}</span>
+                    <span className="font-semibold text-ink">{step}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6 rounded-lg bg-brand p-5 text-on-brand">
+                <p className="m-0 text-xs font-bold uppercase tracking-widest text-white/70">Privacy by design</p>
+                <p className="m-0 mt-2 text-lg font-bold">Public verification shows the credential, not the person.</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Synthetic Dataset Metrics */}
       <section className="mx-auto max-w-[1200px] px-5">
-        <div className="border border-line rounded bg-surface p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-muted m-0">
-              Live Seeded Dataset Statistics (Synthetic Demo Data)
-            </h2>
-            <span className="text-xs px-2 py-0.5 rounded bg-info-surface text-info-strong font-semibold">
-              Deterministic
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="p-4 rounded bg-surface-2 border border-line">
-              <div className="text-2xl sm:text-3xl font-extrabold text-brand">12</div>
-              <div className="text-xs text-muted mt-1">Institutions Registered</div>
-            </div>
-            <div className="p-4 rounded bg-surface-2 border border-line">
-              <div className="text-2xl sm:text-3xl font-extrabold text-brand">60</div>
-              <div className="text-xs text-muted mt-1">Sanctioned Programmes</div>
-            </div>
-            <div className="p-4 rounded bg-surface-2 border border-line">
-              <div className="text-2xl sm:text-3xl font-extrabold text-brand">~1,900</div>
-              <div className="text-xs text-muted mt-1">Enrolled Students</div>
-            </div>
-            <div className="p-4 rounded bg-surface-2 border border-line">
-              <div className="text-2xl sm:text-3xl font-extrabold text-danger-strong">24</div>
-              <div className="text-xs text-muted mt-1">Seeded Active Anomalies</div>
-            </div>
-          </div>
+        <div className="mb-6 max-w-2xl">
+          <p className="m-0 text-xs font-bold uppercase tracking-widest text-accent-strong">Built for the full academic journey</p>
+          <h2 className="m-0 mt-2 text-3xl font-black text-brand-deep">A calmer way to prove what you have earned.</h2>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {features.map(([number, title, description]) => (
+            <Card key={title} className="p-5 transition-transform hover:-translate-y-1">
+              <span className="text-xs font-black tracking-widest text-accent-strong">{number}</span>
+              <h3 className="m-0 mt-8 text-lg">{title}</h3>
+              <p className="m-0 mt-2 text-sm leading-relaxed text-muted">{description}</p>
+            </Card>
+          ))}
         </div>
       </section>
 
-      {/* Core Architectural Pillars */}
-      <section className="mx-auto max-w-[1200px] px-5 space-y-6">
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-ink tracking-tight m-0">
-            Four Layers of Academic Integrity
-          </h2>
-          <p className="text-muted text-sm mt-1">
-            Deterministic rule-based engines running without LLM hallucination or external API dependencies.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-6 rounded border border-line bg-surface space-y-3">
-            <div className="text-xs font-bold uppercase text-accent-strong tracking-wider">Engine 01</div>
-            <h3 className="text-lg font-bold text-ink m-0">10-Layer Anomaly Detection</h3>
-            <p className="text-sm text-muted leading-relaxed m-0">
-              Evaluates incoming student intakes against syntactic Luhn rules, cross-institution duplicate enrollment, duplicate roll numbers, sanctioned seat breaches, and quota ceilings (NRI 5%, OCI/FN 15%, TFW 5%, PMSSS).
-            </p>
+      <section className="bg-brand py-12 text-on-brand">
+        <div className="mx-auto grid max-w-[1200px] gap-6 px-5 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div>
+            <p className="m-0 text-xs font-bold uppercase tracking-widest text-white/70">Trust and security</p>
+            <h2 className="m-0 mt-2 text-3xl font-black text-white">Make every academic handoff accountable.</h2>
+            <p className="m-0 mt-3 max-w-2xl text-sm leading-relaxed text-white/80">ChhatraLekha keeps consent, verification, and record changes visible to the people responsible for them.</p>
           </div>
-
-          <div className="p-6 rounded border border-line bg-surface space-y-3">
-            <div className="text-xs font-bold uppercase text-accent-strong tracking-wider">Engine 02</div>
-            <h3 className="text-lg font-bold text-ink m-0">Academic Record Change Impact Detector</h3>
-            <p className="text-sm text-muted leading-relaxed m-0">
-              Evaluates proposed corrections against rules CIA-A through CIA-F before writing. Predicts side effects on seat capacity, dependent registrations, and issued credentials without silent edits.
-            </p>
-          </div>
-
-          <div className="p-6 rounded border border-line bg-surface space-y-3">
-            <div className="text-xs font-bold uppercase text-accent-strong tracking-wider">Engine 03</div>
-            <h3 className="text-lg font-bold text-ink m-0">Tamper-Evident Cryptographic Seals</h3>
-            <p className="text-sm text-muted leading-relaxed m-0">
-              Generates cryptographic HMAC-SHA256 and Ed25519 digital signatures derived directly from immutable enrollment facts, verifiable offline on phone or server.
-            </p>
-          </div>
-
-          <div className="p-6 rounded border border-line bg-surface space-y-3">
-            <div className="text-xs font-bold uppercase text-accent-strong tracking-wider">Engine 04</div>
-            <h3 className="text-lg font-bold text-ink m-0">Opaque Revocable Verification Tokens</h3>
-            <p className="text-sm text-muted leading-relaxed m-0">
-              Public QR badges carry high-entropy, expiring, revocable tokens. Verification endpoints disclose an allowlist (status, institution, program) without exposing raw APAAR IDs or date of birth.
-            </p>
-          </div>
+          <Link to="/about" className="no-underline"><Button variant="accent">Explore the platform</Button></Link>
         </div>
       </section>
 
-      {/* Demo Walkthrough CTA */}
       <section className="mx-auto max-w-[1200px] px-5">
-        <div className="p-8 rounded bg-surface-2 border border-line flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-2">
-            <h2 className="text-xl font-bold text-ink m-0">Experience the System Firsthand</h2>
-            <p className="text-sm text-muted m-0">
-              Sign in with pre-seeded test accounts for AICTE Directorate, Institution Admin, or Verifier.
-            </p>
+        <Card className="flex flex-col gap-5 bg-surface-2 p-7 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="m-0 text-2xl">Ready to verify with confidence?</h2>
+            <p className="m-0 mt-2 text-sm text-muted">Try the prototype with a seeded demo account or scan a sample credential.</p>
           </div>
-          <Link
-            to="/login"
-            className="px-6 py-3 rounded bg-brand text-on-brand font-semibold text-sm hover:opacity-95 transition-opacity whitespace-nowrap no-underline"
-          >
-            Go to Sign In &rarr;
-          </Link>
-        </div>
+          <div className="flex flex-wrap gap-3">
+            <Link to="/login" className="no-underline"><Button>Open the workspace</Button></Link>
+            <Link to="/verify/t/demo" className="no-underline"><Button variant="secondary">Try verification</Button></Link>
+          </div>
+        </Card>
       </section>
     </div>
   )
