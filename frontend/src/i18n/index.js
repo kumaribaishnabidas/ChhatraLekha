@@ -41,6 +41,36 @@ export const LANGUAGES = [
 
 export const LANGUAGE_BY_CODE = Object.fromEntries(LANGUAGES.map((item) => [item.code, item]))
 
+/**
+ * Complete list of all 22 languages in the Eighth Schedule of the Indian Constitution.
+ * Languages active in Phase 1-4 are flagged with active: true; Phase 5 expansion languages
+ * are mapped with their respective script, direction, and rollout status.
+ */
+export const ALL_SCHEDULED_LANGUAGES_22 = [
+  { code: 'as', name: 'Assamese', nativeName: 'অসমীয়া', script: 'Bengali-Assamese', active: true },
+  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', script: 'Bengali', active: true },
+  { code: 'brx', name: 'Bodo', nativeName: 'बर’', script: 'Devanagari', active: false },
+  { code: 'doi', name: 'Dogri', nativeName: 'डोगरी', script: 'Devanagari', active: false },
+  { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી', script: 'Gujarati', active: true },
+  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', script: 'Devanagari', active: true },
+  { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ', script: 'Kannada', active: true },
+  { code: 'ks', name: 'Kashmiri', nativeName: 'کٲشُر', script: 'Perso-Arabic', dir: 'rtl', active: false },
+  { code: 'kok', name: 'Konkani', nativeName: 'कोंकणी', script: 'Devanagari', active: false },
+  { code: 'mai', name: 'Maithili', nativeName: 'मैथिली', script: 'Devanagari', active: false },
+  { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം', script: 'Malayalam', active: true },
+  { code: 'mni', name: 'Manipuri', nativeName: 'ꯃꯤꯇꯩꯂꯣꯟ', script: 'Meitei Mayek', active: false },
+  { code: 'mr', name: 'Marathi', nativeName: 'मराठी', script: 'Devanagari', active: true },
+  { code: 'ne', name: 'Nepali', nativeName: 'नेपाली', script: 'Devanagari', active: false },
+  { code: 'or', name: 'Odia', nativeName: 'ଓଡ଼ିଆ', script: 'Odia', active: true },
+  { code: 'pa', name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ', script: 'Gurmukhi', active: true },
+  { code: 'sa', name: 'Sanskrit', nativeName: 'संस्कृतम्', script: 'Devanagari', active: false },
+  { code: 'sat', name: 'Santali', nativeName: 'ᱥᱟᱱᱛᱟᱲᱤ', script: 'Ol Chiki', active: false },
+  { code: 'sd', name: 'Sindhi', nativeName: 'سنڌي', script: 'Perso-Arabic', dir: 'rtl', active: false },
+  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', script: 'Tamil', active: true },
+  { code: 'te', name: 'Telugu', nativeName: 'తెలుగు', script: 'Telugu', active: true },
+  { code: 'ur', name: 'Urdu', nativeName: 'اردو', script: 'Perso-Arabic', dir: 'rtl', active: true },
+]
+
 const resources = {
   en: { common: en }, hi: { common: hi }, bn: { common: bn }, ta: { common: ta },
   te: { common: te }, mr: { common: mr }, gu: { common: gu }, kn: { common: kn },

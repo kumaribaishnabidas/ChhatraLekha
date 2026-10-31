@@ -10,6 +10,7 @@ public enum VoiceIntent: String, CaseIterable {
     case verify
     case attendance
     case results
+    case timetable
     case studentCount
     case help
     case stop
@@ -25,6 +26,9 @@ public struct VoiceIntentMatcher {
 
         if lang.starts(with: "or") {
             // Odia voice patterns
+            if clean.contains("କ୍ଲାସ୍ ଟାଇମ୍ ଟେବୁଲ୍") || clean.contains("ସମୟ ସାରଣୀ") || clean.contains("ଟାଇମ୍ ଟେବୁଲ୍") {
+                return .timetable
+            }
             if clean.contains("ଉପସ୍ଥାନ") || clean.contains("ହାଜିରା") {
                 return .attendance
             }
@@ -47,6 +51,9 @@ public struct VoiceIntentMatcher {
 
         if lang.starts(with: "hi") {
             // Hindi voice patterns
+            if clean.contains("समय सारणी") || clean.contains("टाइम टेबल") || clean.contains("टाइमटेबल") {
+                return .timetable
+            }
             if clean.contains("उपस्थिति") || clean.contains("हाजिरी") {
                 return .attendance
             }
@@ -68,6 +75,9 @@ public struct VoiceIntentMatcher {
         }
 
         // English voice patterns
+        if clean.contains("timetable") || clean.contains("schedule") {
+            return .timetable
+        }
         if clean.contains("attendance") || clean.contains("presence") {
             return .attendance
         }

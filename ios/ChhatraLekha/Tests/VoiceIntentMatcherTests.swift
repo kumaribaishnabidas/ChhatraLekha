@@ -4,6 +4,7 @@ import XCTest
 final class VoiceIntentMatcherTests: XCTestCase {
     func testEnglishVoiceCommands() {
         XCTAssertEqual(VoiceIntentMatcher.match(text: "show my attendance"), .attendance)
+        XCTAssertEqual(VoiceIntentMatcher.match(text: "show class timetable"), .timetable)
         XCTAssertEqual(VoiceIntentMatcher.match(text: "open dashboard"), .dashboard)
         XCTAssertEqual(VoiceIntentMatcher.match(text: "check my results"), .results)
         XCTAssertEqual(VoiceIntentMatcher.match(text: "stop"), .stop)
@@ -12,11 +13,13 @@ final class VoiceIntentMatcherTests: XCTestCase {
     func testHindiVoiceCommands() {
         XCTAssertEqual(VoiceIntentMatcher.match(text: "डैशबोर्ड खोलें", language: "hi-IN"), .dashboard)
         XCTAssertEqual(VoiceIntentMatcher.match(text: "मेरी उपस्थिति दिखाओ", language: "hi-IN"), .attendance)
+        XCTAssertEqual(VoiceIntentMatcher.match(text: "समय सारणी दिखाओ", language: "hi-IN"), .timetable)
         XCTAssertEqual(VoiceIntentMatcher.match(text: "रुको", language: "hi-IN"), .stop)
     }
 
     func testOdiaVoiceCommands() {
         XCTAssertEqual(VoiceIntentMatcher.match(text: "ମୋର ଆଜିର ଉପସ୍ଥାନ ଦେଖାଅ", language: "or-IN"), .attendance)
+        XCTAssertEqual(VoiceIntentMatcher.match(text: "ମୋର ଆଜିର କ୍ଲାସ୍ ଟାଇମ୍ ଟେବୁଲ୍ ଦେଖାଅ", language: "or-IN"), .timetable)
         XCTAssertEqual(VoiceIntentMatcher.match(text: "ମୋର ପରୀକ୍ଷା ଫଳାଫଳ ଦେଖାଅ", language: "or-IN"), .results)
         XCTAssertEqual(VoiceIntentMatcher.match(text: "ଡ୍ୟାସବୋର୍ଡ", language: "or-IN"), .dashboard)
     }
