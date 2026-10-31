@@ -20,7 +20,7 @@ import hashlib
 import hmac
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import serialization
@@ -144,6 +144,76 @@ class SealVerification:
             SealVerdict.KEY_UNAVAILABLE: "Verification key unavailable",
             SealVerdict.REVOKED: "Revoked",
         }[self.verdict]
+
+
+@dataclass
+class PublicKeyEntry:
+    key_id: str
+    algorithm: str
+    public_key_pem: str
+    status: str = "ACTIVE"  # ACTIVE, ROTATED, REVOKED
+    valid_from: str = "2026-01-01"
+    expires_at: str | None = None
+    revocation_reason: str | None = None
+
+
+class KeyRegistry:
+    """Versioned public key store for Ed25519 offline verification & key rotation."""
+
+    def __init__(self) -> None:
+        self._keys: dict[str, PublicKeyEntry] = {}
+
+    def register(
+        self,
+        key_id: str,
+        public_key_pem: str,
+        status: str = "ACTIVE",
+        valid_from: str = "2026-01-01",
+        expires_at: str | None = None,
+        revocation_reason: str | None = None,
+    ) -> None:
+        self._keys[key_id] = PublicKeyEntry(
+            key_id=key_id,
+            algorithm=SealAlgorithm.ED25519.value,
+            public_key_pem=public_key_pem,
+            status=status,
+            valid_from=valid_from,
+            expires_at=expires_at,
+            revocation_reason=revocation_reason,
+        )
+
+    def revoke(self, key_id: str, reason: str = "Compromised or retired") -> bool:
+        if key_id in self._keys:
+            self._keys[key_id].status = "REVOKED"
+            self._keys[key_id].revocation_reason = reason
+            return True
+        return False
+
+    def get(self, key_id: str) -> PublicKeyEntry | None:
+        return self._keys.get(key_id)
+
+    def list_keys(self) -> list[dict[str, Any]]:
+        return [
+            {
+                "key_id": k.key_id,
+                "algorithm": k.algorithm,
+                "public_key_pem": k.public_key_pem,
+                "status": k.status,
+                "valid_from": k.valid_from,
+                "expires_at": k.expires_at,
+                "revoked": k.status == "REVOKED",
+                "revocation_reason": k.revocation_reason,
+            }
+            for k in self._keys.values()
+        ]
+
+    def reset(self) -> None:
+        self._keys.clear()
+
+
+key_registry = KeyRegistry()
+if settings.seal_ecdsa_public_key_pem:
+    key_registry.register(settings.seal_key_id, settings.seal_ecdsa_public_key_pem, status="ACTIVE")
 
 
 # --------------------------------------------------------------- base64url
@@ -320,19 +390,39 @@ def verify_hmac(
 def verify_ed25519(
     presented: str, payload: CredentialPayload, public_key_pem: str | None = None
 ) -> SealVerification:
-    """Verify an Ed25519 signature against a published public key."""
+    """Verify an Ed25519 signature against a published or rotated public key."""
     parsed = parse(presented)
     if parsed is None:
         return SealVerification(
             verdict=SealVerdict.MALFORMED, reason="The seal is malformed."
         )
-    pem = public_key_pem if public_key_pem is not None else settings.seal_ecdsa_public_key_pem
+
+    # 1. Direct key passed explicitly
+    pem = public_key_pem
+
+    # 2. Key registry lookup by key_id
+    if not pem:
+        registered = key_registry.get(parsed.key_id)
+        if registered:
+            if registered.status == "REVOKED":
+                return SealVerification(
+                    verdict=SealVerdict.REVOKED,
+                    algorithm=SealAlgorithm.ED25519,
+                    key_id=parsed.key_id,
+                    reason=f"Verification key '{parsed.key_id}' has been revoked: {registered.revocation_reason or 'Retired'}.",
+                )
+            pem = registered.public_key_pem
+
+    # 3. Fallback to settings
+    if not pem and parsed.key_id == settings.seal_key_id:
+        pem = settings.seal_ecdsa_public_key_pem
+
     if not pem:
         return SealVerification(
             verdict=SealVerdict.KEY_UNAVAILABLE,
             algorithm=SealAlgorithm.ED25519,
             key_id=parsed.key_id,
-            reason="No Ed25519 public key is published for this key id.",
+            reason=f"No Ed25519 public key is published for key id '{parsed.key_id}'.",
         )
     try:
         public_key = serialization.load_pem_public_key(pem.encode("utf-8"))

@@ -140,3 +140,53 @@ def test_base64url_round_trips():
 def test_the_default_signing_uses_the_configured_key():
     signed = seal.sign(payload())
     assert seal.verify(signed, payload()).is_valid
+
+
+def test_key_rotation_and_revocation():
+    priv1 = Ed25519PrivateKey.generate()
+    pub1 = priv1.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    ).decode("utf-8")
+    seal.key_registry.register("key-2025", pub1, status="ROTATED")
+
+    priv2 = Ed25519PrivateKey.generate()
+    pub2 = priv2.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    ).decode("utf-8")
+    seal.key_registry.register("key-2026", pub2, status="ACTIVE")
+
+    priv3 = Ed25519PrivateKey.generate()
+    pub3 = priv3.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    ).decode("utf-8")
+    seal.key_registry.register("key-revoked-2024", pub3, status="ACTIVE")
+    seal.key_registry.revoke("key-revoked-2024", "Key retired due to scheduled rotation")
+
+    p = payload()
+    seal1 = seal.sign_ed25519(p, priv1, key_id="key-2025")
+    seal2 = seal.sign_ed25519(p, priv2, key_id="key-2026")
+    seal3 = seal.sign_ed25519(p, priv3, key_id="key-revoked-2024")
+
+    # Rotated key verifies historical seal
+    res1 = seal.verify_ed25519(seal1, p)
+    assert res1.is_valid
+    assert res1.verdict == seal.SealVerdict.VALID
+
+    # Active key verifies active seal
+    res2 = seal.verify_ed25519(seal2, p)
+    assert res2.is_valid
+    assert res2.verdict == seal.SealVerdict.VALID
+
+    # Revoked key fails closed with REVOKED verdict
+    res3 = seal.verify_ed25519(seal3, p)
+    assert not res3.is_valid
+    assert res3.verdict == seal.SealVerdict.REVOKED
+
+    # Unknown key ID fails with KEY_UNAVAILABLE
+    seal_unknown = seal.sign_ed25519(p, priv1, key_id="unknown-key-999")
+    res_unknown = seal.verify_ed25519(seal_unknown, p)
+    assert not res_unknown.is_valid
+    assert res_unknown.verdict == seal.SealVerdict.KEY_UNAVAILABLE

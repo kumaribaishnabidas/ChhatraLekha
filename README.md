@@ -145,12 +145,16 @@ What it does: multi-role JWT authentication with optional **Google sign-in**,
 RBAC on every endpoint, the
 ten-layer anomaly engine, the **academic record change impact detector**,
 batch CSV ingestion with row-level validation and seat-impact preview,
+**inter-institutional student transfer workflows** with relieving institution authorization,
+**student lifecycle state management** with transition reason audit logs,
+**case reviewer assignment, internal case notes, and structured dismissal reasons**,
+**versioned cryptographic key rotation and JWKS endpoint** for offline verification,
 consent-aware verification, **opaque expiring revocable verification tokens**,
 APAAR QR badges, PDF certificates carrying the APAAR ID, CSV/PDF regulatory
 reports, an explainable per-institution risk score, versioned seat policy, and
 a hash-chained audit trail.
 
-**271 pytest tests, all passing.** See [`chhatralekha/README.md`](chhatralekha/README.md)
+**293 pytest tests, all passing.** See [`chhatralekha/README.md`](chhatralekha/README.md)
 and [`chhatralekha/docs/architecture.md`](chhatralekha/docs/architecture.md).
 
 #### Google sign-in
@@ -535,7 +539,7 @@ cp .env.example .env            # then edit the secrets
 python -m app.scripts.seed
 python -m app.scripts.check_prod_settings # verify 12/12 production safety checks
 uvicorn app.main:app --reload
-pytest -q                       # 286 passed
+pytest -q                       # 293 passed
 ```
 
 ### The web frontend

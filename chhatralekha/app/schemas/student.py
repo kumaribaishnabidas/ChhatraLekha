@@ -66,6 +66,15 @@ class StudentUpdate(BaseModel):
     contact_email: Optional[str] = None
     contact_phone: Optional[str] = None
     state_of_domicile: Optional[str] = None
+    record_status: Optional[str] = None
+
+
+class StudentStatusUpdate(BaseModel):
+    """Body of POST /api/students/{apaar_id}/status."""
+
+    record_status: str = Field(..., pattern="^(ADMITTED|ACTIVE|ON_LEAVE|TRANSFERRED|GRADUATED|WITHDRAWN)$")
+    reason: str = Field(..., min_length=3, max_length=500)
+    effective_date: Optional[str] = None
     is_active: Optional[bool] = None
 
 

@@ -45,6 +45,15 @@ class AnomalyRepository:
         )
         return docs(rows)
 
+    async def get(self, anomaly_id: str) -> Doc | None:
+        """Fetch a single anomaly by string ID or ObjectId."""
+        from bson import ObjectId
+
+        if not ObjectId.is_valid(anomaly_id):
+            return None
+        row = await self._collection.find_one({"_id": ObjectId(anomaly_id)})
+        return Doc(row) if row else None
+
     async def for_apaar_id(self, apaar_id: str) -> list[Doc]:
         rows = (
             await self._collection.find({"student_apaar_id": apaar_id})
@@ -107,19 +116,80 @@ class AnomalyRepository:
         result = await self._collection.insert_many(prepared)
         return len(result.inserted_ids)
 
-    async def set_review_status(self, anomaly_id: str, review_status: str) -> Doc | None:
-        """Move one finding into review."""
+    async def set_review_status(
+        self,
+        anomaly_id: str,
+        review_status: str,
+        dismissal_reason: Optional[str] = None,
+        explanation: Optional[str] = None,
+        reviewed_by: Optional[str] = None,
+    ) -> Doc | None:
+        """Move one finding into review with audit metadata."""
         from bson import ObjectId
 
+        if not ObjectId.is_valid(anomaly_id):
+            return None
+
+        update_fields: dict[str, Any] = {
+            "review_status": review_status,
+            "resolved": review_status == "RESOLVED",
+            "reviewed_at": utcnow(),
+        }
+        if dismissal_reason:
+            update_fields["dismissal_reason"] = dismissal_reason
+        if explanation:
+            update_fields["explanation"] = explanation
+        if reviewed_by:
+            update_fields["reviewed_by"] = reviewed_by
+
+        await self._collection.update_one(
+            {"_id": ObjectId(anomaly_id)},
+            {"$set": update_fields},
+        )
+        row = await self._collection.find_one({"_id": ObjectId(anomaly_id)})
+        return Doc(row) if row else None
+
+    async def assign_reviewer(
+        self, anomaly_id: str, assignee_id: str, assignee_name: str, assigned_by: str
+    ) -> Doc | None:
+        """Assign an anomaly case to a reviewer."""
+        from bson import ObjectId
+
+        if not ObjectId.is_valid(anomaly_id):
+            return None
+        now = utcnow()
         await self._collection.update_one(
             {"_id": ObjectId(anomaly_id)},
             {
                 "$set": {
-                    "review_status": review_status,
-                    "resolved": review_status == "RESOLVED",
-                    "reviewed_at": utcnow(),
+                    "assigned_to": assignee_id,
+                    "assigned_reviewer_name": assignee_name,
+                    "assigned_by": assigned_by,
+                    "assigned_at": now,
+                    "review_status": "IN_REVIEW",
                 }
             },
+        )
+        row = await self._collection.find_one({"_id": ObjectId(anomaly_id)})
+        return Doc(row) if row else None
+
+    async def append_case_note(
+        self, anomaly_id: str, note_text: str, author_id: str, author_name: str
+    ) -> Doc | None:
+        """Append an internal note to an anomaly case."""
+        from bson import ObjectId
+
+        if not ObjectId.is_valid(anomaly_id):
+            return None
+        note = {
+            "note_text": note_text,
+            "author_id": author_id,
+            "author_name": author_name,
+            "timestamp": utcnow(),
+        }
+        await self._collection.update_one(
+            {"_id": ObjectId(anomaly_id)},
+            {"$push": {"case_notes": note}},
         )
         row = await self._collection.find_one({"_id": ObjectId(anomaly_id)})
         return Doc(row) if row else None

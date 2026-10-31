@@ -47,6 +47,7 @@ COLLECTIONS = (
     "uploads",
     "results",
     "notifications",
+    "transfers",
     "verification_tokens",
 )
 

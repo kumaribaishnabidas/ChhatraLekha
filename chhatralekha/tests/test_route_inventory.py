@@ -28,6 +28,7 @@ PUBLIC_ROUTE_PATHS = {
     "/api/verify/token/{token}",
     "/api/verify/redirect/{apaar_id}",
     "/api/verify/public-key",
+    "/api/verify/jwks",
 }
 
 

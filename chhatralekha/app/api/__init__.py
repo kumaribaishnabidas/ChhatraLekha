@@ -11,6 +11,7 @@ from app.api import (
     reports,
     students,
     tokens,
+    transfers,
     verify,
 )
 
@@ -18,6 +19,7 @@ ALL_ROUTERS = [
     auth.router,
     me.router,
     students.router,
+    transfers.router,
     institutions.router,
     anomalies.router,
     verify.router,
