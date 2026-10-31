@@ -37,9 +37,14 @@ describe('theme, locale and deterministic voice', () => {
     expect(errorMessage({ response: { status: 403, data: { detail: 'English only' } } }, 'fallback', t)).toBe('errors.forbidden')
   })
 
-  it('matches fixed English and Hindi commands and rejects unknown speech', () => {
+  it('matches fixed English, Hindi, and Odia commands and rejects unknown speech', () => {
     expect(matchIntent('open dashboard', 'en')).toBe('navigate.dashboard')
+    expect(matchIntent('show my attendance', 'en')).toBe('navigate.attendance')
+    expect(matchIntent('show class timetable', 'en')).toBe('navigate.timetable')
     expect(matchIntent('डैशबोर्ड खोलें', 'hi')).toBe('navigate.dashboard')
+    expect(matchIntent('मेरी उपस्थिति दिखाओ', 'hi')).toBe('navigate.attendance')
+    expect(matchIntent('ମୋର ଆଜିର କ୍ଲାସ୍ ଟାଇମ୍ ଟେବୁଲ୍ ଦେଖାଅ', 'or')).toBe('navigate.timetable')
+    expect(matchIntent('ମୋର ଆଜିର ଉପସ୍ଥାନ ଦେଖାଅ', 'or')).toBe('navigate.attendance')
     expect(matchIntent('apply correction now', 'en')).toBeNull()
   })
 })
