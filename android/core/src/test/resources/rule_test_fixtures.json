@@ -1,0 +1,138 @@
+{
+  "version": "1.0.0",
+  "ruleset_id": "CHHATRALEKHA_RULES_2026_V1",
+  "description": "Shared canonical rule specifications and test vectors for backend and mobile validator parity",
+  "apaar_validation_cases": [
+    {
+      "id": "valid_standard",
+      "input": "984210357890",
+      "expected_valid": true,
+      "expected_normalised": "984210357890",
+      "description": "Standard 12-digit well-formed APAAR ID"
+    },
+    {
+      "id": "valid_formatted",
+      "input": "9842-1035-7890",
+      "expected_valid": true,
+      "expected_normalised": "984210357890",
+      "description": "Hyphen-formatted 12-digit APAAR ID"
+    },
+    {
+      "id": "valid_spaced",
+      "input": "9842 1035 7890",
+      "expected_valid": true,
+      "expected_normalised": "984210357890",
+      "description": "Space-formatted 12-digit APAAR ID"
+    },
+    {
+      "id": "invalid_empty",
+      "input": "",
+      "expected_valid": false,
+      "error_keyword": "mandatory",
+      "description": "Empty APAAR ID is rejected"
+    },
+    {
+      "id": "invalid_too_short",
+      "input": "98421035789",
+      "expected_valid": false,
+      "error_keyword": "12 digits",
+      "description": "11-digit APAAR ID is rejected"
+    },
+    {
+      "id": "invalid_too_long",
+      "input": "9842103578901",
+      "expected_valid": false,
+      "description": "13-digit APAAR ID is rejected"
+    },
+    {
+      "id": "invalid_non_numeric",
+      "input": "9842X0357890",
+      "expected_valid": false,
+      "error_keyword": "digits only",
+      "description": "Non-numeric characters rejected"
+    },
+    {
+      "id": "invalid_repeated_all",
+      "input": "111111111111",
+      "expected_valid": false,
+      "description": "All identical digits rejected"
+    },
+    {
+      "id": "invalid_repeated_zeros",
+      "input": "000000000000",
+      "expected_valid": false,
+      "description": "All zeroes rejected"
+    },
+    {
+      "id": "invalid_ascending_sequence",
+      "input": "012345678901",
+      "expected_valid": false,
+      "description": "Sequential ascending run rejected"
+    },
+    {
+      "id": "invalid_descending_sequence",
+      "input": "987654321098",
+      "expected_valid": false,
+      "description": "Sequential descending run rejected"
+    },
+    {
+      "id": "invalid_repeated_pattern",
+      "input": "121212121212",
+      "expected_valid": false,
+      "description": "Alternating pattern rejected"
+    },
+    {
+      "id": "invalid_padded_zeros",
+      "input": "000012345678",
+      "expected_valid": false,
+      "description": "Padded zeros prefix rejected"
+    }
+  ],
+  "anomaly_rule_vectors": [
+    {
+      "rule_id": "RULE-QUOTA-NATIONALITY",
+      "category": "ELIGIBILITY",
+      "test_cases": [
+        {
+          "description": "Foreign national with MERIT quota is anomalous",
+          "nationality": "Nepal",
+          "admission_quota": "MERIT",
+          "expected_anomaly": true,
+          "expected_severity": "HIGH"
+        },
+        {
+          "description": "Indian national with FN quota is anomalous",
+          "nationality": "Indian",
+          "admission_quota": "FN",
+          "expected_anomaly": true,
+          "expected_severity": "HIGH"
+        },
+        {
+          "description": "Indian national with MERIT quota is compliant",
+          "nationality": "Indian",
+          "admission_quota": "MERIT",
+          "expected_anomaly": false
+        }
+      ]
+    },
+    {
+      "rule_id": "RULE-AGE-ELIGIBILITY",
+      "category": "ELIGIBILITY",
+      "test_cases": [
+        {
+          "description": "Student under minimum age limit at enrollment",
+          "date_of_birth": "2012-01-01",
+          "enrollment_date": "2024-08-01",
+          "expected_anomaly": true,
+          "expected_severity": "MEDIUM"
+        },
+        {
+          "description": "Student of standard age at enrollment",
+          "date_of_birth": "2004-03-12",
+          "enrollment_date": "2024-08-01",
+          "expected_anomaly": false
+        }
+      ]
+    }
+  ]
+}

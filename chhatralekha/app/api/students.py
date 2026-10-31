@@ -39,7 +39,13 @@ from app.repositories.audit import AuditRepository
 from app.repositories.programmes import ProgrammeRepository
 from app.repositories.students import StudentRepository
 from app.repositories.submissions import SubmissionRepository
-from app.schemas.student import BatchUploadResult, StudentCreate, StudentOut, StudentUpdate
+from app.schemas.student import (
+    BatchUploadResult,
+    StudentCreate,
+    StudentOut,
+    StudentStatusUpdate,
+    StudentUpdate,
+)
 from app.schemas.tokens import TokenIssueResponse
 from app.services import apaar_validator, csv_ingestion, pdf, qr, seal
 from app.services.ocr import ocr_service
@@ -1054,3 +1060,67 @@ async def student_certificate(
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@router.post(
+    "/{apaar_id}/status",
+    response_model=StudentOut,
+    summary="Update student lifecycle state with reason",
+)
+async def update_student_lifecycle_status(
+    apaar_id: str,
+    payload: StudentStatusUpdate,
+    request: Request,
+    principal: Principal = Depends(require_permission(rbac.Permission.ONBOARD_STUDENTS)),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> StudentOut:
+    """Transition student lifecycle status (ADMITTED, ACTIVE, ON_LEAVE, TRANSFERRED, GRADUATED, WITHDRAWN)."""
+    students = StudentRepository(db["students"])
+    student = await students.get(apaar_id)
+    if student is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No such APAAR ID."
+        )
+    if principal.role != "aicte_admin" and principal.institution_id:
+        if student.get("institution_id") != principal.institution_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not allowed to update another institution's student.",
+            )
+
+    now = datetime.now(timezone.utc)
+    old_status = student.get("record_status", "ACTIVE")
+    history_entry = {
+        "from_status": old_status,
+        "to_status": payload.record_status,
+        "reason": payload.reason,
+        "effective_date": payload.effective_date or now.date().isoformat(),
+        "updated_by": principal.subject,
+        "timestamp": now,
+    }
+
+    await db["students"].update_one(
+        {"apaar_id": apaar_id},
+        {
+            "$set": {
+                "record_status": payload.record_status,
+                "is_active": payload.record_status in {"ACTIVE", "ADMITTED"},
+                "updated_at": now,
+            },
+            "$push": {"lifecycle_history": history_entry},
+        },
+    )
+
+    await writer.log(
+        AuditRepository(db["audit_events"]),
+        actor=principal.subject,
+        actor_role=principal.role,
+        action="UPDATE_STUDENT_STATUS",
+        subject=apaar_id,
+        details=f"Status transitioned from {old_status} to {payload.record_status}. Reason: {payload.reason}",
+        category="STUDENT_LIFECYCLE",
+        ip_address=client_ip(request),
+    )
+
+    updated = await students.get(apaar_id)
+    return _to_out(updated)

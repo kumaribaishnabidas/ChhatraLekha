@@ -15,11 +15,11 @@ Every command below has been executed on the local workspace and confirmed passi
 
 | Component | Test / Build Command | Result | Duration / Scope |
 | :--- | :--- | :--- | :--- |
-| **API Backend** | `pytest --tb=no` (in `chhatralekha/`) | **286 passed**, 0 failures, 1 warning | ~11.5s across 29 test suites |
-| **Frontend Unit Tests** | `npm.cmd test -- --run` (in `frontend/`) | **68 passed**, 0 failures | 9 test files, 28.44s |
+| **API Backend** | `pytest --tb=no` (in `chhatralekha/`) | **293 passed**, 0 failures, 1 warning | ~10s across 31 test suites |
+| **Frontend Unit Tests** | `npm.cmd test -- --run` (in `frontend/`) | **68 passed**, 0 failures | 9 test files, 19.28s |
 | **Frontend Route Links** | `npm.cmd run check:links` (in `frontend/`) | **Passed** | 28 declared router paths verified |
 | **Frontend Translations** | `npm.cmd run i18n:check` (in `frontend/`) | **Passed** | 13 languages, 417 translation keys |
-| **Frontend Production Build** | `npm.cmd run build` (in `frontend/`) | **Passed** | `dist/` bundle created in 15.73s |
+| **Frontend Production Build** | `npm.cmd run build` (in `frontend/`) | **Passed** | `dist/` bundle created in 12.79s |
 | **Android Core Unit Tests** | `.\gradlew.bat :core:test` (in `android/`) | **204 passed**, 0 failures | 15 test XML suites in 29s |
 | **Android Debug APK Build** | `.\gradlew.bat assembleDebug` (in `android/`) | **Passed** | `app-debug.apk` built (22.5 MB) |
 | **Anomaly Evaluation** | `python -m app.scripts.eval_anomalies` | **100% Precision, 100% Recall** | 23 synthetic records, 10 layers |
@@ -41,6 +41,10 @@ Every command below has been executed on the local workspace and confirmed passi
 | **8** | **Android Local Persistence & API Sync** | **IMPLEMENTED** | Room database in `android/app` caches students (`StudentRecordDao`), pending operations (`PendingSyncDao`), and audit events (`AuditEntryDao`). Pure Java HTTP client `ChhatraLekhaApiClient.kt` communicates with backend REST API. `SyncManager.kt` provides two-way sync, optimistic concurrency (record versions), HTTP 409 conflict detection, and safe offline fallbacks. |
 | **9** | **Audit Event Creation & Retrieval** | **IMPLEMENTED** | Append-only audit log in `chhatralekha/app/audit/writer.py` and `AuditRepository`. Backward-linked hash chaining in `chhatralekha/app/services/audit_chain.py` (`prev_hash || timestamp || actor || action || subject || details || category`). Endpoint `GET /api/audit/verify-chain` verifies cryptographic continuity. |
 | **10** | **Student Portal & Self-Service Credential Hub** | **IMPLEMENTED** | Endpoints in `chhatralekha/app/api/me.py` and views in `frontend/src/pages/student/`. Single-use hashed claim code flow (`/api/students/{apaar_id}/claim-code` and `/api/me/claim`), student ownership authorization guard (`apaar_id` bound to JWT Principal), digital ID card (`/me/id-card`), self-service share link generation with granular field disclosure and instant revocation (`/me/shares`), consent ledger (`/me/consent`), marksheet/certificate document uploads with OCR human-in-the-loop review (`/me/uploads`), academic results analytics (`/me/results`), and audit activity history (`/me/activity`). |
+| **11** | **Inter-Institutional Transfer Workflow** | **IMPLEMENTED** | Endpoints in `chhatralekha/app/api/transfers.py` (`POST /api/transfers`, `GET /api/transfers`, `GET /api/transfers/{transfer_id}`, `POST /api/transfers/{transfer_id}/review`). Receiving institution requests transfer; relieving institution holds exclusive authority to approve release with full audit logging and institutional notifications. |
+| **12** | **Student Lifecycle State Management** | **IMPLEMENTED** | State machine in `chhatralekha/app/models/enums.py` (`ADMITTED`, `ACTIVE`, `ON_LEAVE`, `TRANSFERRED`, `GRADUATED`, `WITHDRAWN`) and `POST /api/students/{apaar_id}/status`. Tracks reason, effective date, and audit trail. |
+| **13** | **Anomaly Case Review & Key Rotation** | **IMPLEMENTED** | Case assignment (`/api/anomalies/{id}/assign`), internal case notes (`/api/anomalies/{id}/notes`), and structured dismissal reasons with pre-mutation institution checks. Key rotation lifecycle via `KeyRegistry` in `seal.py`, supporting active, rotated, and revoked keys, with versioned `/api/verify/jwks` endpoint. |
+| **14** | **Shared Canonical Rule Fixtures** | **IMPLEMENTED** | Canonical rule specification and vectors in `chhatralekha/app/resources/rule_test_fixtures.json` and `android/core/src/test/resources/rule_test_fixtures.json` preventing backend and mobile validator drift. |
 
 ---
 
@@ -60,15 +64,16 @@ Every command below has been executed on the local workspace and confirmed passi
   - ChhatraLekha implements three distinct generations in `seal.py` and `SealVerification`:
     1. `LEGACY` (unkeyed SHA-256): Explicitly marked as `LEGACY_UNVERIFIED`. It is never accepted as an authentic signature.
     2. `HMAC` (`HMAC-SHA256`): Keyed with a server-held secret. Authenticates that the issuing server produced the seal.
-    3. `ED25519` (Asymmetric Digital Signature): Signed with an Ed25519 private key kept server-side. Third parties can verify credentials independently using the public key published at `GET /api/verify/public-key`.
+    3. `ED25519` (Asymmetric Digital Signature): Signed with an Ed25519 private key kept server-side. Third parties can verify credentials independently using the public key published at `GET /api/verify/public-key` and `GET /api/verify/jwks`.
+    4. Key Lifecycle: Versioned key registry supporting active keys, rotated previous keys (for verifying older credentials), and revoked compromised keys (which immediately fail closed).
 
 ### 3.3 Test Totals Alignment
 - **Discrepancy**: Prior notes in various drafts claimed conflicting test numbers (ranging from 160 to 250).
 - **Verified Ground Truth**:
-  - Backend pytest: **271 tests passed** (0 failures).
-  - Frontend vitest: **61 tests passed** (0 failures).
+  - Backend pytest: **293 tests passed** (0 failures).
+  - Frontend vitest: **68 tests passed** (0 failures).
   - Android core unit tests: **204 tests passed** across 15 XML test suites (0 failures).
-  - Total automated unit/integration tests across the entire repository: **536 tests passed**.
+  - Total automated unit/integration tests across the entire repository: **565 tests passed**.
 
 ### 3.4 CI Pipeline Status
 - **Prior State**: `.github/workflows/chhatralekha.yml` tested only backend and frontend, omitting the Android app entirely and missing `android/**` in triggers.

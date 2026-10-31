@@ -9,7 +9,7 @@ still receives a valid verdict, but the personal fields are withheld.
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import RedirectResponse
@@ -225,21 +225,55 @@ async def _verify(
     "/public-key",
     summary="Get public verification key for offline third-party signature checks",
 )
-async def get_public_verification_key() -> dict[str, str]:
-    """Provides the public key (Ed25519) allowing third parties to independently
+async def get_public_verification_key() -> dict[str, Any]:
+    """Provides the active public key (Ed25519) allowing third parties to independently
     verify signed digital credentials offline without possessing any private keys.
     """
     from app.core.config import get_settings
 
     settings = get_settings()
+    active_entry = seal.key_registry.get(settings.seal_key_id)
     return {
         "algorithm": "Ed25519",
-        "key_id": "chhatralekha-2026",
-        "public_key_pem": settings.seal_ecdsa_public_key_pem or "PUBLIC_KEY_CONFIGURED",
+        "key_id": settings.seal_key_id,
+        "public_key_pem": (
+            active_entry.public_key_pem
+            if active_entry
+            else (settings.seal_ecdsa_public_key_pem or "PUBLIC_KEY_CONFIGURED")
+        ),
+        "status": active_entry.status if active_entry else "ACTIVE",
         "notice": (
             "Public key for independent offline verification of ChhatraLekha credentials. "
             "Private keys are strictly guarded and never placed in client code."
         ),
+    }
+
+
+@router.get(
+    "/jwks",
+    summary="List active and rotated public verification keys",
+)
+async def get_jwks() -> dict[str, Any]:
+    """Public keyset supporting key rotation and offline verification across credential generations."""
+    from app.core.config import get_settings
+
+    settings = get_settings()
+    keys = seal.key_registry.list_keys()
+    if not keys:
+        keys = [{
+            "key_id": settings.seal_key_id,
+            "algorithm": "Ed25519",
+            "public_key_pem": settings.seal_ecdsa_public_key_pem or "PUBLIC_KEY_CONFIGURED",
+            "status": "ACTIVE",
+            "valid_from": "2026-01-01",
+            "expires_at": None,
+            "revoked": False,
+        }]
+    return {
+        "keys": keys,
+        "active_key_id": settings.seal_key_id,
+        "algorithm": "Ed25519",
+        "notice": "All keys in this set are public verification keys only. Signing secrets are never published.",
     }
 
 

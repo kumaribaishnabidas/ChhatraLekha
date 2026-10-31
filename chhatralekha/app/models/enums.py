@@ -336,3 +336,41 @@ class QuotaBasis(str, Enum):
             QuotaBasis.TFW: "AICTE APH - max 5% of sanctioned intake",
             QuotaBasis.PMSSS: "AICTE APH - capped per course / institute",
         }[self]
+
+
+class StudentLifecycleState(str, Enum):
+    ADMITTED = "ADMITTED"
+    ACTIVE = "ACTIVE"
+    ON_LEAVE = "ON_LEAVE"
+    TRANSFERRED = "TRANSFERRED"
+    GRADUATED = "GRADUATED"
+    WITHDRAWN = "WITHDRAWN"
+
+    @property
+    def label(self) -> str:
+        return {
+            StudentLifecycleState.ADMITTED: "Admitted",
+            StudentLifecycleState.ACTIVE: "Active Enrolment",
+            StudentLifecycleState.ON_LEAVE: "On Leave / Sabbatical",
+            StudentLifecycleState.TRANSFERRED: "Transferred Out",
+            StudentLifecycleState.GRADUATED: "Graduated / Completed",
+            StudentLifecycleState.WITHDRAWN: "Withdrawn / Cancelled",
+        }[self]
+
+
+class TransferStatus(str, Enum):
+    SUBMITTED = "SUBMITTED"
+    IN_REVIEW = "IN_REVIEW"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    CANCELLED = "CANCELLED"
+
+    @property
+    def label(self) -> str:
+        return {
+            TransferStatus.SUBMITTED: "Submitted",
+            TransferStatus.IN_REVIEW: "In Review",
+            TransferStatus.APPROVED: "Approved & Transferred",
+            TransferStatus.REJECTED: "Rejected",
+            TransferStatus.CANCELLED: "Cancelled",
+        }[self]
