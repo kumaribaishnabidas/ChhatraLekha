@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+import hashlib
+import secrets
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Optional
 
 from fastapi import (
@@ -18,6 +20,7 @@ from fastapi import (
 )
 from fastapi.responses import StreamingResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from pydantic import BaseModel, Field
 
 from app.api.deps import (
     Principal,
@@ -343,8 +346,29 @@ async def get_student(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No such APAAR ID."
         )
-    if principal.role != "aicte_admin" and principal.institution_id:
-        if student.get("institution_id") != principal.institution_id:
+
+    # Student ownership check:
+    if principal.role == "student":
+        if not principal.apaar_id or principal.apaar_id != apaar_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Students may only access their own academic record.",
+            )
+        return _to_out(student)
+
+    # Staff roles must have appropriate permissions
+    if not (
+        rbac.has_permission(principal.role, rbac.Permission.VIEW_STUDENT_REGISTER)
+        or rbac.has_permission(principal.role, rbac.Permission.VIEW_NATIONAL_DASHBOARD)
+        or rbac.has_permission(principal.role, rbac.Permission.VIEW_INSTITUTION_DASHBOARD)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view student records.",
+        )
+
+    if principal.role != "aicte_admin":
+        if not principal.institution_id or student.get("institution_id") != principal.institution_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You are not allowed to access another institution's records.",
@@ -502,6 +526,143 @@ async def deactivate_student(
         ip_address=client_ip(request),
     )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# ----------------------------------------------------------- student claims & review
+
+
+@router.post(
+    "/{apaar_id}/claim-code",
+    summary="Generate a single-use onboarding claim code for a student",
+)
+async def generate_claim_code(
+    apaar_id: str,
+    request: Request,
+    principal: Principal = Depends(require_permission(rbac.Permission.ONBOARD_STUDENTS)),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> dict[str, Any]:
+    """Generate a high-entropy 7-day single-use claim code for student self-onboarding."""
+    students = StudentRepository(db["students"])
+    student = await students.get(apaar_id)
+    if student is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No such APAAR ID.")
+    principal.require_scope(student.get("institution_id", ""))
+
+    raw_code = f"CL-{secrets.token_hex(4).upper()}-{secrets.token_hex(4).upper()}"
+    code_hash = hashlib.sha256(raw_code.encode("utf-8")).hexdigest()
+    now = datetime.now(timezone.utc)
+    expires_at = now + timedelta(days=7)
+
+    # Invalidate any previous unused claim codes for this student
+    await db["claim_codes"].update_many(
+        {"apaar_id": apaar_id, "is_used": False},
+        {"$set": {"is_used": True, "used_at": now, "invalidated_by": "NEW_CODE_ISSUED"}},
+    )
+
+    await db["claim_codes"].insert_one({
+        "code_hash": code_hash,
+        "apaar_id": apaar_id,
+        "institution_id": student.get("institution_id"),
+        "created_at": now,
+        "expires_at": expires_at,
+        "is_used": False,
+        "issued_by": principal.subject,
+    })
+
+    await writer.log(
+        AuditRepository(db["audit_events"]),
+        actor=principal.subject,
+        actor_role=principal.role,
+        action="GENERATE_CLAIM_CODE",
+        subject=apaar_id,
+        details=f"Generated 7-day claim code for student {student.get('student_name')}.",
+        category="SECURITY",
+        ip_address=client_ip(request),
+    )
+
+    return {
+        "claim_code": raw_code,
+        "apaar_id": apaar_id,
+        "student_name": student.get("student_name"),
+        "institution_id": student.get("institution_id"),
+        "expires_at": expires_at,
+        "notice": "This code can be used once to link a student login to this record. Do not share publicly.",
+    }
+
+
+class ReviewSubmissionPayload(BaseModel):
+    decision: str = Field(..., pattern="^(APPROVED|REJECTED)$")
+    notes: str = Field("", max_length=500)
+
+
+@router.post(
+    "/submissions/{upload_id}/review",
+    summary="Review and approve or reject a student-uploaded document",
+)
+async def review_submission(
+    upload_id: str,
+    payload: ReviewSubmissionPayload,
+    request: Request,
+    principal: Principal = Depends(require_permission(rbac.Permission.ONBOARD_STUDENTS)),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> dict[str, Any]:
+    """Human approval of OCR-extracted academic document."""
+    from bson import ObjectId
+
+    upload = await db["uploads"].find_one({"upload_id": upload_id})
+    if not upload:
+        try:
+            upload = await db["uploads"].find_one({"_id": ObjectId(upload_id)})
+        except Exception:
+            upload = None
+
+    if not upload:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Submission not found.")
+
+    principal.require_scope(upload.get("institution_id", ""))
+    now = datetime.now(timezone.utc)
+
+    await db["uploads"].update_one(
+        {"_id": upload["_id"]},
+        {
+            "$set": {
+                "status": payload.decision,
+                "reviewer_notes": payload.notes,
+                "reviewed_by": principal.subject,
+                "reviewed_at": now,
+                "updated_at": now,
+            }
+        },
+    )
+
+    # Notify student
+    if upload.get("user_id"):
+        await db["notifications"].insert_one({
+            "user_id": upload["user_id"],
+            "title": f"Document {payload.decision.capitalize()}",
+            "message": f"Your {upload.get('document_type', 'document')} submission was {payload.decision.lower()} by the institution: {payload.notes or 'No notes provided.'}",
+            "type": f"UPLOAD_{payload.decision}",
+            "is_read": False,
+            "created_at": now,
+        })
+
+    await writer.log(
+        AuditRepository(db["audit_events"]),
+        actor=principal.subject,
+        actor_role=principal.role,
+        action="REVIEW_STUDENT_DOCUMENT",
+        subject=upload.get("apaar_id", ""),
+        details=f"Reviewer set upload {upload_id} to {payload.decision}. Notes: {payload.notes}",
+        category="CREDENTIAL",
+        ip_address=client_ip(request),
+    )
+
+    return {
+        "upload_id": upload_id,
+        "status": payload.decision,
+        "reviewed_by": principal.subject,
+        "reviewed_at": now,
+    }
 
 
 # ----------------------------------------------------------------- bulk CSV
@@ -822,8 +983,16 @@ async def student_certificate(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No such APAAR ID."
         )
-    if principal.role != "aicte_admin" and principal.institution_id:
-        if student.get("institution_id") != principal.institution_id:
+
+    # Student ownership check:
+    if principal.role == "student":
+        if not principal.apaar_id or principal.apaar_id != apaar_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Students may only generate certificates for their own academic record.",
+            )
+    elif principal.role != "aicte_admin":
+        if not principal.institution_id or student.get("institution_id") != principal.institution_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You are not allowed to issue a certificate for another institution.",

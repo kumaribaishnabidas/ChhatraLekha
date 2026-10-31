@@ -15,11 +15,11 @@ Every command below has been executed on the local workspace and confirmed passi
 
 | Component | Test / Build Command | Result | Duration / Scope |
 | :--- | :--- | :--- | :--- |
-| **API Backend** | `pytest --tb=no` (in `chhatralekha/`) | **271 passed**, 0 failures, 1 warning | ~10.5s across 28 test suites |
-| **Frontend Unit Tests** | `npm.cmd test -- --run` (in `frontend/`) | **61 passed**, 0 failures | 8 test files, 19.88s |
-| **Frontend Route Links** | `npm.cmd run check:links` (in `frontend/`) | **Passed** | 21 declared router paths verified |
-| **Frontend Translations** | `npm.cmd run i18n:check` (in `frontend/`) | **Passed** | 13 languages, 336 translation keys |
-| **Frontend Production Build** | `npm.cmd run build` (in `frontend/`) | **Passed** | `dist/` bundle created in 11.07s |
+| **API Backend** | `pytest --tb=no` (in `chhatralekha/`) | **285 passed**, 0 failures, 1 warning | ~11.2s across 29 test suites |
+| **Frontend Unit Tests** | `npm.cmd test -- --run` (in `frontend/`) | **61 passed**, 0 failures | 8 test files, 19.57s |
+| **Frontend Route Links** | `npm.cmd run check:links` (in `frontend/`) | **Passed** | 28 declared router paths verified |
+| **Frontend Translations** | `npm.cmd run i18n:check` (in `frontend/`) | **Passed** | 13 languages, 417 translation keys |
+| **Frontend Production Build** | `npm.cmd run build` (in `frontend/`) | **Passed** | `dist/` bundle created in 15.73s |
 | **Android Core Unit Tests** | `.\gradlew.bat :core:test` (in `android/`) | **204 passed**, 0 failures | 15 test XML suites in 29s |
 | **Android Debug APK Build** | `.\gradlew.bat assembleDebug` (in `android/`) | **Passed** | `app-debug.apk` built (22.5 MB) |
 | **Anomaly Evaluation** | `python -m app.scripts.eval_anomalies` | **100% Precision, 100% Recall** | 23 synthetic records, 10 layers |
@@ -40,6 +40,7 @@ Every command below has been executed on the local workspace and confirmed passi
 | **7** | **Credential Expiry & Revocation** | **IMPLEMENTED** | Fails closed immediately on verification. `GET /api/verify/token/{token}` verifies `expires_at < now` -> `EXPIRED`, `document.revoked` -> `REVOKED`, and `document.needs_reissue` -> `NEEDS_REFRESH`. Tested in backend test suites. |
 | **8** | **Android Local Persistence & API Sync** | **IMPLEMENTED** | Room database in `android/app` caches students (`StudentRecordDao`), pending operations (`PendingSyncDao`), and audit events (`AuditEntryDao`). Pure Java HTTP client `ChhatraLekhaApiClient.kt` communicates with backend REST API. `SyncManager.kt` provides two-way sync, optimistic concurrency (record versions), HTTP 409 conflict detection, and safe offline fallbacks. |
 | **9** | **Audit Event Creation & Retrieval** | **IMPLEMENTED** | Append-only audit log in `chhatralekha/app/audit/writer.py` and `AuditRepository`. Backward-linked hash chaining in `chhatralekha/app/services/audit_chain.py` (`prev_hash || timestamp || actor || action || subject || details || category`). Endpoint `GET /api/audit/verify-chain` verifies cryptographic continuity. |
+| **10** | **Student Portal & Self-Service Credential Hub** | **IMPLEMENTED** | Endpoints in `chhatralekha/app/api/me.py` and views in `frontend/src/pages/student/`. Single-use hashed claim code flow (`/api/students/{apaar_id}/claim-code` and `/api/me/claim`), student ownership authorization guard (`apaar_id` bound to JWT Principal), digital ID card (`/me/id-card`), self-service share link generation with granular field disclosure and instant revocation (`/me/shares`), consent ledger (`/me/consent`), marksheet/certificate document uploads with OCR human-in-the-loop review (`/me/uploads`), academic results analytics (`/me/results`), and audit activity history (`/me/activity`). |
 
 ---
 

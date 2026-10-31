@@ -34,6 +34,7 @@ class Permission(str, Enum):
     APPLY_CORRECTION = "apply_correction"
     VIEW_IMPACTS = "view_impacts"
     REVIEW_TASKS = "review_tasks"
+    ISSUE_OWN_TOKEN = "issue_own_token"
 
 
 _DIRECTORATE = frozenset(
@@ -82,6 +83,7 @@ _STUDENT = frozenset(
         Permission.VIEW_OWN_RECORD,
         Permission.GENERATE_CERTIFICATE,
         Permission.MANAGE_CONSENT,
+        Permission.ISSUE_OWN_TOKEN,
     }
 )
 

@@ -106,6 +106,7 @@ class Principal:
         display_name: str = "",
         email: str = "",
         user: Optional[Any] = None,
+        apaar_id: Optional[str] = None,
     ) -> None:
         self.subject = subject
         self.role = role
@@ -113,6 +114,7 @@ class Principal:
         self.display_name = display_name
         self.email = email
         self.user = user
+        self.apaar_id = apaar_id or (user.get("apaar_id") if isinstance(user, dict) else None)
 
     def require(self, permission: rbac.Permission) -> None:
         """Raise ``403`` when the principal lacks the permission."""
@@ -203,6 +205,7 @@ async def get_principal(
         display_name=user.get("full_name") or user.get("email", ""),
         email=user.get("email", ""),
         user=user,
+        apaar_id=user.get("apaar_id") or payload.get("apaar_id"),
     )
     request.state.principal = principal
     return principal

@@ -81,11 +81,13 @@ async def login(
         ip_address=client_ip(request),
     )
 
+    extra = {"apaar_id": user["apaar_id"]} if user.get("apaar_id") else None
     return TokenPair(
         access_token=create_access_token(
             subject=user["user_id"],
             role=user["role"],
             institution_id=user.get("institution_id"),
+            extra_claims=extra,
         ),
         refresh_token=create_refresh_token(user["user_id"]),
         expires_in=settings.access_token_expire_minutes * 60,
@@ -93,6 +95,7 @@ async def login(
         user_id=user["user_id"],
         display_name=user.get("full_name") or user.get("email", ""),
         institution_id=user.get("institution_id"),
+        apaar_id=user.get("apaar_id"),
     )
 
 
@@ -117,9 +120,13 @@ async def refresh(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="The account is not active."
         )
 
+    extra = {"apaar_id": user["apaar_id"]} if user.get("apaar_id") else None
     return TokenPair(
         access_token=create_access_token(
-            subject=user["user_id"], role=user["role"], institution_id=user.get("institution_id")
+            subject=user["user_id"],
+            role=user["role"],
+            institution_id=user.get("institution_id"),
+            extra_claims=extra,
         ),
         refresh_token=create_refresh_token(user["user_id"]),
         expires_in=settings.access_token_expire_minutes * 60,
@@ -127,6 +134,7 @@ async def refresh(
         user_id=user["user_id"],
         display_name=user.get("full_name") or user.get("email", ""),
         institution_id=user.get("institution_id"),
+        apaar_id=user.get("apaar_id"),
     )
 
 
@@ -141,6 +149,7 @@ async def me(principal=Depends(get_principal)) -> UserOut:
         full_name=principal.display_name,
         role=principal.role,
         institution_id=principal.institution_id,
+        apaar_id=principal.apaar_id or user.get("apaar_id"),
         is_active=user.get("is_active", True),
         last_login_at=last_login.isoformat() if last_login else None,
     )

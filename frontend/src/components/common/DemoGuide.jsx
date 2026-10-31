@@ -27,8 +27,8 @@ const DEMO_PERSONAS = [
     labelKey: 'demo.roleStudent',
     email: 'student@vidyavikas.edu.in',
     role: 'student',
-    target: '/wallet',
-    badge: 'APAAR',
+    target: '/me',
+    badge: 'Student ID',
   },
   {
     key: 'verifier',

@@ -47,6 +47,7 @@ class TokenOut(BaseModel):
     revoked: bool = False
     needs_reissue: bool = False
     issued_by: str = ""
+    allowed_fields: Optional[list[str]] = None
 
 
 class PublicVerificationOut(BaseModel):

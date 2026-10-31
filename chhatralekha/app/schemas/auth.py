@@ -30,6 +30,7 @@ class TokenPair(BaseModel):
     user_id: str
     display_name: str
     institution_id: str | None = None
+    apaar_id: str | None = None
 
 
 class UserOut(BaseModel):
@@ -42,5 +43,6 @@ class UserOut(BaseModel):
     full_name: str
     role: str
     institution_id: str | None = None
+    apaar_id: str | None = None
     is_active: bool = True
     last_login_at: str | None = None

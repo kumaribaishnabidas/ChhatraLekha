@@ -23,6 +23,13 @@ const UploadPage = lazy(() => import('./pages/UploadPage'))
 const VerificationPage = lazy(() => import('./pages/VerificationPage'))
 const StudentWalletPage = lazy(() => import('./pages/StudentWalletPage'))
 const InstitutionDashboardPage = lazy(() => import('./pages/InstitutionDashboardPage'))
+const StudentHomePage = lazy(() => import('./pages/student/StudentHomePage'))
+const StudentIdCardPage = lazy(() => import('./pages/student/StudentIdCardPage'))
+const StudentSharePage = lazy(() => import('./pages/student/StudentSharePage'))
+const StudentConsentPage = lazy(() => import('./pages/student/StudentConsentPage'))
+const StudentUploadsPage = lazy(() => import('./pages/student/StudentUploadsPage'))
+const StudentResultsPage = lazy(() => import('./pages/student/StudentResultsPage'))
+const StudentActivityPage = lazy(() => import('./pages/student/StudentActivityPage'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage'))
 const FaqPage = lazy(() => import('./pages/FaqPage'))
@@ -69,7 +76,7 @@ function RoleRedirect() {
     return <Navigate to="/institution" replace />
   }
   if (can(PERMISSIONS.VIEW_OWN_RECORD)) {
-    return <Navigate to="/wallet" replace />
+    return <Navigate to="/me" replace />
   }
   return <Navigate to="/verify" replace />
 }
@@ -166,6 +173,62 @@ export default function App() {
           element={
             <Guarded permission={PERMISSIONS.EXPORT_REPORTS}>
               <ReportsPage />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/me"
+          element={
+            <Guarded permission={PERMISSIONS.VIEW_OWN_RECORD}>
+              <StudentHomePage />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/me/id-card"
+          element={
+            <Guarded permission={PERMISSIONS.VIEW_OWN_RECORD}>
+              <StudentIdCardPage />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/me/share"
+          element={
+            <Guarded permission={PERMISSIONS.ISSUE_OWN_TOKEN}>
+              <StudentSharePage />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/me/consent"
+          element={
+            <Guarded permission={PERMISSIONS.MANAGE_CONSENT}>
+              <StudentConsentPage />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/me/uploads"
+          element={
+            <Guarded permission={PERMISSIONS.VIEW_OWN_RECORD}>
+              <StudentUploadsPage />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/me/results"
+          element={
+            <Guarded permission={PERMISSIONS.VIEW_OWN_RECORD}>
+              <StudentResultsPage />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/me/activity"
+          element={
+            <Guarded permission={PERMISSIONS.VIEW_OWN_RECORD}>
+              <StudentActivityPage />
             </Guarded>
           }
         />

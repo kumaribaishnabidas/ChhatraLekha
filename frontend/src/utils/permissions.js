@@ -24,6 +24,7 @@ export const PERMISSIONS = {
   APPLY_CORRECTION: 'apply_correction',
   VIEW_IMPACTS: 'view_impacts',
   REVIEW_TASKS: 'review_tasks',
+  ISSUE_OWN_TOKEN: 'issue_own_token',
 }
 
 const DIRECTORATE = [
@@ -62,6 +63,7 @@ const STUDENT = [
   PERMISSIONS.VIEW_OWN_RECORD,
   PERMISSIONS.GENERATE_CERTIFICATE,
   PERMISSIONS.MANAGE_CONSENT,
+  PERMISSIONS.ISSUE_OWN_TOKEN,
 ]
 
 export const ROLE_PERMISSIONS = {

@@ -7,6 +7,7 @@ from app.api import (
     corrections,
     dashboard,
     institutions,
+    me,
     reports,
     students,
     tokens,
@@ -15,6 +16,7 @@ from app.api import (
 
 ALL_ROUTERS = [
     auth.router,
+    me.router,
     students.router,
     institutions.router,
     anomalies.router,
