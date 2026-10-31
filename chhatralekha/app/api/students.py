@@ -37,6 +37,7 @@ from app.repositories.programmes import ProgrammeRepository
 from app.repositories.students import StudentRepository
 from app.repositories.submissions import SubmissionRepository
 from app.schemas.student import BatchUploadResult, StudentCreate, StudentOut, StudentUpdate
+from app.schemas.tokens import TokenIssueResponse
 from app.services import apaar_validator, csv_ingestion, pdf, qr, seal
 from app.services.registry import recompute_anomalies
 
@@ -592,6 +593,52 @@ async def student_qr(
     png = qr.render_png(link)
     return StreamingResponse(
         iter([png]), media_type="image/png", headers={"Content-Disposition": "inline"}
+    )
+
+
+@router.post(
+    "/{apaar_id}/token",
+    response_model=TokenIssueResponse,
+    summary="Issue an opaque verification token for a student",
+)
+async def student_token(
+    apaar_id: str,
+    principal: Principal = Depends(
+        require_any_permission(
+            rbac.Permission.ONBOARD_STUDENTS,
+            rbac.Permission.GENERATE_CERTIFICATE,
+            rbac.Permission.VERIFY_CREDENTIAL,
+        )
+    ),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> TokenIssueResponse:
+    """Issue the opaque token that the mobile app or web client embeds in a QR code."""
+    students = StudentRepository(db["students"])
+    student = await students.get(apaar_id)
+    if student is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No such APAAR ID."
+        )
+    if principal.role != "aicte_admin" and principal.institution_id:
+        if student.get("institution_id") != principal.institution_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not allowed to access another institution's records.",
+            )
+
+    document, raw = await _issue_badge_token(db, student, principal.subject)
+    return TokenIssueResponse(
+        token_id=document.get("token_id", ""),
+        token=raw,
+        token_url=qr.build_token_payload(raw),
+        student_record_id=str(student.get("_id", "")),
+        issued_at=document.get("issued_at"),
+        expires_at=document.get("expires_at"),
+        expires_in_minutes=settings.verification_token_minutes,
+        notice=(
+            "Verification against this prototype's database, not official APAAR or "
+            "AICTE verification."
+        ),
     )
 
 

@@ -6,19 +6,13 @@
 
 **The APAAR ID Student Data Management &amp; Verification Platform**
 
-[Website &amp; landing page →](https://kumaribaishnabidas.github.io/ChhatraLekha/) · [Source code](https://github.com/kumaribaishnabidas/ChhatraLekha) · [Backend documentation](chhatralekha/README.md) · [App documentation](Acadentrix/README.md)
+[Website &amp; landing page →](https://kumaribaishnabidas.github.io/ChhatraLekha/) · [Source code](https://github.com/kumaribaishnabidas/ChhatraLekha) · [Backend documentation](chhatralekha/README.md) · [App documentation](android/README.md)
 
 </div>
 
 ---
 
-> **A note on the names.** The product is **ChhatraLekha**. The code base keeps its
-> earlier internal identifiers - the `chhatralekha/` Python package and the
-> `com.acadentrix.app` Android package - because renaming them would be a
-> large, risky change with no functional benefit. The user-facing text is
-> consistent everywhere.
-
-> **APAAR** - the **Automated Permanent Academic Account Registry**, issued under the
+> **APAAR** — the **Automated Permanent Academic Account Registry**, issued under the
 > Ministry of Education's *One Nation, One Student ID* initiative. It is the student's
 > academic passport: every enrolled student is issued a 12-digit APAAR ID that is
 > supposed to travel with them across institutions, employers and degree-awarding
@@ -39,7 +33,7 @@ institutions:
 |---|---|---|
 | Web frontend | `frontend/` | React 19, Vite 6, Tailwind CSS 4, Recharts 3, React Router 7 |
 | Python backend | `chhatralekha/` | FastAPI, Motor (async MongoDB), Pydantic v2, `cryptography` |
-| Android client | `Acadentrix/` | Kotlin 2.2, Jetpack Compose, Material 3, Room |
+| Android client | `android/` | Kotlin 2.2, Jetpack Compose, Material 3, Room |
 
 The **Academic Record Change Impact Detector** is the headline feature: preview a
 correction, see exactly which linked records it would affect, and apply it
@@ -53,11 +47,11 @@ without ever silently changing an official academic record.
 | --- | --- |
 | **Product / project name** | **ChhatraLekha** |
 | **Brand name and logo** | **ChhatraLekha** |
-| **Package / application id** | `com.acadentrix.app` |
-| **Gradle project name** | `Acadentrix` |
+| **Package / application id** | `com.chhatralekha.app` |
+| **Gradle project name** | `chhatralekha-android` |
 | **Backend package** | `chhatralekha/` |
 
-The ChhatraLekha logo is the artwork the team supplied, shipped verbatim — as the launcher icon
+The ChhatraLekha logo is the project's own artwork, used unmodified — as the launcher icon
 (adaptive, with a themed-monochrome layer), in the app's header, on the degree certificate and
 across the website. The brand palette is sampled directly from that artwork:
 navy `#2F57D6` / `#16257A`, blue `#1F3FBF` / `#4169E1`, teal `#FF8A00`.
@@ -89,7 +83,7 @@ ChhatraLekha/
 │   ├── public/brand/         ← ChhatraLekha logo artwork
 │   ├── vercel.json           ← the Vercel deployment of the frontend
 │   └── vite.config.js
-└── Acadentrix/               ← the Android application
+└── android/                  ← the Android application
     ├── app/                  ← Kotlin + Jetpack Compose source, unit tests, Room schema
     ├── core/                 ← the shared Kotlin module (validator, anomaly engine, seal, QR)
     ├── gradle/               ← Gradle wrapper
@@ -102,7 +96,7 @@ ChhatraLekha/
 
 There are **two implementations of the same rules**, and that is deliberate:
 
-* **`Acadentrix/`** is the offline-first Android client (Kotlin, Compose, Room).
+* **`android/`** is the offline-first Android client (Kotlin, Compose, Room).
 * **`chhatralekha/`** is the server (FastAPI, MongoDB) and the web portal.
 
 The APAAR validator, the anomaly engine, the seal format and the QR payload
@@ -180,19 +174,19 @@ new account with the restricted `verifier` role.
 It is off until you give the backend a client of your own — see
 [`chhatralekha/README.md`](chhatralekha/README.md#google-sign-in).
 
-### 3. The Android client (`Acadentrix/`)
+### 3. The Android client (`android/`)
 
 Requirements: **JDK 17+**, Android SDK with **compileSdk 36**.
 
 ```powershell
-cd Acadentrix
+cd android
 .\gradlew.bat :core:test assembleDebug
 ```
 
 or with the convenience launcher (pins JDK 17, sanitises PATH):
 
 ```powershell
-cd Acadentrix
+cd android
 .\build.cmd :core:test assembleDebug
 ```
 
@@ -239,7 +233,7 @@ docker compose up --build     # MongoDB + the API + the React frontend
 | Frontend (React 19 + Vite + Tailwind 4) | **Vercel** | Root directory `frontend/`, output `dist` |
 | Backend (FastAPI + Motor) | **Render** (web service) | `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, health check `/health` |
 | Database (MongoDB) | **MongoDB Atlas** | An Atlas cluster is a replica set, so multi-document transactions are available |
-| Android client (`Acadentrix/`) | Direct APK / Play Internal Testing | Offline-capable with Room database, pure Java runtime HTTP client (`ChhatraLekhaApiClient`), two-way sync (`SyncManager`), and optimistic concurrency (HTTP 409 conflict handling) |
+| Android client (`android/`) | Direct APK / Play Internal Testing | Offline-capable with Room database, pure Java runtime HTTP client (`ChhatraLekhaApiClient`), two-way sync (`SyncManager`), and optimistic concurrency (HTTP 409 conflict handling) |
 
 The configuration files are [`render.yaml`](render.yaml) and
 [`frontend/vercel.json`](frontend/vercel.json).
@@ -405,7 +399,7 @@ curl -s https://<service>.onrender.com/health
 ### The Android client
 
 The client is **offline-first with bidirectional network synchronisation capability**:
-it features an in-built `ChhatraLekhaApiClient` and `SyncManager` (`com.acadentrix.core.network`),
+it features an in-built `ChhatraLekhaApiClient` and `SyncManager` (`com.chhatralekha.core.network`),
 using standard Java runtime networking (zero external dependencies). It connects to
 the FastAPI backend (`http://10.0.2.2:8000/api` for emulator, or configurable remote URL).
 
@@ -552,15 +546,10 @@ pytest -q                       # 262 passed
 ```bash
 cd frontend
 npm install
-<<<<<<< HEAD
-npm test                        # 48 tests
-npm run build
-=======
 npm test                        # 61 passed (including 7 design system lint tests)
 npm run i18n:check              # 13 locales, 257 keys each
 npm run check:links             # verified internal routes and static assets
 npm run build                   # route-level code splitting
->>>>>>> 92abb0106e7af41c4caa35b11a70b4159b24e4df
 ```
 
 ### The Android client
@@ -568,20 +557,20 @@ npm run build                   # route-level code splitting
 Requirements: **JDK 17+**, Android SDK with **compileSdk 36**.
 
 ```powershell
-cd Acadentrix
+cd android
 .\gradlew.bat :core:test assembleDebug
 ```
 
 or with the convenience launcher (pins JDK 17, sanitises PATH):
 
 ```powershell
-cd Acadentrix
+cd android
 .\build.cmd :core:test assembleDebug   # 204 passed unit & integration tests, builds app-debug.apk
 ```
 
 
-Artifacts land in `Acadentrix/app/build/outputs/apk/debug/app-debug.apk`, with the HTML test
-report at `Acadentrix/core/build/reports/tests/test/index.html`.
+Artifacts land in `android/app/build/outputs/apk/debug/app-debug.apk`, with the HTML test
+report at `android/core/build/reports/tests/test/index.html`.
 
 ---
 
@@ -654,6 +643,6 @@ so the portal is demonstrable on a laptop.
 
 ---
 
-## Team
+## Project
 
-**ChhatraLekha**.
+ChhatraLekha is an open academic-identity prototype. Questions and feedback are welcome through the contact page.

@@ -6,7 +6,7 @@ on:
     paths:
       - "chhatralekha/**"
       - "frontend/**"
-      - "Acadentrix/**"
+      - "android/**"
       - "docker-compose.yml"
       - ".github/workflows/chhatralekha.yml"
   pull_request:
@@ -14,7 +14,7 @@ on:
     paths:
       - "chhatralekha/**"
       - "frontend/**"
-      - "Acadentrix/**"
+      - "android/**"
       - "docker-compose.yml"
       - ".github/workflows/chhatralekha.yml"
 
@@ -23,6 +23,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  audit:
+    name: Legacy-name and term audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Run legacy name and term check
+        run: bash scripts/check-legacy-names.sh
+
   backend:
     name: Backend (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
@@ -110,7 +120,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: Acadentrix
+        working-directory: android
 
     steps:
       - name: Check out the repository
@@ -137,7 +147,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-core-test-results
-          path: Acadentrix/core/build/test-results/test
+          path: android/core/build/test-results/test
           if-no-files-found: ignore
 
   container:

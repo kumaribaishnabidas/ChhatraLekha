@@ -9,7 +9,7 @@ Two rules govern what goes into that link:
   ``FRONTEND_ORIGIN``. It never points at an official government service:
   ChhatraLekha is a prototype, a badge that resolved to somebody else's registry
   would claim an authenticity the platform does not have, and would send a
-  stranger's browser to a domain nobody on the team controls.
+  stranger's browser to a domain the operator does not control.
 * It carries an **opaque, expiring, revocable token** - never the raw APAAR
   ID. The token discloses nothing, and only its hash is stored, so a dump of
   the collection cannot be replayed.

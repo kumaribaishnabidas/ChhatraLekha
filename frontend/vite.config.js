@@ -7,6 +7,9 @@ import tailwindcss from '@tailwindcss/vite'
 // production.
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  resolve: {
+    preserveSymlinks: true,
+  },
   server: {
     port: 5173,
     proxy: {
