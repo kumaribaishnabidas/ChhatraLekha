@@ -164,6 +164,26 @@ async def test_student_can_read_own_record_and_certificate(client, multi_student
     assert res_cert.headers["content-type"] == "application/pdf"
 
 
+async def test_student_cannot_issue_another_students_token_or_badge(client, multi_students_setup):
+    token_a = await _login(client, "aakash@student.test")
+    # Student A tries to issue token for Student B (Priya, same institution)
+    res_tok = await client.post("/api/students/841295304812/token", headers=auth(token_a))
+    assert res_tok.status_code == 403
+
+    # Student A tries to fetch badge/qr for Student B
+    res_badge = await client.get("/api/students/841295304812/qr", headers=auth(token_a))
+    assert res_badge.status_code == 403
+
+    # Student A can issue token and badge for self
+    res_own_tok = await client.post("/api/students/984210357890/token", headers=auth(token_a))
+    assert res_own_tok.status_code == 200
+    assert "token" in res_own_tok.json()
+
+    res_own_badge = await client.get("/api/students/984210357890/qr", headers=auth(token_a))
+    assert res_own_badge.status_code == 200
+    assert res_own_badge.headers["content-type"] == "image/png"
+
+
 async def test_institution_keeps_access_to_own_students(client, multi_students_setup, institution_token):
     # Principal of INST-T1 can read students at INST-T1
     res = await client.get("/api/students/984210357890", headers=auth(institution_token))

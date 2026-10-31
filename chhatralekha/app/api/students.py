@@ -881,8 +881,14 @@ async def student_qr(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No such APAAR ID."
         )
-    if principal.role != "aicte_admin" and principal.institution_id:
-        if student.get("institution_id") != principal.institution_id:
+    if principal.role == "student":
+        if not principal.apaar_id or principal.apaar_id != apaar_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Students may only request badges for their own academic record.",
+            )
+    elif principal.role != "aicte_admin":
+        if not principal.institution_id or student.get("institution_id") != principal.institution_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You are not allowed to access another institution's records.",
@@ -919,8 +925,14 @@ async def student_token(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No such APAAR ID."
         )
-    if principal.role != "aicte_admin" and principal.institution_id:
-        if student.get("institution_id") != principal.institution_id:
+    if principal.role == "student":
+        if not principal.apaar_id or principal.apaar_id != apaar_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Students may only request badges for their own academic record.",
+            )
+    elif principal.role != "aicte_admin":
+        if not principal.institution_id or student.get("institution_id") != principal.institution_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You are not allowed to access another institution's records.",

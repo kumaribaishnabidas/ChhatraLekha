@@ -33,7 +33,7 @@ export default function StudentSharePage() {
       setLoading(true)
       setError('')
       const { data } = await api.get('/me/shares')
-      setShares(data)
+      setShares(Array.isArray(data) ? data : data?.shares || [])
     } catch (err) {
       setError(errorMessage(err, 'Unable to load share links.'))
     } finally {

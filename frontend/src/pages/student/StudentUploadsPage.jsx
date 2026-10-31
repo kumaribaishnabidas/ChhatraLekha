@@ -26,7 +26,7 @@ export default function StudentUploadsPage() {
       setLoading(true)
       setError('')
       const { data } = await api.get('/me/uploads')
-      setUploads(data)
+      setUploads(Array.isArray(data) ? data : data?.uploads || [])
     } catch (err) {
       setError(errorMessage(err, 'Unable to load upload history.'))
     } finally {

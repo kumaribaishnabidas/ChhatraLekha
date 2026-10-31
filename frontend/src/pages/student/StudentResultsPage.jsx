@@ -72,7 +72,7 @@ export default function StudentResultsPage() {
             {t('student.results.cgpaLabel', { defaultValue: 'Cumulative CGPA' })}
           </p>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-4xl font-black text-brand-deep">{resultsData.cgpa.toFixed(2)}</span>
+            <span className="text-4xl font-black text-brand-deep">{(resultsData?.cgpa ?? 0).toFixed(2)}</span>
             <span className="text-xs text-muted">/ 10.00</span>
           </div>
           <span className="mt-2 inline-block rounded bg-success-surface px-2 py-0.5 text-[10px] font-bold text-success-strong">

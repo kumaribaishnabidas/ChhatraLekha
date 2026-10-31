@@ -245,7 +245,7 @@ export function Modal({ open, onClose, title, children, footer, className = '' }
   )
 }
 
-export function Table({ headers = [], children, className = '' }) {
+export function Table({ headers = [], rows, children, className = '' }) {
   return (
     <div className={`table-wrap ${className}`}>
       <table className="data-table">
@@ -258,7 +258,17 @@ export function Table({ headers = [], children, className = '' }) {
             </tr>
           </thead>
         )}
-        <tbody>{children}</tbody>
+        <tbody>
+          {rows
+            ? rows.map((row, rIdx) => (
+                <tr key={rIdx}>
+                  {Array.isArray(row)
+                    ? row.map((cell, cIdx) => <td key={cIdx}>{cell}</td>)
+                    : row}
+                </tr>
+              ))
+            : children}
+        </tbody>
       </table>
     </div>
   )
