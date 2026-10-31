@@ -20,9 +20,9 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.api.deps import (
     Principal,
     client_ip,
+    ensure_can_access_student,
     get_db,
     require_any_permission,
-    require_permission,
 )
 from app.audit import writer
 from app.core import rbac
@@ -73,9 +73,9 @@ async def issue_token(
     request: Request,
     principal: Principal = Depends(
         require_any_permission(
-            rbac.Permission.VERIFY_CREDENTIAL,
             rbac.Permission.GENERATE_CERTIFICATE,
             rbac.Permission.ONBOARD_STUDENTS,
+            rbac.Permission.ISSUE_OWN_TOKEN,
         )
     ),
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -91,12 +91,13 @@ async def issue_token(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No such student record."
         )
-    if principal.role != "aicte_admin" and principal.institution_id:
-        if student.get("institution_id") != principal.institution_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You are not allowed to issue a token for this record.",
-            )
+    await ensure_can_access_student(
+        principal,
+        student,
+        db=db,
+        request=request,
+        detail="You are not allowed to issue a token for this record.",
+    )
 
     minutes = payload.minutes or settings.verification_token_minutes
     claims = {
@@ -148,9 +149,15 @@ async def issue_token(
     summary="The tokens issued for a record",
 )
 async def list_tokens(
+    request: Request,
     student_record_id: Optional[str] = Query(None),
     principal: Principal = Depends(
-        require_permission(rbac.Permission.VERIFY_CREDENTIAL)
+        require_any_permission(
+            rbac.Permission.ONBOARD_STUDENTS,
+            rbac.Permission.GENERATE_CERTIFICATE,
+            rbac.Permission.VIEW_OWN_RECORD,
+            rbac.Permission.VIEW_STUDENT_REGISTER,
+        )
     ),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> list[TokenOut]:
@@ -160,6 +167,19 @@ async def list_tokens(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Name the student record whose tokens you want to see.",
         )
+    students = StudentRepository(db["students"])
+    student = await students.get_by_record_id(student_record_id)
+    if student is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No such student record."
+        )
+    await ensure_can_access_student(
+        principal,
+        student,
+        db=db,
+        request=request,
+        detail="You are not allowed to view tokens for this record.",
+    )
     rows = await VerificationTokenRepository(db["verification_tokens"]).for_record(
         student_record_id
     )
@@ -176,15 +196,30 @@ async def revoke_token(
     request: Request,
     principal: Principal = Depends(
         require_any_permission(
-            rbac.Permission.VERIFY_CREDENTIAL,
             rbac.Permission.GENERATE_CERTIFICATE,
             rbac.Permission.ONBOARD_STUDENTS,
+            rbac.Permission.ISSUE_OWN_TOKEN,
         )
     ),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> TokenOut:
     """Revoke a token, so that it stops verifying anything."""
     repository = VerificationTokenRepository(db["verification_tokens"])
+    token_doc = await repository.get(token_id)
+    if token_doc is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No such token."
+        )
+    students = StudentRepository(db["students"])
+    student = await students.get_by_record_id(token_doc.get("student_record_id", ""))
+    if student is not None:
+        await ensure_can_access_student(
+            principal,
+            student,
+            db=db,
+            request=request,
+            detail="You are not allowed to revoke this token.",
+        )
     updated = await repository.revoke(token_id)
     if updated is None:
         raise HTTPException(

@@ -35,6 +35,7 @@ ROLE_TEACHER = "teacher"
 ROLE_STUDENT = "student"
 ROLE_PARENT = "parent"
 ROLE_VERIFIER = "verifier"
+ROLE_PENDING = "pending"
 
 ALL_ROLES = (
     ROLE_NATIONAL_ADMIN,
@@ -49,6 +50,7 @@ ALL_ROLES = (
     ROLE_STUDENT,
     ROLE_PARENT,
     ROLE_VERIFIER,
+    ROLE_PENDING,
 )
 
 

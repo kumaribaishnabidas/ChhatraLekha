@@ -17,7 +17,7 @@ def _google_configured(monkeypatch):
     settings = get_settings()
     monkeypatch.setattr(settings, "google_client_id", "client-id.apps.googleusercontent.com")
     monkeypatch.setattr(settings, "google_client_secret", "client-secret")
-    monkeypatch.setattr(settings, "google_default_role", "verifier")
+    monkeypatch.setattr(settings, "google_default_role", "pending")
     yield
 
 
@@ -189,7 +189,7 @@ async def test_a_new_person_gets_an_account_with_the_default_role():
     )
     account, created = await google.resolve_account(db, profile)
     assert created is True
-    assert account["role"] == "verifier"
+    assert account["role"] == "pending"
     assert account["email"] == "newcomer@example.com"
     assert account["google_sub"] == "google-subject-1"
     # An account that has never used a password must not accept one.
@@ -239,3 +239,35 @@ async def test_an_existing_email_is_linked_rather_than_duplicated():
     assert account["institution_id"] == "INST-0421"
     stored = await db["users"].find_one({"user_id": "USR-EXISTING"})
     assert stored["google_sub"] == "google-subject-3"
+
+
+async def test_pending_google_account_cannot_read_any_student_records(client, seeded):
+    from app.core.security import create_access_token
+
+    await seeded["users"].insert_one({
+        "user_id": "USR-G-NEWCOMER",
+        "email": "newcomer@example.com",
+        "full_name": "New Comer",
+        "role": "pending",
+        "is_active": True,
+    })
+    await seeded["students"].insert_one({
+        "apaar_id": "984210357890",
+        "student_name": "Demo Student",
+        "institution_id": "INST-T1",
+        "is_active": True,
+        "record_status": "ACTIVE",
+    })
+
+    pending_token = create_access_token(subject="USR-G-NEWCOMER", role="pending")
+    auth_header = {"Authorization": f"Bearer {pending_token}"}
+
+    res_record = await client.get("/api/students/984210357890", headers=auth_header)
+    assert res_record.status_code == 403
+
+    res_list = await client.get("/api/students", headers=auth_header)
+    assert res_list.status_code == 403
+
+    res_consent = await client.get("/api/consent/984210357890", headers=auth_header)
+    assert res_consent.status_code == 403
+

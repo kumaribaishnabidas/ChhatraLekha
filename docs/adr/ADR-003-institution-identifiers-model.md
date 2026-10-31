@@ -39,3 +39,4 @@ Hardcoding a single `aicte_id` or `code` field in the database prevents uniform 
 **Consequences:**  
 - Positive: Accommodates any Indian regulatory scheme or future national registry without database migrations.
 - Positive: Prevents misleading claims about government verification while preserving clean queryability.
+

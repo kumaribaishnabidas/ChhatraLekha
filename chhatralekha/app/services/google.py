@@ -191,7 +191,7 @@ async def resolve_account(db, profile: GoogleProfile) -> tuple[dict[str, Any], b
         "user_id": f"USR-G-{profile.subject[:12].upper()}",
         "email": profile.email,
         "full_name": profile.name,
-        "role": settings.google_default_role or "verifier",
+        "role": settings.google_default_role or "pending",
         "institution_id": None,
         "password_hash": GOOGLE_ONLY_PASSWORD_HASH,
         "google_sub": profile.subject,

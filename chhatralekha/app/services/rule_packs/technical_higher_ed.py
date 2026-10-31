@@ -40,3 +40,4 @@ class TechnicalHigherEdPack:
         anomalies += engine.detect_cross_institution_duplicates(snapshot)
         anomalies += engine.detect_invalid_apaar(snapshot)
         return anomalies
+
