@@ -111,11 +111,18 @@ export default function StudentWalletPage() {
           <div className="rounded-lg border border-line bg-surface-2 p-6 shadow-md space-y-5">
             {/* ID Card Top Header */}
             <div className="flex items-center justify-between border-b border-line pb-4">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-accent-strong m-0">
-                  National Academic Registry
-                </p>
-                <h2 className="text-xl font-black text-brand m-0">ChhatraLekha Student ID</h2>
+              <div className="flex items-center gap-3">
+                <img
+                  src="/brand/chhatralekha-logo.png"
+                  alt="ChhatraLekha"
+                  className="h-10 w-auto rounded bg-white p-1 border border-line shadow-xs"
+                />
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-accent-strong m-0">
+                    National Academic Registry
+                  </p>
+                  <h2 className="text-xl font-black text-brand m-0">ChhatraLekha Student ID</h2>
+                </div>
               </div>
               <StatusChip status={student.record_status || 'ACTIVE'}>
                 {student.record_status || 'Active'}

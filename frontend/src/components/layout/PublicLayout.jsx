@@ -36,8 +36,8 @@ export default function PublicLayout() {
           <Link to="/" className="flex items-center gap-3 no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
             <img
               src="/brand/chhatralekha-logo.png"
-              alt="ChhatraLekha"
-              className="h-10 sm:h-12 w-[108px] sm:w-[132px] object-contain block"
+              alt="ChhatraLekha - Authenticate, Verify, Empower"
+              className="h-10 sm:h-12 w-auto max-w-[200px] object-contain block"
               onError={(e) => {
                 e.currentTarget.style.display = 'none'
               }}
@@ -238,7 +238,11 @@ export default function PublicLayout() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div className="md:col-span-2">
               <div className="flex items-center gap-3 mb-3">
-                <span className="font-extrabold text-lg text-brand tracking-tight">ChhatraLekha</span>
+                <img
+                  src="/brand/chhatralekha-logo.png"
+                  alt="ChhatraLekha"
+                  className="h-10 w-auto object-contain rounded bg-white p-1 border border-line"
+                />
                 <span className="text-xs px-2 py-0.5 rounded border border-warning/40 bg-warning-surface text-warning-strong font-semibold">
                   Prototype
                 </span>

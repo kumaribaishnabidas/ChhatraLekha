@@ -86,7 +86,9 @@ export default function LoginPage() {
       <section className="flex items-center justify-center p-6">
         <div className="card w-full max-w-md p-7">
           <div className="flex items-center justify-between gap-3 mb-6">
-            <img src="/brand/chhatralekha-logo.png" alt="ChhatraLekha" className="w-[116px] h-auto block" />
+            <div className="rounded bg-white p-1 border border-line">
+              <img src="/brand/chhatralekha-logo.png" alt="ChhatraLekha - Authenticate, Verify, Empower" className="w-[130px] h-auto block" />
+            </div>
             <div className="flex items-center gap-2">
               <ThemeToggle variant="surface" label={t('settings.theme.label')} />
               <LanguageSwitcher variant="surface" />
