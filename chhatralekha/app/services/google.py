@@ -134,12 +134,15 @@ async def fetch_profile(
     email = str(data.get("email", "")).strip().lower()
     if not subject or not email:
         raise GoogleAuthError("Google did not return an identifier and an e-mail address.")
+    email_verified = bool(data.get("email_verified", True))
+    if not email_verified:
+        raise GoogleAuthError("Google account email is not verified.")
     return GoogleProfile(
         subject=subject,
         email=email,
         name=str(data.get("name") or email.split("@")[0]).strip(),
         picture=data.get("picture"),
-        email_verified=bool(data.get("email_verified", True)),
+        email_verified=email_verified,
     )
 
 
@@ -153,6 +156,9 @@ async def resolve_account(db, profile: GoogleProfile) -> tuple[dict[str, Any], b
 
     Returns the account document and whether it was just created.
     """
+    if not profile.email_verified:
+        raise GoogleAuthError("Google account email is not verified.")
+
     from datetime import datetime, timezone
 
     now = datetime.now(timezone.utc)

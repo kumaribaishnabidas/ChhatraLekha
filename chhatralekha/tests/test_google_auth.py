@@ -125,6 +125,58 @@ async def test_a_profile_without_an_identifier_is_refused():
             await google.fetch_profile("token", client=client)
 
 
+async def test_an_unverified_google_email_is_refused():
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "sub": "1234567890",
+                "email": "person@example.com",
+                "name": "Person Example",
+                "email_verified": False,
+            },
+        )
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        with pytest.raises(google.GoogleAuthError, match="verified"):
+            await google.fetch_profile("token", client=client)
+
+
+async def test_an_inactive_api_key_owner_is_rejected(client):
+    from app.core.database import mongo
+    from app.core.security import generate_api_key
+
+    api_key, hashed = generate_api_key("demo")
+    await mongo.db()["users"].insert_one(
+        {
+            "user_id": "USR-KEY-OWNER",
+            "email": "owner@example.com",
+            "full_name": "Key Owner",
+            "role": "institution_admin",
+            "institution_id": "INST-T1",
+            "password_hash": "x",
+            "is_active": False,
+        }
+    )
+    await mongo.db()["api_keys"].insert_one(
+        {
+            "key_id": "KEY-INACTIVE-OWNER",
+            "label": "Inactive owner",
+            "user_id": "USR-KEY-OWNER",
+            "institution_id": "INST-T1",
+            "role": "institution_admin",
+            "key_hash": hashed,
+            "scopes": "students:read",
+            "is_active": True,
+        }
+    )
+
+    response = await client.get("/api/auth/me", headers={"X-API-Key": api_key})
+    assert response.status_code == 401
+    assert "not active" in response.json()["detail"].lower()
+
+
 # ------------------------------------------------------------ the account
 
 

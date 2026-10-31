@@ -54,6 +54,11 @@ async def test_a_callback_without_a_state_is_refused(client, monkeypatch):
         f"{settings.frontend_origin.rstrip('/')}/login#"
     )
     assert "error=" in response.headers["location"]
+    assert any(
+        "chhatralekha_google_state=" in cookie
+        and ("Max-Age=0" in cookie or "expires=" in cookie.lower())
+        for cookie in response.headers.get_list("set-cookie")
+    )
 
 
 async def test_a_callback_with_a_wrong_state_is_refused(client, monkeypatch):
@@ -88,3 +93,30 @@ async def test_a_callback_with_a_google_error_is_refused(client, monkeypatch):
     assert response.status_code == 307
     assert "error=" in response.headers["location"]
     assert "access_denied" in response.headers["location"]
+    assert any(
+        "chhatralekha_google_state=" in cookie
+        and ("Max-Age=0" in cookie or "expires=" in cookie.lower())
+        for cookie in response.headers.get_list("set-cookie")
+    )
+
+
+def test_client_ip_ignores_forwarded_headers_by_default(monkeypatch):
+    from app.api.deps import client_ip
+    from app.core.config import get_settings
+
+    settings = get_settings()
+    monkeypatch.setattr(settings, "trust_forwarded_headers", False)
+
+    request = type("Request", (), {"headers": {"X-Forwarded-For": "203.0.113.42"}, "client": type("Client", (), {"host": "10.0.0.5"})()})()
+    assert client_ip(request) == "10.0.0.5"
+
+
+def test_client_ip_uses_forwarded_header_when_explicitly_trusted(monkeypatch):
+    from app.api.deps import client_ip
+    from app.core.config import get_settings
+
+    settings = get_settings()
+    monkeypatch.setattr(settings, "trust_forwarded_headers", True)
+
+    request = type("Request", (), {"headers": {"X-Forwarded-For": "203.0.113.42, 10.0.0.5"}, "client": type("Client", (), {"host": "10.0.0.5"})()})()
+    assert client_ip(request) == "203.0.113.42"

@@ -554,6 +554,7 @@ async def seed(student_count: int = 2219, reset: bool = True) -> dict:
         {
             "key_id": "KEY-DEMO-001",
             "label": "Demo institutional integration",
+            "user_id": "USR-02-INSTITUTION-ADMIN",
             "institution_id": "INST-0421",
             "role": "institution_admin",
             "key_hash": api_key_hash,
