@@ -1,4 +1,4 @@
-"""EduSynC - APAAR ID Student Data Management & Verification Platform.
+"""ChhatraLekha - APAAR ID Student Data Management & Verification Platform.
 
 The FastAPI application exposes:
 
@@ -40,7 +40,7 @@ async def lifespan(app: FastAPI):
     settings.assert_production_safe()
     await mongo.connect()
     logger.info(
-        "EduSynC is ready (MongoDB database '%s')", settings.mongodb_database
+        "ChhatraLekha is ready (MongoDB database '%s')", settings.mongodb_database
     )
     logger.info(
         "Correction mode: %s",
@@ -95,7 +95,7 @@ else:
     _openapi_url = "/openapi.json"
 
 app = FastAPI(
-    title="EduSynC - APAAR ID Platform",
+    title="ChhatraLekha - APAAR ID Platform",
     description=(
         "Student data management, automated validation, anomaly detection, "
         "signed credential verification, consent management and regulatory "

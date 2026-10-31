@@ -1,18 +1,18 @@
 <div align="center">
 
-<img src="docs/assets/brand/edusync-lockup.png" alt="EduSynC" height="220" />
+<img src="docs/assets/brand/chhatralekha-logo.png" alt="ChhatraLekha" height="220" />
 
-# APAAR Verify (EduSynC codebase)
+# ChhatraLekha — APAAR ID Student Data Management & Verification Platform
 
 **The APAAR ID Student Data Management &amp; Verification Platform**
 
-[Website &amp; landing page →](https://kumaribaishnabidas.github.io/EduSynC/) · [Source code](https://github.com/kumaribaishnabidas/EduSynC) · [Backend documentation](edusync/README.md) · [App documentation](Acadentrix/README.md)
+[Website &amp; landing page →](https://kumaribaishnabidas.github.io/ChhatraLekha/) · [Source code](https://github.com/kumaribaishnabidas/ChhatraLekha) · [Backend documentation](edusync/README.md) · [App documentation](Acadentrix/README.md)
 
 </div>
 
 ---
 
-> **A note on the names.** The product is **EduSynC**. The code base keeps its
+> **A note on the names.** The product is **ChhatraLekha**. The code base keeps its
 > earlier internal identifiers - the `edusync/` Python package and the
 > `com.acadentrix.app` Android package - because renaming them would be a
 > large, risky change with no functional benefit. The user-facing text is
@@ -51,13 +51,13 @@ without ever silently changing an official academic record.
 
 | | |
 | --- | --- |
-| **Product / project name** | **EduSynC** |
-| **Brand name and logo** | **EduSynC** |
+| **Product / project name** | **ChhatraLekha** |
+| **Brand name and logo** | **ChhatraLekha** |
 | **Package / application id** | `com.acadentrix.app` |
 | **Gradle project name** | `Acadentrix` |
 | **Backend package** | `edusync/` |
 
-The EduSynC logo is the artwork the team supplied, shipped verbatim — as the launcher icon
+The ChhatraLekha logo is the artwork the team supplied, shipped verbatim — as the launcher icon
 (adaptive, with a themed-monochrome layer), in the app's header, on the degree certificate and
 across the website. The brand palette is sampled directly from that artwork:
 navy `#14246B` / `#0F2F73`, blue `#0F3A8A` / `#1558B8`, teal `#12B886`.
@@ -69,7 +69,7 @@ Source assets live in [`docs/assets/brand/`](docs/assets/brand/).
 ## What is in this repository
 
 ```
-EduSynC/
+ChhatraLekha/
 ├── README.md                 ← you are here
 ├── .gitignore
 ├── .gitattributes
@@ -78,7 +78,7 @@ EduSynC/
 ├── render.yaml               ← the Render deployment of the backend
 ├── docs/                     ← the website & landing page (GitHub Pages)
 │   ├── index.html
-│   └── assets/brand/         ← EduSynC logo artwork
+│   └── assets/brand/         ← ChhatraLekha logo artwork
 ├── edusync/                  ← the Python backend (FastAPI + MongoDB)
 │   ├── app/                  ← core, models, schemas, api, repositories, services, audit
 │   ├── tests/                ← the pytest suite
@@ -86,7 +86,7 @@ EduSynC/
 │   └── docs/architecture.md  ← the full design
 ├── frontend/                 ← the React web application
 │   ├── src/                  ← pages, components, hooks, services, utils
-│   ├── public/brand/         ← EduSynC logo artwork
+│   ├── public/brand/         ← ChhatraLekha logo artwork
 │   ├── vercel.json           ← the Vercel deployment of the frontend
 │   └── vite.config.js
 └── Acadentrix/               ← the Android application
@@ -625,7 +625,7 @@ statistics, review-task and theme commands, and read fixed templates based on
 structured API data. It cannot apply corrections, dismiss tasks, revoke
 tokens, or perform any other state-changing action. APAAR IDs are masked before
 display or read-aloud, and audio is never recorded, stored or sent to the
-EduSynC backend.
+ChhatraLekha backend.
 
 Voice input is opt-in. A translated privacy notice explains that some browsers
 process microphone audio through the browser vendor's cloud speech service.
@@ -656,4 +656,4 @@ so the portal is demonstrable on a laptop.
 
 ## Team
 
-**EduSynC**.
+**ChhatraLekha**.

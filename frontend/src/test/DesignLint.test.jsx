@@ -124,8 +124,8 @@ describe('Stage 6: Design System Lint', () => {
   it('sanitizeCopyPayload masks raw 12-digit APAAR IDs and leaves tokens intact', () => {
     expect(sanitizeCopyPayload('123456789012')).toBe('****-****-9012')
     expect(sanitizeCopyPayload('1234-5678-9012')).toBe('****-****-9012')
-    expect(sanitizeCopyPayload('https://edusync.vercel.app/verify/t/abc123token')).toBe(
-      'https://edusync.vercel.app/verify/t/abc123token',
+    expect(sanitizeCopyPayload('https://chhatralekha.vercel.app/verify/t/abc123token')).toBe(
+      'https://chhatralekha.vercel.app/verify/t/abc123token',
     )
     expect(sanitizeCopyPayload('9876')).toBe('9876')
   })

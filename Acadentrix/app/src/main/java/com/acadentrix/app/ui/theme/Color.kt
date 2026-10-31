@@ -2,8 +2,8 @@ package com.acadentrix.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// ---------------------------------------------------------------- EduSynC Navy
-// Sampled directly from the supplied EduSynC brand artwork:
+// ---------------------------------------------------------------- ChhatraLekha Navy
+// Sampled directly from the supplied ChhatraLekha brand artwork:
 //   deep navy #14246B | primary navy #0F2F73 | mid blue #0F3A8A | bright blue #1558B8
 val NavyDeep = Color(0xFF14246B)
 val NavyPrimary = Color(0xFF0F2F73)
@@ -58,8 +58,8 @@ val InfoContainerDark = Color(0xFF0B3D6B)
 val InfoOnContainerLight = Color(0xFF04182E)
 val InfoOnContainerDark = Color(0xFFCEE1F8)
 
-// ------------------------------------------------------- EduSynC Brand Teal
-// The teal accent carried by the EduSynC mark (sampled from the logo artwork).
+// ------------------------------------------------------- ChhatraLekha Brand Teal
+// The teal accent carried by the ChhatraLekha mark (sampled from the logo artwork).
 val BrandTeal = Color(0xFF12B886)
 val BrandTealLight = Color(0xFF3FD3A3)
 val BrandTealContainerLight = Color(0xFFD6F5E9)
@@ -67,7 +67,7 @@ val BrandTealContainerDark = Color(0xFF0B4D38)
 val BrandTealOnContainerLight = Color(0xFF053525)
 val BrandTealOnContainerDark = Color(0xFFA9F0D5)
 
-// ------------------------------------------------------- EduSynC Brand Canvas
+// ------------------------------------------------------- ChhatraLekha Brand Canvas
 // The artwork is drawn on white; these are the plates it is presented on.
 val BrandPlate = Color(0xFFFFFFFF)
 val BrandPlateBorder = Color(0xFFDDE3EE)

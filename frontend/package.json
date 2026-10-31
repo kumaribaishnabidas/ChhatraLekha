@@ -3,7 +3,8 @@
   "private": true,
   "version": "2.0.0",
   "type": "module",
-  "description": "EduSynC - APAAR ID Student Data Management and Verification Platform (web frontend)",
+  "packageManager": "npm@10.9.9",
+  "description": "ChhatraLekha - APAAR ID Student Data Management and Verification Platform (web frontend)",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

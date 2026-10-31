@@ -24,7 +24,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="text-base sm:text-lg text-muted leading-relaxed">
-              EduSynC eliminates academic reconciliation fraud across institutions with a 10-layer anomaly engine, cryptographic tamper-evident seals, and an Academic Record Change Impact Detector.
+              ChhatraLekha eliminates academic reconciliation fraud across institutions with a 10-layer anomaly engine, cryptographic tamper-evident seals, and an Academic Record Change Impact Detector.
             </p>
 
             <div className="p-4 rounded border border-warning/40 bg-warning-surface text-warning-strong text-xs sm:text-sm">

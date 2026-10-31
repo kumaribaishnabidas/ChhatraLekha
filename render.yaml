@@ -1,4 +1,4 @@
-# EduSynC - Render deployment
+# ChhatraLekha - Render deployment
 #
 # The backend is a FastAPI application backed by MongoDB. Point MONGODB_URL at
 # a MongoDB Atlas cluster: Atlas clusters are replica sets, so the correction

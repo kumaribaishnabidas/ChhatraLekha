@@ -48,8 +48,8 @@ import com.acadentrix.core.validation.ApaarIdValidator
 import com.acadentrix.app.ui.components.ApaarCard
 import com.acadentrix.app.ui.components.DetailRow
 import com.acadentrix.app.ui.components.DropdownSelector
-import com.acadentrix.app.ui.components.EduSynCMark
-import com.acadentrix.app.ui.components.EduSynCPlate
+import com.acadentrix.app.ui.components.ChhatraLekhaMark
+import com.acadentrix.app.ui.components.ChhatraLekhaPlate
 import com.acadentrix.app.ui.components.EmptyState
 import com.acadentrix.app.ui.components.InfoBanner
 import com.acadentrix.app.ui.components.QrCodeView
@@ -353,7 +353,7 @@ private fun CertificateSheet(
                     )
                 }
                 Spacer(Modifier.width(8.dp))
-                EduSynCPlate(markSize = 15.dp, platePadding = 4.dp, radius = 7.dp)
+                ChhatraLekhaPlate(markSize = 15.dp, platePadding = 4.dp, radius = 7.dp)
             }
         }
 
@@ -568,7 +568,7 @@ private fun CertificateSheet(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            EduSynCMark(size = 18.dp)
+            ChhatraLekhaMark(size = 18.dp)
             Spacer(Modifier.width(7.dp))
             Text(
                 text = "EDUSYNC",

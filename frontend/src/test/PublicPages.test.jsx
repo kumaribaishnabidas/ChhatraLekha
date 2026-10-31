@@ -28,7 +28,7 @@ describe('Public Pages', () => {
       </MemoryRouter>,
     )
     expect(screen.getByText(/Academic Record Verification/i)).toBeInTheDocument()
-    expect(screen.getByText(/About EduSynC/i)).toBeInTheDocument()
+    expect(screen.getByText(/About ChhatraLekha/i)).toBeInTheDocument()
   })
 
   it('renders FaqPage with accordion questions', () => {

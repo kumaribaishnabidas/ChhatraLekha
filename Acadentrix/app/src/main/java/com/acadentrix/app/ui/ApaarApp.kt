@@ -62,7 +62,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.acadentrix.core.model.UserRole
-import com.acadentrix.app.ui.components.EduSynCPlate
+import com.acadentrix.app.ui.components.ChhatraLekhaPlate
 import com.acadentrix.app.ui.screens.aicte.AnomalyInspectorScreen
 import com.acadentrix.app.ui.screens.aicte.AuditTrailScreen
 import com.acadentrix.app.ui.screens.aicte.AicteDashboardScreen
@@ -232,7 +232,7 @@ private fun ApaarHeader(
     ) {
         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                EduSynCPlate(markSize = 22.dp, platePadding = 7.dp, radius = 11.dp)
+                ChhatraLekhaPlate(markSize = 22.dp, platePadding = 7.dp, radius = 11.dp)
                 Spacer(Modifier.width(11.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(

@@ -8,7 +8,7 @@ import java.net.URL
 import java.nio.charset.StandardCharsets
 
 /**
- * Standard HTTP client connecting the Android application to the EduSynC backend API.
+ * Standard HTTP client connecting the Android application to the ChhatraLekha backend API.
  * Uses zero third-party dependencies, leveraging standard Java runtime networking
  * to ensure deterministic, crash-free execution across all Android API levels.
  */

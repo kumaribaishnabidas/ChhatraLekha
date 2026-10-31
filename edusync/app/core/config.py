@@ -16,7 +16,7 @@ from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Runtime settings for the EduSynC platform."""
+    """Runtime settings for the ChhatraLekha platform."""
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     )
 
     # ------------------------------------------------------------- identity
-    app_name: str = "EduSynC"
+    app_name: str = "ChhatraLekha"
     environment: str = "dev"
     #: ``ENV`` is accepted as an alias of ``ENVIRONMENT`` because the hosting
     #: platforms set ``ENV`` by convention. ``ENVIRONMENT`` still wins when

@@ -109,7 +109,7 @@ def check_production_settings() -> int:
 
     # Print summary
     print("=" * 72)
-    print("  EduSynC - Production Settings Audit (Stage 4 Check)")
+    print("  ChhatraLekha - Production Settings Audit (Stage 4 Check)")
     print("=" * 72)
     failures = 0
     for name, passed, detail in results:

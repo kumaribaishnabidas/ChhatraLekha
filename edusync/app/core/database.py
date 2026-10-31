@@ -1,6 +1,6 @@
 """MongoDB connection, collections and index management.
 
-EduSynC stores its registry in MongoDB. The connection is created lazily on
+ChhatraLekha stores its registry in MongoDB. The connection is created lazily on
 first use so that importing the application never opens a socket, which keeps
 the unit tests fast and lets the CLI scripts run without a server.
 
@@ -99,7 +99,7 @@ class Mongo:
             logger.warning(
                 "=" * 74
                 + "\n"
-                + "  EduSynC is running on the IN-MEMORY DEMO DATABASE.\n"
+                + "  ChhatraLekha is running on the IN-MEMORY DEMO DATABASE.\n"
                 + "  Nothing is persisted, and the data disappears when the process\n"
                 + "  stops. This mode is for demos and tests only - set MONGODB_URL\n"
                 + "  to a real MongoDB server for anything real.\n"
