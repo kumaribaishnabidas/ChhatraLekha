@@ -23,3 +23,4 @@ Institutions configure a `rule_pack` property (with automatic defaults based on 
 - Positive: Clean separation of concerns. Adding new state or board rules requires writing an isolated rule pack and test suite without risking regressions in higher education validation.
 - Positive: Existing 300 backend tests and anomaly evaluation benchmarks continue running with zero modifications.
 - Trade-off: Institutions must be associated with their designated rule pack upon onboarding.
+

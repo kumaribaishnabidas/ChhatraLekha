@@ -11,6 +11,7 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
+from app.audit import writer
 from app.core import rbac
 from app.core.config import get_settings
 from app.core.database import mongo
@@ -139,6 +140,107 @@ class Principal:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You are not allowed to access another institution's records.",
         )
+
+
+async def ensure_can_access_student(
+    principal: Principal,
+    student: dict,
+    *,
+    db: Optional[AsyncIOMotorDatabase] = None,
+    request: Optional[Request] = None,
+    detail: str = "You are not allowed to access another institution's records.",
+) -> None:
+    """Allow the owner student, same-institution staff, or authorized administrators.
+
+    Rejects students accessing another student's record, cross-institution staff
+    access, and roles without direct student record access (such as verifier or pending).
+    Writes an audit entry on access denial.
+    """
+    if principal.role == "student":
+        own = principal.apaar_id or (principal.user or {}).get("apaar_id")
+        if not own or own != student.get("apaar_id"):
+            if db is not None:
+                await writer.log(
+                    AuditRepository(db["audit_events"]),
+                    actor=principal.subject,
+                    actor_role=principal.role,
+                    action="ACCESS_DENIED",
+                    subject=student.get("apaar_id", ""),
+                    details=f"Student attempted unauthorized access to record of {student.get('apaar_id')}.",
+                    category="SECURITY",
+                    ip_address=client_ip(request) if request else None,
+                )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You may only access your own record.",
+            )
+        return
+
+    if principal.role in {
+        "national_admin",
+        "aicte_admin",
+        "platform_operator",
+        "regulator_admin",
+        "state_admin",
+        "district_admin",
+    }:
+        return
+
+    if principal.role in {"institution_admin", "academic_admin", "teacher"}:
+        if not principal.institution_id or student.get("institution_id") != principal.institution_id:
+            if db is not None:
+                await writer.log(
+                    AuditRepository(db["audit_events"]),
+                    actor=principal.subject,
+                    actor_role=principal.role,
+                    action="ACCESS_DENIED",
+                    subject=student.get("apaar_id", ""),
+                    details=detail,
+                    category="SECURITY",
+                    ip_address=client_ip(request) if request else None,
+                )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=detail,
+            )
+        return
+
+    if principal.role == "parent":
+        ward_apaar = (principal.user or {}).get("ward_apaar_id") or (principal.user or {}).get("apaar_id")
+        if ward_apaar and ward_apaar == student.get("apaar_id"):
+            return
+        if db is not None:
+            await writer.log(
+                AuditRepository(db["audit_events"]),
+                actor=principal.subject,
+                actor_role=principal.role,
+                action="ACCESS_DENIED",
+                subject=student.get("apaar_id", ""),
+                details=f"Parent attempted unauthorized access to record of {student.get('apaar_id')}.",
+                category="SECURITY",
+                ip_address=client_ip(request) if request else None,
+            )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You may only access your linked ward's record.",
+        )
+
+    # Verifier, pending, and any other role: no direct record access
+    if db is not None:
+        await writer.log(
+            AuditRepository(db["audit_events"]),
+            actor=principal.subject,
+            actor_role=principal.role,
+            action="ACCESS_DENIED",
+            subject=student.get("apaar_id", ""),
+            details=f"Role '{principal.role}' attempted direct student record access.",
+            category="SECURITY",
+            ip_address=client_ip(request) if request else None,
+        )
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Your role may not read student records directly.",
+    )
 
 
 async def get_principal(

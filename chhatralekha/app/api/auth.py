@@ -270,7 +270,7 @@ async def google_callback(
 
     access = create_access_token(
         subject=account["user_id"],
-        role=account.get("role", "verifier"),
+        role=account.get("role", "pending"),
         institution_id=account.get("institution_id"),
     )
     refresh = create_refresh_token(account["user_id"])

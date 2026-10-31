@@ -100,7 +100,7 @@ class Settings(BaseSettings):
     google_redirect_uri: str = ""
     #: The role given to somebody who signs in with Google for the first
     #: time and has no account yet.
-    google_default_role: str = "verifier"
+    google_default_role: str = "pending"
     #: The scopes requested from Google.
     google_scopes: List[str] = ["openid", "email", "profile"]
 

@@ -538,7 +538,7 @@ cp .env.example .env            # then edit the secrets
 python -m app.scripts.seed
 python -m app.scripts.check_prod_settings # verify 12/12 production safety checks
 uvicorn app.main:app --reload
-pytest -q                       # 305 passed across 33 test suites
+pytest -q                       # 320 passed across 34 test suites
 ```
 
 ### The web frontend

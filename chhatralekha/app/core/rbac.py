@@ -18,6 +18,7 @@ from app.core.security import (
     ROLE_INSTITUTION,
     ROLE_NATIONAL_ADMIN,
     ROLE_PARENT,
+    ROLE_PENDING,
     ROLE_PLATFORM_OPERATOR,
     ROLE_REGULATOR_ADMIN,
     ROLE_STATE_ADMIN,
@@ -161,6 +162,8 @@ _PARENT = frozenset(
     }
 )
 
+_PENDING: frozenset[Permission] = frozenset()
+
 ROLE_PERMISSIONS: dict[str, frozenset[Permission]] = {
     ROLE_NATIONAL_ADMIN: _DIRECTORATE,
     ROLE_AICTE: _DIRECTORATE,
@@ -174,6 +177,7 @@ ROLE_PERMISSIONS: dict[str, frozenset[Permission]] = {
     ROLE_VERIFIER: _VERIFIER,
     ROLE_STUDENT: _STUDENT,
     ROLE_PARENT: _PARENT,
+    ROLE_PENDING: _PENDING,
 }
 
 ROLE_LABELS: dict[str, str] = {
@@ -189,6 +193,7 @@ ROLE_LABELS: dict[str, str] = {
     ROLE_VERIFIER: "Credential Verifier",
     ROLE_STUDENT: "Student",
     ROLE_PARENT: "Parent / Guardian",
+    ROLE_PENDING: "Pending Approval",
 }
 
 

@@ -27,3 +27,4 @@ A school student is typically a minor without independent legal consent capacity
 **Consequences:**  
 - Positive: Safe, legally compliant operational model protecting minor school students across India.
 - Positive: Clear institutional verification barrier prevents unauthorized persons from claiming access to minor student records.
+

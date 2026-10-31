@@ -10,6 +10,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.api.deps import (
     Principal,
     client_ip,
+    ensure_can_access_student,
     get_db,
     get_principal,
     require_permission,
@@ -45,10 +46,24 @@ def _consent_out(row: Doc) -> ConsentOut:
 @router.get("/{apaar_id}", response_model=list[ConsentOut], summary="The consent ledger of a student")
 async def list_consents(
     apaar_id: str,
+    request: Request,
     principal: Principal = Depends(get_principal),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> list[ConsentOut]:
     """Every consent record belonging to a student."""
+    students = StudentRepository(db["students"])
+    student = await students.get(apaar_id)
+    if student is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No such APAAR ID."
+        )
+    await ensure_can_access_student(
+        principal,
+        student,
+        db=db,
+        request=request,
+        detail="You are not allowed to access another institution's consents.",
+    )
     rows = await ConsentRepository(db["consents"]).for_apaar_id(apaar_id)
     return [_consent_out(row) for row in rows]
 
@@ -60,10 +75,24 @@ async def list_consents(
 )
 async def consent_decisions(
     apaar_id: str,
+    request: Request,
     principal: Principal = Depends(get_principal),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> list[ConsentDecisionOut]:
     """Evaluate the ledger against every consent purpose."""
+    students = StudentRepository(db["students"])
+    student = await students.get(apaar_id)
+    if student is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No such APAAR ID."
+        )
+    await ensure_can_access_student(
+        principal,
+        student,
+        db=db,
+        request=request,
+        detail="You are not allowed to access another institution's consents.",
+    )
     rows = await ConsentRepository(db["consents"]).for_apaar_id(apaar_id)
     return [
         ConsentDecisionOut(
@@ -101,12 +130,13 @@ async def record_consent(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No such APAAR ID."
         )
-    if principal.role != "aicte_admin" and principal.institution_id:
-        if student.get("institution_id") != principal.institution_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You are not allowed to manage another institution's consents.",
-            )
+    await ensure_can_access_student(
+        principal,
+        student,
+        db=db,
+        request=request,
+        detail="You are not allowed to manage another institution's consents.",
+    )
 
     now = datetime.now(timezone.utc)
     status_value = (

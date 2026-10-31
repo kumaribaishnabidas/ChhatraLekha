@@ -29,3 +29,4 @@ We introduce an **Academic Unit** abstraction separating common identity attribu
 **Consequences:**  
 - Positive: Single, clean mental model for administrators and queries across both schools and colleges.
 - Positive: Enables unified reporting and audit trails across an individual student's entire educational lifecycle.
+

@@ -15,7 +15,7 @@ Every command below has been executed on the local workspace and confirmed passi
 
 | Component | Test / Build Command | Result | Duration / Scope |
 | :--- | :--- | :--- | :--- |
-| **API Backend** | `pytest --tb=no` (in `chhatralekha/`) | **305 passed**, 0 failures, 1 warning | ~11s across 33 test suites |
+| **API Backend** | `pytest --tb=no` (in `chhatralekha/`) | **320 passed**, 0 failures, 1 warning | ~11s across 34 test suites |
 | **Frontend Unit Tests** | `npm.cmd test -- --run` (in `frontend/`) | **68 passed**, 0 failures | 9 test files |
 | **Frontend Route Links** | `npm.cmd run check:links` (in `frontend/`) | **Passed** | 34 configured application routes, 25 verified internal routes |
 | **Frontend Translations** | `npm.cmd run i18n:check` (in `frontend/`) | **Passed** | 13 languages, 423 translation keys each |

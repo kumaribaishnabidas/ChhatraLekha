@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field
 from app.api.deps import (
     Principal,
     client_ip,
+    ensure_can_access_student,
     get_db,
     get_principal,
     require_any_permission,
@@ -174,10 +175,24 @@ async def list_students(
     principal: Principal = Depends(get_principal),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> list[StudentOut]:
-    """List enrolments, scoped to the caller's institution unless they are AICTE."""
+    """List enrolments, scoped to the caller's institution unless they are an authorized regulator/admin."""
+    # Verifiers, students, parents, and pending users must not list the student register
+    if principal.role in {"verifier", "student", "parent", "pending"}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Role '{principal.role}' is not allowed to view the student register.",
+        )
+
     students = StudentRepository(db["students"])
 
-    if principal.role != "aicte_admin" and principal.institution_id:
+    if principal.role not in {
+        "national_admin",
+        "aicte_admin",
+        "platform_operator",
+        "regulator_admin",
+        "state_admin",
+        "district_admin",
+    }:
         institution_id = principal.institution_id
 
     # The working register shows the active records; a withdrawn enrolment
@@ -342,6 +357,7 @@ async def upload_document(
 )
 async def get_student(
     apaar_id: str,
+    request: Request,
     principal: Principal = Depends(get_principal),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> StudentOut:
@@ -353,32 +369,7 @@ async def get_student(
             status_code=status.HTTP_404_NOT_FOUND, detail="No such APAAR ID."
         )
 
-    # Student ownership check:
-    if principal.role == "student":
-        if not principal.apaar_id or principal.apaar_id != apaar_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Students may only access their own academic record.",
-            )
-        return _to_out(student)
-
-    # Staff roles must have appropriate permissions
-    if not (
-        rbac.has_permission(principal.role, rbac.Permission.VIEW_STUDENT_REGISTER)
-        or rbac.has_permission(principal.role, rbac.Permission.VIEW_NATIONAL_DASHBOARD)
-        or rbac.has_permission(principal.role, rbac.Permission.VIEW_INSTITUTION_DASHBOARD)
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to view student records.",
-        )
-
-    if principal.role != "aicte_admin":
-        if not principal.institution_id or student.get("institution_id") != principal.institution_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You are not allowed to access another institution's records.",
-            )
+    await ensure_can_access_student(principal, student, db=db, request=request)
     return _to_out(student)
 
 
@@ -867,11 +858,12 @@ def _social_or_general(raw: str) -> str:
 @router.get("/{apaar_id}/qr", summary="The APAAR QR badge of a student")
 async def student_qr(
     apaar_id: str,
+    request: Request,
     principal: Principal = Depends(
         require_any_permission(
             rbac.Permission.ONBOARD_STUDENTS,
             rbac.Permission.GENERATE_CERTIFICATE,
-            rbac.Permission.VERIFY_CREDENTIAL,
+            rbac.Permission.ISSUE_OWN_TOKEN,
         )
     ),
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -887,18 +879,7 @@ async def student_qr(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No such APAAR ID."
         )
-    if principal.role == "student":
-        if not principal.apaar_id or principal.apaar_id != apaar_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Students may only request badges for their own academic record.",
-            )
-    elif principal.role != "aicte_admin":
-        if not principal.institution_id or student.get("institution_id") != principal.institution_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You are not allowed to access another institution's records.",
-            )
+    await ensure_can_access_student(principal, student, db=db, request=request)
 
     document, raw = await _issue_badge_token(db, student, principal.subject)
     link = qr.build_token_payload(raw)
@@ -915,11 +896,12 @@ async def student_qr(
 )
 async def student_token(
     apaar_id: str,
+    request: Request,
     principal: Principal = Depends(
         require_any_permission(
             rbac.Permission.ONBOARD_STUDENTS,
             rbac.Permission.GENERATE_CERTIFICATE,
-            rbac.Permission.VERIFY_CREDENTIAL,
+            rbac.Permission.ISSUE_OWN_TOKEN,
         )
     ),
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -931,18 +913,7 @@ async def student_token(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No such APAAR ID."
         )
-    if principal.role == "student":
-        if not principal.apaar_id or principal.apaar_id != apaar_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Students may only request badges for their own academic record.",
-            )
-    elif principal.role != "aicte_admin":
-        if not principal.institution_id or student.get("institution_id") != principal.institution_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You are not allowed to access another institution's records.",
-            )
+    await ensure_can_access_student(principal, student, db=db, request=request)
 
     document, raw = await _issue_badge_token(db, student, principal.subject)
     return TokenIssueResponse(
@@ -1002,19 +973,13 @@ async def student_certificate(
             status_code=status.HTTP_404_NOT_FOUND, detail="No such APAAR ID."
         )
 
-    # Student ownership check:
-    if principal.role == "student":
-        if not principal.apaar_id or principal.apaar_id != apaar_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Students may only generate certificates for their own academic record.",
-            )
-    elif principal.role != "aicte_admin":
-        if not principal.institution_id or student.get("institution_id") != principal.institution_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You are not allowed to issue a certificate for another institution.",
-            )
+    await ensure_can_access_student(
+        principal,
+        student,
+        db=db,
+        request=request,
+        detail="You are not allowed to issue a certificate for another institution.",
+    )
 
     institutions = await db["institutions"].find_one(
         {"institution_id": student.get("institution_id")}

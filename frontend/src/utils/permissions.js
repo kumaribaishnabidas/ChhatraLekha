@@ -132,6 +132,7 @@ export const ROLE_PERMISSIONS = {
   verifier: VERIFIER,
   student: STUDENT,
   parent: PARENT,
+  pending: [],
 }
 
 export const ROLE_LABELS = {
@@ -147,6 +148,7 @@ export const ROLE_LABELS = {
   verifier: 'Verifier',
   student: 'Student',
   parent: 'Parent / Guardian',
+  pending: 'Pending Approval',
 }
 
 export function permissionsFor(role) {
