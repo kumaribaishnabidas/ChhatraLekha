@@ -24,13 +24,11 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from dataclasses import dataclass, field
-from typing import Optional, Sequence
+from typing import Optional
 
 from app.models.enums import (
     AdmissionQuota,
-    AnomalySeverity,
     AnomalyType,
     Gender,
     InstitutionType,
@@ -530,7 +528,7 @@ def print_report(results: dict) -> None:
     print("PER-RULE / DETECTOR PERFORMANCE:")
     print(f"{'Rule / Detector':<32} {'Seeded':<8} {'Det':<6} {'TP':<5} {'FP':<5} {'FN':<5} {'Prec':<8} {'Recall':<8}")
     print("-" * 80)
-    for code, stats in results["per_rule_performance"].items():
+    for _code, stats in results["per_rule_performance"].items():
         print(
             f"{stats['rule_label'][:31]:<32} "
             f"{stats['seeded']:<8} "
