@@ -12,10 +12,8 @@ from __future__ import annotations
 import pytest
 from fastapi.routing import APIRoute
 
+from app.api.deps import Principal, get_principal
 from app.main import app
-from app.api.deps import get_principal, require_permission, Principal
-from app.core.rbac import Permission
-
 
 PUBLIC_ROUTE_PATHS = {
     "/health",
