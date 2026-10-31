@@ -236,6 +236,35 @@ async def test_student_token_endpoint_issues_opaque_token(
     assert "/verify/t/" in body["token_url"]
 
 
+async def test_student_me_profile_and_wallet(client, institution_token, student_token):
+    await create_student(client, institution_token)
+    profile_res = await client.get("/api/students/me/profile", headers=auth(student_token))
+    assert profile_res.status_code == 200, profile_res.text
+    profile = profile_res.json()
+    assert profile["apaar_id"] == "984210357890"
+
+    wallet_res = await client.get("/api/students/me/wallet", headers=auth(student_token))
+    assert wallet_res.status_code == 200, wallet_res.text
+    wallet = wallet_res.json()
+    assert wallet["student"]["apaar_id"] == "984210357890"
+    assert "/verify/t/" in wallet["verification_token"]["token_url"]
+    assert len(wallet["credentials"]) >= 1
+
+
+async def test_upload_document_ocr(client, student_token):
+    payload = b"ACADEMIC TRANSCRIPT\nStudent Name: Aakash Verma\nAPAAR ID: 984210357890\nMarks: 88.5%\n"
+    response = await client.post(
+        "/api/students/upload-document",
+        files={"file": ("transcript.pdf", payload, "application/pdf")},
+        headers=auth(student_token),
+    )
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["student_name"] == "Aakash Verma"
+    assert result["apaar_id"] == "984210357890"
+    assert result["requires_human_approval"] is True
+
+
 # ------------------------------------------------------------- bulk csv
 
 

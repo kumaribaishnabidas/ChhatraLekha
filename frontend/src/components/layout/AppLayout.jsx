@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import LanguageSwitcher from '../common/LanguageSwitcher'
 import ThemeToggle from '../common/ThemeToggle'
+import DemoGuide from '../common/DemoGuide'
 import VoiceButton from '../../voice/VoiceButton'
 import VoicePanel from '../../voice/VoicePanel'
 import { useAuth } from '../../hooks/useAuth'
@@ -14,6 +15,8 @@ import { PERMISSIONS, ROLE_LABELS } from '../../utils/permissions'
 
 const NAVIGATION = [
   { to: '/dashboard', label: 'nav.dashboard', permission: PERMISSIONS.VIEW_NATIONAL_DASHBOARD },
+  { to: '/institution', label: 'nav.institutionDashboard', permission: PERMISSIONS.VIEW_INSTITUTION_DASHBOARD },
+  { to: '/wallet', label: 'nav.wallet', permission: PERMISSIONS.VIEW_OWN_RECORD },
   { to: '/institutions', label: 'nav.institutions', permission: PERMISSIONS.VIEW_COMPLIANCE_MATRIX },
   { to: '/students', label: 'nav.students', permission: PERMISSIONS.VIEW_STUDENT_REGISTER },
   { to: '/upload', label: 'nav.upload', permission: PERMISSIONS.IMPORT_CSV },
@@ -35,11 +38,20 @@ export default function AppLayout() {
     navigate('/login', { replace: true })
   }
 
+  const homePath = can(PERMISSIONS.VIEW_NATIONAL_DASHBOARD)
+    ? '/dashboard'
+    : can(PERMISSIONS.VIEW_INSTITUTION_DASHBOARD)
+    ? '/institution'
+    : can(PERMISSIONS.VIEW_OWN_RECORD)
+    ? '/wallet'
+    : '/verify'
+
   return (
     <div className="min-h-screen">
+      <DemoGuide />
       <header className="sticky top-0 z-40 bg-navy text-white border-b border-navy-deep">
         <div className="mx-auto max-w-[1240px] px-5 py-3 flex items-center gap-5">
-          <NavLink to="/dashboard" className="flex items-center gap-3 no-underline">
+          <NavLink to={homePath} className="flex items-center gap-3 no-underline">
             <img
               src="/brand/chhatralekha-lockup-inverse.svg"
               alt="ChhatraLekha"

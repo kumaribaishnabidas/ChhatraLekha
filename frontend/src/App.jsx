@@ -21,6 +21,8 @@ const StudentsPage = lazy(() => import('./pages/StudentsPage'))
 const TokenVerificationPage = lazy(() => import('./pages/TokenVerificationPage'))
 const UploadPage = lazy(() => import('./pages/UploadPage'))
 const VerificationPage = lazy(() => import('./pages/VerificationPage'))
+const StudentWalletPage = lazy(() => import('./pages/StudentWalletPage'))
+const InstitutionDashboardPage = lazy(() => import('./pages/InstitutionDashboardPage'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage'))
 const FaqPage = lazy(() => import('./pages/FaqPage'))
@@ -55,6 +57,21 @@ function Guarded({ permission, children }) {
     )
   }
   return children
+}
+
+/** Redirects to the appropriate default page for the user's role. */
+function RoleRedirect() {
+  const { can } = useAuth()
+  if (can(PERMISSIONS.VIEW_NATIONAL_DASHBOARD)) {
+    return <Navigate to="/dashboard" replace />
+  }
+  if (can(PERMISSIONS.VIEW_INSTITUTION_DASHBOARD)) {
+    return <Navigate to="/institution" replace />
+  }
+  if (can(PERMISSIONS.VIEW_OWN_RECORD)) {
+    return <Navigate to="/wallet" replace />
+  }
+  return <Navigate to="/verify" replace />
 }
 
 export default function App() {
@@ -152,7 +169,23 @@ export default function App() {
             </Guarded>
           }
         />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route
+          path="/wallet"
+          element={
+            <Guarded permission={PERMISSIONS.VIEW_OWN_RECORD}>
+              <StudentWalletPage />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/institution"
+          element={
+            <Guarded permission={PERMISSIONS.VIEW_INSTITUTION_DASHBOARD}>
+              <InstitutionDashboardPage />
+            </Guarded>
+          }
+        />
+        <Route path="*" element={<RoleRedirect />} />
       </Route>
       {/* Catch-all 404 */}
       <Route path="*" element={<NotFoundPage />} />
