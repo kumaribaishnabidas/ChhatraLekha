@@ -40,7 +40,7 @@ class Settings(BaseSettings):
 
     # ------------------------------------------------------------- database
     mongodb_url: str = ""
-    mongodb_database: str = "edusync"
+    mongodb_database: str = "chhatralekha"
     mongodb_timeout_ms: int = 5000
     #: Key used to derive the privacy-preserving match token of an APAAR ID.
     #: An empty value falls back to the seal key.
@@ -105,7 +105,7 @@ class Settings(BaseSettings):
     google_scopes: List[str] = ["openid", "email", "profile"]
 
     # -------------------------------------------------------------- session
-    session_cookie_name: str = "edusync_session"
+    session_cookie_name: str = "chhatralekha_session"
     session_max_age: int = 60 * 60 * 8
 
     # ----------------------------------------------------------- demo data

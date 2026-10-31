@@ -7,7 +7,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-private val Context.dataStore by preferencesDataStore(name = "edusync_settings")
+private val Context.dataStore by preferencesDataStore(name = "chhatralekha_settings")
 
 /** The exact three in-app appearance choices; persisted with DataStore. */
 enum class ThemePreference { SYSTEM, LIGHT, DARK }

@@ -43,17 +43,17 @@ describe('LoginPage', () => {
 
     const user = userEvent.setup()
     renderLogin()
-    await user.type(screen.getByLabelText(/e-mail address/i), 'aicte@edusync.test')
+    await user.type(screen.getByLabelText(/e-mail address/i), 'aicte@chhatralekha.test')
     await user.type(screen.getByLabelText(/password/i), 'Test@1234')
     await user.click(screen.getByRole('button', { name: /sign in/i }))
 
     await waitFor(() => expect(api.post).toHaveBeenCalled())
     expect(api.post).toHaveBeenCalledWith('/auth/login', {
-      email: 'aicte@edusync.test',
+      email: 'aicte@chhatralekha.test',
       password: 'Test@1234',
     })
     await waitFor(() =>
-      expect(window.localStorage.getItem('edusync.token')).toBe('token-123'),
+      expect(window.localStorage.getItem('chhatralekha.token')).toBe('token-123'),
     )
   })
 
@@ -64,7 +64,7 @@ describe('LoginPage', () => {
 
     const user = userEvent.setup()
     renderLogin()
-    await user.type(screen.getByLabelText(/e-mail address/i), 'aicte@edusync.test')
+    await user.type(screen.getByLabelText(/e-mail address/i), 'aicte@chhatralekha.test')
     await user.type(screen.getByLabelText(/password/i), 'wrong')
     await user.click(screen.getByRole('button', { name: /sign in/i }))
 

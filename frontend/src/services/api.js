@@ -59,9 +59,9 @@ if (import.meta.env.PROD && !import.meta.env.VITE_API_URL) {
   )
 }
 
-const TOKEN_KEY = 'edusync.token'
-const REFRESH_KEY = 'edusync.refresh'
-const USER_KEY = 'edusync.user'
+const TOKEN_KEY = 'chhatralekha.token'
+const REFRESH_KEY = 'chhatralekha.refresh'
+const USER_KEY = 'chhatralekha.user'
 
 export const api = axios.create({
   baseURL: BASE_URL,

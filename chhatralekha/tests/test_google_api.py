@@ -36,7 +36,7 @@ async def test_the_start_endpoint_redirects_to_google(client, monkeypatch):
 
     # The CSRF state is remembered in a short-lived, HttpOnly cookie.
     cookies = response.headers.get_list("set-cookie")
-    assert any("edusync_google_state=" in cookie for cookie in cookies)
+    assert any("chhatralekha_google_state=" in cookie for cookie in cookies)
     assert any("HttpOnly" in cookie for cookie in cookies)
     assert any("Max-Age=600" in cookie for cookie in cookies)
 
@@ -63,7 +63,7 @@ async def test_a_callback_with_a_wrong_state_is_refused(client, monkeypatch):
 
     # Start the flow to get the real state cookie.
     start = await client.get("/api/auth/google", follow_redirects=False)
-    state = start.cookies.get("edusync_google_state")
+    state = start.cookies.get("chhatralekha_google_state")
     assert state
 
     response = await client.get(

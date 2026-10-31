@@ -234,7 +234,7 @@ async def get_public_verification_key() -> dict[str, str]:
     settings = get_settings()
     return {
         "algorithm": "Ed25519",
-        "key_id": "edusync-2026",
+        "key_id": "chhatralekha-2026",
         "public_key_pem": settings.seal_ecdsa_public_key_pem or "PUBLIC_KEY_CONFIGURED",
         "notice": (
             "Public key for independent offline verification of ChhatraLekha credentials. "

@@ -33,7 +33,7 @@ GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo"
 
 #: The name of the short-lived cookie that carries the CSRF ``state``.
-STATE_COOKIE = "edusync_google_state"
+STATE_COOKIE = "chhatralekha_google_state"
 
 #: How long the state cookie lives, in seconds.
 STATE_TTL_SECONDS = 600

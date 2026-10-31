@@ -169,7 +169,7 @@ def test_the_connection_string_is_redacted():
     from app.core.database import redact_url
 
     redacted = redact_url(
-        "mongodb+srv://apaaruser:SuperSecret123@cluster0.abcd.mongodb.net/edusync"
+        "mongodb+srv://apaaruser:SuperSecret123@cluster0.abcd.mongodb.net/chhatralekha"
     )
     assert "SuperSecret123" not in redacted
     assert "apaaruser" in redacted

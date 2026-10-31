@@ -20,7 +20,7 @@ htmlcov/
 .env
 *.db
 *.sqlite3
-edusync.db
+chhatralekha.db
 
 # Editors
 .idea/

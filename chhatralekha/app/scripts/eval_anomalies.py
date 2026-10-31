@@ -512,7 +512,7 @@ def run_evaluation() -> dict:
 
 def print_report(results: dict) -> None:
     print("=" * 80)
-    print("EDUSYNC REGULATORY ANOMALY ENGINE - EVALUATION REPORT")
+    print("CHHATRALEKHA REGULATORY ANOMALY ENGINE - EVALUATION REPORT")
     print("=" * 80)
     print(f"Architecture : {results['engine_architecture']}")
     ds = results["dataset_size"]

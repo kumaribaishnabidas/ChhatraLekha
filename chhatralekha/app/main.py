@@ -25,7 +25,7 @@ from app.core.database import mongo
 
 settings = get_settings()
 
-logger = logging.getLogger("edusync")
+logger = logging.getLogger("chhatralekha")
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
 )

@@ -45,7 +45,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH" \
     ENVIRONMENT=dev \
     MONGODB_URL=mongodb://mongodb:27017 \
-    MONGODB_DATABASE=edusync
+    MONGODB_DATABASE=chhatralekha
 
 RUN apt-get update \
     && apt-get install --no-install-recommends -y libpq5 curl \
