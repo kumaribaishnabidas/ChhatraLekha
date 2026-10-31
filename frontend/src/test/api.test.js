@@ -43,11 +43,11 @@ describe('tokenStore', () => {
 
 describe('the API base URL', () => {
   it('strips a trailing slash from the configured URL', () => {
-    expect(normaliseApiUrl('https://edusync-api.onrender.com/')).toBe(
-      'https://edusync-api.onrender.com',
+    expect(normaliseApiUrl('https://chhatralekha-api.onrender.com/')).toBe(
+      'https://chhatralekha-api.onrender.com',
     )
-    expect(normaliseApiUrl('https://edusync-api.onrender.com///')).toBe(
-      'https://edusync-api.onrender.com',
+    expect(normaliseApiUrl('https://chhatralekha-api.onrender.com///')).toBe(
+      'https://chhatralekha-api.onrender.com',
     )
   })
 
@@ -58,14 +58,14 @@ describe('the API base URL', () => {
   })
 
   it('trims the surrounding whitespace', () => {
-    expect(normaliseApiUrl('  https://edusync-api.onrender.com  ')).toBe(
-      'https://edusync-api.onrender.com',
+    expect(normaliseApiUrl('  https://chhatralekha-api.onrender.com  ')).toBe(
+      'https://chhatralekha-api.onrender.com',
     )
   })
 
   it('leaves a URL without a trailing slash alone', () => {
-    expect(normaliseApiUrl('https://edusync-api.onrender.com')).toBe(
-      'https://edusync-api.onrender.com',
+    expect(normaliseApiUrl('https://chhatralekha-api.onrender.com')).toBe(
+      'https://chhatralekha-api.onrender.com',
     )
   })
 

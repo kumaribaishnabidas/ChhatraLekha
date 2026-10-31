@@ -7,7 +7,7 @@ export function usePageMeta({ title, description, noindex = false, canonical = n
   useEffect(() => {
     const prevTitle = document.title
     if (title) {
-      document.title = `${title} | EduSynC`
+      document.title = `${title} | ChhatraLekha`
     }
 
     let metaDesc = document.querySelector('meta[name="description"]')
@@ -34,7 +34,7 @@ export function usePageMeta({ title, description, noindex = false, canonical = n
     }
 
     let linkCanonical = document.querySelector('link[rel="canonical"]')
-    const siteUrl = import.meta.env.VITE_SITE_URL || 'https://edusync.vercel.app'
+    const siteUrl = import.meta.env.VITE_SITE_URL || 'https://chhatralekha.vercel.app'
     if (canonical && !noindex) {
       if (!linkCanonical) {
         linkCanonical = document.createElement('link')

@@ -17,8 +17,8 @@ describe('Public Pages', () => {
         <LandingPage />
       </MemoryRouter>,
     )
-    expect(screen.getByText(/Automated Permanent Academic Account Registry/i)).toBeInTheDocument()
-    expect(screen.getByText(/Sign In & Try Live Demo/i)).toBeInTheDocument()
+    expect(screen.getByText(/One trusted record for every student/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Verify a credential/i })).toBeInTheDocument()
   })
 
   it('renders AboutPage with problem statement details', () => {
@@ -28,7 +28,7 @@ describe('Public Pages', () => {
       </MemoryRouter>,
     )
     expect(screen.getByText(/Academic Record Verification/i)).toBeInTheDocument()
-    expect(screen.getByText(/About EduSynC/i)).toBeInTheDocument()
+    expect(screen.getByText(/About ChhatraLekha/i)).toBeInTheDocument()
   })
 
   it('renders FaqPage with accordion questions', () => {

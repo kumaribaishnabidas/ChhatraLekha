@@ -8,7 +8,7 @@ import java.net.URL
 import java.nio.charset.StandardCharsets
 
 /**
- * Standard HTTP client connecting the Android application to the EduSynC backend API.
+ * Standard HTTP client connecting the Android application to the ChhatraLekha backend API.
  * Uses zero third-party dependencies, leveraging standard Java runtime networking
  * to ensure deterministic, crash-free execution across all Android API levels.
  */
@@ -19,7 +19,7 @@ class EduSyncApiClient(
 ) {
     companion object {
         const val DEFAULT_BASE_URL = "http://10.0.2.2:8000/api"
-        const val PRODUCTION_API_URL = "https://edusync.onrender.com/api"
+        const val PRODUCTION_API_URL = "https://chhatralekha-api.onrender.com/api"
     }
 
     /**

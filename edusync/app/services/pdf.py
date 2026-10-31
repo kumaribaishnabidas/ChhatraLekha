@@ -26,7 +26,7 @@ from reportlab.platypus import (
 
 from app.models.documents import enum_value, field
 
-# EduSynC brand palette.
+# ChhatraLekha brand palette.
 NAVY = colors.HexColor("#14246B")
 MID_BLUE = colors.HexColor("#0F3A8A")
 BRAND_TEAL = colors.HexColor("#12B886")
@@ -95,7 +95,7 @@ def _footer(canvas, doc) -> None:
     canvas.rect(0, 0, A4[0], 12 * mm, stroke=0, fill=1)
     canvas.setFillColor(colors.white)
     canvas.setFont("Helvetica-Bold", 8)
-    canvas.drawString(18 * mm, 4.6 * mm, "EduSynC")
+    canvas.drawString(18 * mm, 4.6 * mm, "ChhatraLekha")
     canvas.setFont("Helvetica", 7)
     canvas.drawRightString(
         A4[0] - 18 * mm, 4.6 * mm, f"Page {doc.page}  |  APAAR National Registry"
@@ -115,7 +115,7 @@ def build_students_report_pdf(
     *,
     title: str = "APAAR Student Register",
     subtitle: str = "",
-    generated_by: str = "EduSynC",
+    generated_by: str = "ChhatraLekha",
 ) -> bytes:
     """Render the student register as a paginated PDF table."""
     styles = _styles()
@@ -181,7 +181,7 @@ def build_students_report_pdf(
     story.append(Spacer(1, 6 * mm))
     story.append(
         Paragraph(
-            f"{len(rows)} record(s). This report is generated from the live EduSynC "
+            f"{len(rows)} record(s). This report is generated from the live ChhatraLekha "
             "registry and carries the APAAR ID of every student listed.",
             styles["small"],
         )
@@ -370,7 +370,7 @@ def build_certificate_pdf(
     )
 
     story: list = []
-    story.append(Paragraph("EduSynC", styles["title"]))
+    story.append(Paragraph("ChhatraLekha", styles["title"]))
     story.append(
         Paragraph(
             "Automated Permanent Academic Account Registry (APAAR) &middot; AICTE",
@@ -425,7 +425,7 @@ def build_certificate_pdf(
         [
             qr_image,
             Paragraph(
-                "Scan to verify this credential at the EduSynC verification portal. "
+                "Scan to verify this credential at the ChhatraLekha verification portal. "
                 "The badge carries an opaque, expiring, revocable token - it does "
                 "not carry the APAAR ID.",
                 styles["body"],
@@ -456,7 +456,7 @@ def build_certificate_pdf(
     story.append(Spacer(1, 3 * mm))
     story.append(
         Paragraph(
-            f"Issued {issued.strftime('%d %B %Y, %H:%M UTC')} by the EduSynC national "
+            f"Issued {issued.strftime('%d %B %Y, %H:%M UTC')} by the ChhatraLekha national "
             "registry. This certificate is verifiable offline using the digital seal "
             "and the APAAR QR badge printed above.",
             styles["small"],

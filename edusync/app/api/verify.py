@@ -237,7 +237,7 @@ async def get_public_verification_key() -> dict[str, str]:
         "key_id": "edusync-2026",
         "public_key_pem": settings.seal_ecdsa_public_key_pem or "PUBLIC_KEY_CONFIGURED",
         "notice": (
-            "Public key for independent offline verification of EduSynC credentials. "
+            "Public key for independent offline verification of ChhatraLekha credentials. "
             "Private keys are strictly guarded and never placed in client code."
         ),
     }

@@ -29,30 +29,30 @@ import com.acadentrix.app.ui.theme.BrandPlate
 import com.acadentrix.app.ui.theme.BrandPlateBorder
 
 /**
- * The EduSynC brand mark.
+ * The ChhatraLekha brand mark.
  *
- * The artwork ships as the team's own raster asset (`res/drawable-nodpi/edusync_mark.png`)
+ * The artwork ships as the team's own raster asset (`res/drawable-nodpi/chhatralekha_mark.png`)
  * so the branding on screen is pixel-identical to the supplied logo.
  */
 @Composable
-fun EduSynCMark(
+fun ChhatraLekhaMark(
     modifier: Modifier = Modifier,
     size: Dp = 40.dp
 ) {
     Image(
-        painter = painterResource(R.drawable.edusync_mark),
-        contentDescription = "EduSynC",
+        painter = painterResource(R.drawable.chhatralekha_mark),
+        contentDescription = "ChhatraLekha",
         contentScale = ContentScale.Fit,
         modifier = modifier.size(size)
     )
 }
 
 /**
- * The EduSynC mark presented on its white plate, for use on the dark navy
+ * The ChhatraLekha mark presented on its white plate, for use on the dark navy
  * header surfaces where the artwork needs a light ground to sit on.
  */
 @Composable
-fun EduSynCPlate(
+fun ChhatraLekhaPlate(
     modifier: Modifier = Modifier,
     markSize: Dp = 38.dp,
     platePadding: Dp = 7.dp,
@@ -68,32 +68,32 @@ fun EduSynCPlate(
             .padding(platePadding),
         contentAlignment = Alignment.Center
     ) {
-        EduSynCMark(size = markSize)
+        ChhatraLekhaMark(size = markSize)
     }
 }
 
 /**
- * Horizontal brand lockup: EduSynC mark + the EduSynC wordmark.
+ * Horizontal brand lockup: ChhatraLekha mark + the ChhatraLekha wordmark.
  */
 @Composable
-fun EduSynCLockup(
+fun ChhatraLekhaLockup(
     modifier: Modifier = Modifier,
     markSize: Dp = 34.dp,
     wordColor: Color = Color.White,
     subColor: Color = Color.White.copy(alpha = 0.72f),
-    subText: String = "by EduSynC",
+    subText: String = "by ChhatraLekha",
     onWhite: Boolean = false
 ) {
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         if (onWhite) {
-            EduSynCMark(size = markSize)
+            ChhatraLekhaMark(size = markSize)
         } else {
-            EduSynCPlate(markSize = markSize, platePadding = 5.dp, radius = 9.dp)
+            ChhatraLekhaPlate(markSize = markSize, platePadding = 5.dp, radius = 9.dp)
         }
         Spacer(Modifier.width(10.dp))
         Column {
             Text(
-                text = "EduSynC",
+                text = "ChhatraLekha",
                 style = MaterialTheme.typography.titleSmall,
                 color = wordColor,
                 fontWeight = FontWeight.Bold,

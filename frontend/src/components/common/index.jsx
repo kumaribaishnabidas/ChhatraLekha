@@ -136,4 +136,56 @@ export function FilterBar({ children }) {
   return <div className="flex flex-wrap items-end gap-3 mb-4">{children}</div>
 }
 
+export function Button({
+  children,
+  variant = 'primary',
+  className = '',
+  loading = false,
+  type = 'button',
+  ...props
+}) {
+  const variants = {
+    primary: 'btn-navy',
+    accent: 'btn-primary',
+    secondary: 'btn-outline',
+    ghost: 'btn-ghost',
+    danger: 'btn-danger',
+  }
+  return (
+    <button
+      type={type}
+      className={`btn ${variants[variant] || variants.primary} ${className}`}
+      disabled={loading || props.disabled}
+      {...props}
+    >
+      {loading && <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden="true" />}
+      {children}
+    </button>
+  )
+}
+
+export function StatusChip({ status, children }) {
+  const styles = {
+    valid: 'bg-success-surface text-success-strong',
+    active: 'bg-success-surface text-success-strong',
+    expired: 'bg-warning-surface text-warning-strong',
+    revoked: 'bg-danger-surface text-danger-strong',
+    pending: 'bg-warning-surface text-warning-strong',
+    'needs refresh': 'bg-info-surface text-info-strong',
+  }
+  const key = String(status || children || '').toLowerCase()
+  return <Badge className={styles[key] || 'bg-neutral-surface text-neutral-strong'}>{children || status}</Badge>
+}
+
+export function Field({ label, hint, error, children }) {
+  return (
+    <label className="block">
+      {label && <span className="label">{label}</span>}
+      {children}
+      {hint && !error && <span className="mt-1 block text-xs text-muted">{hint}</span>}
+      {error && <span className="mt-1 block text-xs text-danger-strong">{error}</span>}
+    </label>
+  )
+}
+
 export { default as CopyButton, sanitizeCopyPayload } from './CopyButton'

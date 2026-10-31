@@ -61,8 +61,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-canvas">
       <section className="hidden lg:flex flex-col justify-between bg-brand text-white p-12 border-r border-line">
-        <div className="flex items-center gap-3">
-          <img src="/brand/edusync-lockup.png" alt="EduSynC" className="h-11 w-auto" />
+        <div className="flex items-center gap-3 rounded-lg bg-white p-3 w-fit shadow-sm">
+          <img src="/brand/chhatralekha-logo.png" alt="ChhatraLekha" className="w-[230px] h-auto block" />
         </div>
         <div className="max-w-xl">
           <h1 className="m-0 text-white text-4xl leading-tight">
@@ -86,7 +86,7 @@ export default function LoginPage() {
       <section className="flex items-center justify-center p-6">
         <div className="card w-full max-w-md p-7">
           <div className="flex items-center justify-between gap-3 mb-6">
-            <img src="/brand/edusync-wordmark.png" alt="EduSynC" className="h-9 w-auto" />
+            <img src="/brand/chhatralekha-logo.png" alt="ChhatraLekha" className="w-[116px] h-auto block" />
             <div className="flex items-center gap-2">
               <ThemeToggle variant="surface" label={t('settings.theme.label')} />
               <LanguageSwitcher variant="surface" />

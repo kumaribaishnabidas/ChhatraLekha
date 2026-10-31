@@ -1,6 +1,6 @@
-# EduSynC - the Python backend
+# ChhatraLekha - the Python backend
 
-The server of the **EduSynC** platform. It holds
+The server of the **ChhatraLekha** platform. It holds
 the registry, runs the validation and the anomaly rules, and issues the
 credentials that the web frontend and the Android client consume.
 

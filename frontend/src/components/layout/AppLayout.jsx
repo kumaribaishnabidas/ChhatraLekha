@@ -41,16 +41,13 @@ export default function AppLayout() {
         <div className="mx-auto max-w-[1240px] px-5 py-3 flex items-center gap-5">
           <NavLink to="/dashboard" className="flex items-center gap-3 no-underline">
             <img
-              src="/brand/edusync-lockup.png"
-              alt="EduSynC"
+              src="/brand/chhatralekha-lockup-inverse.svg"
+              alt="ChhatraLekha"
               className="h-9 w-auto block"
               onError={(event) => {
                 event.currentTarget.style.display = 'none'
               }}
             />
-            <span className="hidden sm:inline font-extrabold tracking-wide text-lg">
-              EduSynC
-            </span>
           </NavLink>
 
           <nav className="ml-auto flex items-center gap-1 overflow-x-auto">

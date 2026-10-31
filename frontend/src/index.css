@@ -1,11 +1,10 @@
 @import 'tailwindcss';
 
 /*
- * EduSynC design tokens.
+ * ChhatraLekha design tokens.
  *
- * The palette is sampled directly from the EduSynC brand artwork: navy
- * #14246B, mid blue #0F3A8A, bright blue #1558B8, brand teal #12B886, plus
- * saffron, emerald and crimson for the anomaly severities.
+ * ChhatraLekha professional palette: royal blue, orange, white and ivory.
+ * Status colours remain separate so verification states stay unambiguous.
  *
  * Every colour is a **CSS variable** with a light value and a dark value.
  * The Tailwind theme below maps the utilities onto those variables, so a
@@ -23,33 +22,33 @@
 
 :root {
   /* ------------------------------------------------------------ surfaces */
-  --app-canvas: #f4f7fc;
+  --app-canvas: #fffff0;
   --app-surface: #ffffff;
-  --app-surface-2: #f7f9fd;
-  --app-surface-3: #eef2f8;
+  --app-surface-2: #fafaec;
+  --app-surface-3: #f1f0dc;
 
   /* --------------------------------------------------------------- text */
-  --app-ink: #1a1f2b;
-  --app-muted: #5a6472;
+  --app-ink: #16192b;
+  --app-muted: #4a5160;
 
   /* ------------------------------------------------------------- borders */
-  --app-line: #d6deea;
-  --app-line-strong: #b9c4d6;
+  --app-line: #e4e2cc;
+  --app-line-strong: #c9c6a8;
 
   /* --------------------------------------------------------------- brand */
   /* The brand navy is used as a *background* (the header, the buttons). */
-  --app-brand: #14246b;
-  --app-brand-deep: #0f1a4a;
+  --app-brand: #2f57d6;
+  --app-brand-deep: #16257a;
   /* ...and as a *text* colour (headings, emphasised names). */
-  --app-brand-text: #14246b;
-  --app-brand-mid: #0f3a8a;
-  --app-brand-bright: #1558b8;
+  --app-brand-text: #1f3fbf;
+  --app-brand-mid: #3655c9;
+  --app-brand-bright: #4169e1;
   --app-on-brand: #ffffff;
 
   /* -------------------------------------------------------------- accent */
-  --app-accent: #12b886;
-  --app-accent-strong: #0d926b;
-  --app-on-accent: #05231a;
+  --app-accent: #ff8a00;
+  --app-accent-strong: #c2410c;
+  --app-on-accent: #16257a;
 
   /* ------------------------------------------------- regulatory semantics */
   --app-success: #0f7a44;
@@ -67,17 +66,17 @@
   --app-danger-strong: #a01b1b;
   --app-on-danger: #ffffff;
 
-  --app-info: #1558b8;
+  --app-info: #4169e1;
   --app-info-surface: #e7effc;
-  --app-info-strong: #0f3a8a;
+  --app-info-strong: #1f3fbf;
   --app-on-info: #ffffff;
 
   --app-neutral-surface: #edf1f6;
   --app-neutral-strong: #5a6472;
 
   /* -------------------------------------------------------------- effects */
-  --app-shadow: rgba(20, 36, 107, 0.08);
-  --app-shadow-strong: rgba(20, 36, 107, 0.12);
+  --app-shadow: rgba(31, 63, 191, 0.08);
+  --app-shadow-strong: rgba(31, 63, 191, 0.14);
   --app-header-ink: #ffffff;
   --app-header-ink-soft: rgba(255, 255, 255, 0.72);
   --app-header-line: rgba(255, 255, 255, 0.2);
@@ -92,27 +91,27 @@
 }
 
 [data-theme='dark'] {
-  --app-canvas: #0a0f1a;
-  --app-surface: #121a26;
-  --app-surface-2: #18212f;
-  --app-surface-3: #1d2735;
+  --app-canvas: #0b1437;
+  --app-surface: #121c4a;
+  --app-surface-2: #17235a;
+  --app-surface-3: #1e2c6b;
 
-  --app-ink: #e6ebf2;
-  --app-muted: #9aa6b8;
+  --app-ink: #f5f3e8;
+  --app-muted: #b7bcd6;
 
-  --app-line: #2a3547;
-  --app-line-strong: #3b4860;
+  --app-line: #2a3980;
+  --app-line-strong: #3b4c9c;
 
-  --app-brand: #16255c;
-  --app-brand-deep: #0d1636;
-  --app-brand-text: #a9c0f2;
-  --app-brand-mid: #7ba6e8;
-  --app-brand-bright: #93b8f2;
-  --app-on-brand: #ffffff;
+  --app-brand: #5b7ff0;
+  --app-brand-deep: #0b1437;
+  --app-brand-text: #8fa8ff;
+  --app-brand-mid: #7190ef;
+  --app-brand-bright: #9bb1ff;
+  --app-on-brand: #0b1437;
 
-  --app-accent: #3fd3a3;
-  --app-accent-strong: #2bbd8d;
-  --app-on-accent: #04231a;
+  --app-accent: #ff9a2e;
+  --app-accent-strong: #ffb35c;
+  --app-on-accent: #0b1437;
 
   --app-success: #5ad07f;
   --app-success-surface: #10331f;
@@ -137,7 +136,7 @@
   --app-neutral-surface: #1e2836;
   --app-neutral-strong: #9aa6b8;
 
-  --app-shadow: rgba(0, 0, 0, 0.55);
+  --app-shadow: rgba(0, 0, 0, 0.45);
   --app-shadow-strong: rgba(0, 0, 0, 0.7);
 }
 
@@ -232,7 +231,7 @@
 
 @layer components {
   .card {
-    @apply bg-surface border border-line rounded;
+    @apply bg-surface border border-line rounded-lg shadow-[0_8px_24px_var(--app-shadow)];
   }
 
   .btn {

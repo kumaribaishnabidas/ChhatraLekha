@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-# Build launcher for Acadentrix (a product of EduSynC).
+# Build launcher for Acadentrix (a product of ChhatraLekha).
 #
 # This wrapper is a convenience, not a requirement: a bare `gradlew test` now
 # works on this machine. It pins the project toolchain (JDK 17) and sanitises

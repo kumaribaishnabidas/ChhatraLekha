@@ -3,7 +3,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 export default function TermsPage() {
   usePageMeta({
     title: 'Terms of Service',
-    description: 'Terms of service and prototype usage conditions for EduSynC.',
+    description: 'Terms of service and prototype usage conditions for ChhatraLekha.',
     canonical: '/terms',
   })
 
@@ -23,14 +23,14 @@ export default function TermsPage() {
         <section className="space-y-2">
           <h2 className="text-lg font-bold text-ink">1. Acceptance of Prototype Conditions</h2>
           <p className="text-muted">
-            By accessing or interacting with the EduSynC demonstration portal, you acknowledge that this software is an architectural prototype created for technical demonstration and evaluation.
+            By accessing or interacting with the ChhatraLekha demonstration portal, you acknowledge that this software is an architectural prototype created for technical demonstration and evaluation.
           </p>
         </section>
 
         <section className="space-y-2">
           <h2 className="text-lg font-bold text-ink">2. No Official AICTE or APAAR Status</h2>
           <p className="text-muted">
-            EduSynC is not an official portal of the All India Council for Technical Education (AICTE), the Ministry of Education, or the Government of India. Verifications, QR badges, and downloadable certificates are issued for demonstration purposes only.
+            ChhatraLekha is not an official portal of the All India Council for Technical Education (AICTE), the Ministry of Education, or the Government of India. Verifications, QR badges, and downloadable certificates are issued for demonstration purposes only.
           </p>
         </section>
 

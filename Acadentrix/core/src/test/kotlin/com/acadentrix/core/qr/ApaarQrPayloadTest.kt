@@ -40,7 +40,7 @@ class ApaarQrPayloadTest {
     @Test
     fun buildProducesTheCanonicalVerificationLink() {
         assertEquals(
-            "https://edusync.vercel.app/verify?apaar=984210357890&inst=INST-0421" +
+            "https://chhatralekha.vercel.app/verify?apaar=984210357890&inst=INST-0421" +
                 "&prog=BTECH_CSE&seal=$seal&t=$timestamp",
             payload()
         )
@@ -112,18 +112,18 @@ class ApaarQrPayloadTest {
     fun buildTokenProducesTheCanonicalTokenUrl() {
         val token = "tok_sec_984210357890_test"
         val url = ApaarQrPayload.buildToken(token)
-        assertEquals("https://edusync.vercel.app/verify/t/tok_sec_984210357890_test", url)
+        assertEquals("https://chhatralekha.vercel.app/verify/t/tok_sec_984210357890_test", url)
     }
 
     @Test
     fun parseExtractsOpaqueTokenPayloads() {
         val token = "tok_sec_984210357890_test"
-        val parsedT = ApaarQrPayload.parse("https://edusync.vercel.app/verify/t/$token")
+        val parsedT = ApaarQrPayload.parse("https://chhatralekha.vercel.app/verify/t/$token")
         assertNotNull(parsedT)
         assertTrue(parsedT?.isTokenPayload == true)
         assertEquals(token, parsedT?.token)
 
-        val parsedToken = ApaarQrPayload.parse("https://edusync.vercel.app/verify/token/$token")
+        val parsedToken = ApaarQrPayload.parse("https://chhatralekha.vercel.app/verify/token/$token")
         assertNotNull(parsedToken)
         assertTrue(parsedToken?.isTokenPayload == true)
         assertEquals(token, parsedToken?.token)

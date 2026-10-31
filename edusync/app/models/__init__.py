@@ -1,4 +1,4 @@
-"""EduSynC database models and enumerations."""
+"""ChhatraLekha database models and enumerations."""
 
 from app.models.documents import Doc, docs, match_token, new_id, redact_apaar
 from app.models.enums import (

@@ -3,7 +3,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 export default function PrivacyPage() {
   usePageMeta({
     title: 'Privacy Policy',
-    description: 'Privacy policy for the EduSynC prototype, detailing synthetic data processing, token hashing, and audit logging.',
+    description: 'Privacy policy for the ChhatraLekha prototype, detailing synthetic data processing, token hashing, and audit logging.',
     canonical: '/privacy',
   })
 
@@ -23,7 +23,7 @@ export default function PrivacyPage() {
         <section className="space-y-2">
           <h2 className="text-lg font-bold text-ink">1. Nature of the System</h2>
           <p className="text-muted">
-            EduSynC is a software verification prototype. All citizen records, student enrollments, institution profiles, and anomaly markers stored within the system database are synthetic data generated for architectural validation.
+            ChhatraLekha is a software verification prototype. All citizen records, student enrollments, institution profiles, and anomaly markers stored within the system database are synthetic data generated for architectural validation.
           </p>
         </section>
 
@@ -53,7 +53,7 @@ export default function PrivacyPage() {
         <section className="space-y-2">
           <h2 className="text-lg font-bold text-ink">5. Voice Recognition Privacy (Opt-in)</h2>
           <p className="text-muted">
-            Voice command input is strictly opt-in and operates through the native browser Web Speech API. Depending on the browser engine (e.g. Google Chrome), voice audio may be converted to text by the browser vendor's speech service. EduSynC servers never record, capture, or store microphone audio streams.
+            Voice command input is strictly opt-in and operates through the native browser Web Speech API. Depending on the browser engine (e.g. Google Chrome), voice audio may be converted to text by the browser vendor's speech service. ChhatraLekha servers never record, capture, or store microphone audio streams.
           </p>
         </section>
       </div>

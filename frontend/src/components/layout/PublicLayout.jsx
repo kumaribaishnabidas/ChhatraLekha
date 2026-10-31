@@ -35,16 +35,13 @@ export default function PublicLayout() {
         <div className="mx-auto max-w-[1200px] px-5 py-3 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-3 no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
             <img
-              src="/brand/edusync-lockup.png"
-              alt="EduSynC"
-              className="h-8 sm:h-9 w-auto block"
+              src="/brand/chhatralekha-logo.png"
+              alt="ChhatraLekha"
+              className="h-10 sm:h-12 w-[108px] sm:w-[132px] object-contain block"
               onError={(e) => {
                 e.currentTarget.style.display = 'none'
               }}
             />
-            <span className="font-extrabold text-lg text-brand tracking-tight">
-              EduSynC
-            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -197,7 +194,7 @@ export default function PublicLayout() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div className="md:col-span-2">
               <div className="flex items-center gap-3 mb-3">
-                <span className="font-extrabold text-lg text-brand tracking-tight">EduSynC</span>
+                <span className="font-extrabold text-lg text-brand tracking-tight">ChhatraLekha</span>
                 <span className="text-xs px-2 py-0.5 rounded border border-warning/40 bg-warning-surface text-warning-strong font-semibold">
                   Prototype
                 </span>
@@ -231,7 +228,7 @@ export default function PublicLayout() {
 
           <div className="pt-6 border-t border-line flex flex-col sm:flex-row items-center justify-between text-xs text-muted gap-3">
             <p className="m-0">
-              &copy; {new Date().getFullYear()} EduSynC. All rights reserved.
+              &copy; {new Date().getFullYear()} ChhatraLekha. All rights reserved.
             </p>
             <p className="m-0 text-muted/80">
               No cookies for tracking &middot; Strict privacy &middot; Offline-first verified

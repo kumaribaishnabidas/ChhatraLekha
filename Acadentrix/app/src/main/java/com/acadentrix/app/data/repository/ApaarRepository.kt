@@ -293,7 +293,7 @@ class ApaarRepository(private val database: ApaarDatabase) {
     private val syncManager = SyncManager(apiClient)
 
     /**
-     * Synchronizes local Room database with the remote EduSynC FastAPI server.
+     * Synchronizes local Room database with the remote ChhatraLekha FastAPI server.
      * Keeps Room as the authoritative local persistence layer and gracefully
      * handles offline mode and conflicts.
      */
