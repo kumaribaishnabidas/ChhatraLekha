@@ -124,6 +124,14 @@ private fun navItemsFor(role: UserRole): List<NavItem> = when (role) {
         NavItem(Routes.STUDENT_CARD, "My Card", Icons.Filled.Badge),
         NavItem(Routes.STUDENT_CERTIFICATE, "Certificate", Icons.Filled.AccountBalance)
     )
+    UserRole.TEACHER -> listOf(
+        NavItem(Routes.INST_REGISTER, "Classes", Icons.Filled.School),
+        NavItem(Routes.INST_OVERVIEW, "Overview", Icons.Filled.Assignment)
+    )
+    UserRole.PARENT -> listOf(
+        NavItem(Routes.STUDENT_CARD, "My Children", Icons.Filled.Badge),
+        NavItem(Routes.STUDENT_CERTIFICATE, "Results", Icons.Filled.AccountBalance)
+    )
 }
 
 /**
@@ -154,6 +162,8 @@ fun ApaarApp(
                             UserRole.INSTITUTION -> Routes.INST_OVERVIEW
                             UserRole.VERIFIER -> Routes.VERIFIER
                             UserRole.STUDENT -> Routes.STUDENT_CARD
+                            UserRole.TEACHER -> Routes.INST_REGISTER
+                            UserRole.PARENT -> Routes.STUDENT_CARD
                         }
                     ) {
                         popUpTo(Routes.HOME) { inclusive = false }
@@ -308,6 +318,8 @@ private fun ApaarHeader(
                                             UserRole.INSTITUTION -> Icons.Filled.School
                                             UserRole.VERIFIER -> Icons.Filled.QrCodeScanner
                                             UserRole.STUDENT -> Icons.Filled.Person
+                                            UserRole.TEACHER -> Icons.Filled.Assignment
+                                            UserRole.PARENT -> Icons.Filled.Person
                                         },
                                         contentDescription = null,
                                         tint = if (candidate == role) Saffron else MaterialTheme.colorScheme.onSurfaceVariant

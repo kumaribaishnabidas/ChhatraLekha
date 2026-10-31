@@ -32,6 +32,18 @@ enum class UserRole(
         shortLabel = "Student",
         tagline = "Digital APAAR academic identity card, QR seal & ABC linkage",
         iconKey = "student"
+    ),
+    TEACHER(
+        label = "Teacher / Faculty",
+        shortLabel = "Teacher",
+        tagline = "Assigned classes, daily attendance & assessment grading",
+        iconKey = "teacher"
+    ),
+    PARENT(
+        label = "Parent / Guardian",
+        shortLabel = "Parent",
+        tagline = "Linked student attendance, academic results & notices",
+        iconKey = "parent"
     )
 }
 

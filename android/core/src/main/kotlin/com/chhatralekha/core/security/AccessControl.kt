@@ -57,6 +57,18 @@ enum class Permission(val label: String, val description: String) {
     EXPORT_REPORTS(
         "Export reports",
         "Download regulatory reports as CSV or PDF."
+    ),
+    RECORD_ATTENDANCE(
+        "Record attendance",
+        "Mark and submit class attendance."
+    ),
+    RECORD_MARKS(
+        "Record assessment marks",
+        "Enter and review evaluation marks and grades."
+    ),
+    VIEW_PARENT_PORTAL(
+        "Parent portal",
+        "View attendance, grades and notices for linked students."
     )
 }
 
@@ -97,6 +109,18 @@ object AccessControl {
         Permission.MANAGE_CONSENT
     )
 
+    private val TEACHER: Set<Permission> = setOf(
+        Permission.VIEW_STUDENT_REGISTER,
+        Permission.RECORD_ATTENDANCE,
+        Permission.RECORD_MARKS,
+        Permission.VIEW_AUDIT_TRAIL
+    )
+
+    private val PARENT: Set<Permission> = setOf(
+        Permission.VIEW_PARENT_PORTAL,
+        Permission.VIEW_OWN_RECORD
+    )
+
     /**
      * The permissions granted to a role.
      */
@@ -105,6 +129,8 @@ object AccessControl {
         UserRole.INSTITUTION -> INSTITUTION
         UserRole.VERIFIER -> VERIFIER
         UserRole.STUDENT -> STUDENT
+        UserRole.TEACHER -> TEACHER
+        UserRole.PARENT -> PARENT
     }
 
     /**
