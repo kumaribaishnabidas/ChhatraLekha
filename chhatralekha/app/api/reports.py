@@ -24,7 +24,7 @@ def _stamp() -> str:
 
 
 def _filename(prefix: str, extension: str) -> str:
-    return f"edusync-{prefix}-{_stamp()}.{extension}"
+    return f"chhatralekha-{prefix}-{_stamp()}.{extension}"
 
 
 async def _students(db, institution_id: Optional[str], limit: int = 100000) -> list:

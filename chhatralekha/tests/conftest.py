@@ -110,7 +110,7 @@ async def users(seeded):
         [
             {
                 "user_id": "USR-AICTE",
-                "email": "aicte@edusync.test",
+                "email": "aicte@chhatralekha.test",
                 "full_name": "Aicte Admin",
                 "role": "aicte_admin",
                 "institution_id": None,
@@ -128,7 +128,7 @@ async def users(seeded):
             },
             {
                 "user_id": "USR-VER",
-                "email": "verifier@edusync.test",
+                "email": "verifier@chhatralekha.test",
                 "full_name": "Verifier",
                 "role": "verifier",
                 "institution_id": None,
@@ -137,7 +137,7 @@ async def users(seeded):
             },
             {
                 "user_id": "USR-STU",
-                "email": "student@edusync.test",
+                "email": "student@chhatralekha.test",
                 "full_name": "Student",
                 "role": "student",
                 "institution_id": None,
@@ -170,7 +170,7 @@ async def login(client: httpx.AsyncClient, email: str) -> str:
 
 @pytest.fixture
 async def aicte_token(client):
-    return await login(client, "aicte@edusync.test")
+    return await login(client, "aicte@chhatralekha.test")
 
 
 @pytest.fixture
@@ -180,4 +180,4 @@ async def institution_token(client):
 
 @pytest.fixture
 async def verifier_token(client):
-    return await login(client, "verifier@edusync.test")
+    return await login(client, "verifier@chhatralekha.test")

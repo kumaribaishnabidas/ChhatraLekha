@@ -47,7 +47,7 @@ async def grant_consent(client, token, apaar_id="984210357890", status="GRANTED"
 async def test_login_returns_a_token_pair(client):
     response = await client.post(
         "/api/auth/login",
-        json={"email": "aicte@edusync.test", "password": "Test@1234"},
+        json={"email": "aicte@chhatralekha.test", "password": "Test@1234"},
     )
     assert response.status_code == 200
     body = response.json()
@@ -59,7 +59,7 @@ async def test_login_returns_a_token_pair(client):
 async def test_a_wrong_password_is_rejected(client):
     response = await client.post(
         "/api/auth/login",
-        json={"email": "aicte@edusync.test", "password": "nope"},
+        json={"email": "aicte@chhatralekha.test", "password": "nope"},
     )
     assert response.status_code == 401
 
@@ -78,7 +78,7 @@ async def test_an_unauthenticated_request_is_rejected(client):
 async def test_a_refresh_token_issues_a_new_access_token(client):
     login = await client.post(
         "/api/auth/login",
-        json={"email": "aicte@edusync.test", "password": "Test@1234"},
+        json={"email": "aicte@chhatralekha.test", "password": "Test@1234"},
     )
     refresh = login.json()["refresh_token"]
     response = await client.post("/api/auth/refresh", json={"refresh_token": refresh})

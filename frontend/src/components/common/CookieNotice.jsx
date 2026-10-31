@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
-const STORAGE_KEY = 'edusync.cookie_ack'
+const STORAGE_KEY = 'chhatralekha.cookie_ack'
 
 export default function CookieNotice() {
   const { t } = useTranslation()

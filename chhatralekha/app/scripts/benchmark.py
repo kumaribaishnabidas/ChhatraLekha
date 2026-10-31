@@ -183,7 +183,7 @@ def benchmark_crypto_seals() -> dict[str, Any]:
 
 
 def benchmark_token_verification() -> dict[str, Any]:
-    raw_token = "edusync_tok_" + "a" * 32
+    raw_token = "chhatralekha_tok_" + "a" * 32
     lats, errs = measure(lambda: hash_token(raw_token), iterations=200)
 
     return {
@@ -268,7 +268,7 @@ def run_benchmark() -> dict[str, Any]:
 def print_benchmark_report(data: dict[str, Any]) -> None:
     env = data["runtime_environment"]
     print("=" * 80)
-    print("EDUSYNC PERFORMANCE & LATENCY BENCHMARK REPORT")
+    print("CHHATRALEKHA PERFORMANCE & LATENCY BENCHMARK REPORT")
     print("=" * 80)
     print(f"Platform   : {env['platform']} ({env['cpu_architecture']})")
     print(f"Python     : {env['python_version']}")

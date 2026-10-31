@@ -92,7 +92,7 @@ STATES = [
 ]
 
 DEMO_USERS = [
-    ("aicte.admin@edusync.gov.in", "Dr. Ananya Iyer", "aicte_admin", None),
+    ("aicte.admin@chhatralekha.gov.in", "Dr. Ananya Iyer", "aicte_admin", None),
     ("principal@vidyavikas.edu.in", "Prof. Ramesh Kulkarni", "institution_admin", "INST-0421"),
     ("principal@bhartiya.edu.in", "Prof. Sunil Mehta", "institution_admin", "INST-0422"),
     ("verifier@acme-corp.com", "Maya Krishnan", "verifier", None),
@@ -549,7 +549,7 @@ async def seed(student_count: int = 2219, reset: bool = True) -> dict:
     # -------------------------------------------- recompute the anomalies
     anomalies = await recompute_anomalies(db)
 
-    api_key_plain, api_key_hash = generate_api_key("edusync")
+    api_key_plain, api_key_hash = generate_api_key("chhatralekha")
     await db["api_keys"].insert_one(
         {
             "key_id": "KEY-DEMO-001",

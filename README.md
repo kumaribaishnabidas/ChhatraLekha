@@ -306,7 +306,7 @@ machine that can reach Atlas:
 ```bash
 cd chhatralekha
 MONGODB_URL='mongodb+srv://...' \
-MONGODB_DATABASE=edusync \
+MONGODB_DATABASE=chhatralekha \
 ENVIRONMENT=production \
 ALLOW_PRODUCTION_SEED=true \
 DEMO_PASSWORD='choose-a-demo-password' \
@@ -326,7 +326,7 @@ When `DEMO_PASSWORD` is empty, a password is generated and printed **once**.
 | Name | Required | Placeholder | Where |
 |---|---|---|---|
 | `MONGODB_URL` | yes | `mongodb+srv://user:pass@cluster.mongodb.net` | Render (secret) |
-| `MONGODB_DATABASE` | no | `edusync` | Render |
+| `MONGODB_DATABASE` | no | `chhatralekha` | Render |
 | `SECRET_KEY` | yes | `python -c "import secrets; print(secrets.token_urlsafe(48))"` | Render (secret) |
 | `SEAL_HMAC_KEY` | yes | `python -c "import secrets; print(secrets.token_urlsafe(32))"` | Render (secret) |
 | `MATCH_KEY` | no | falls back to `SEAL_HMAC_KEY` | Render |
