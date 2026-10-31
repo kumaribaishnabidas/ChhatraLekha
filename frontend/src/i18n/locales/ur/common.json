@@ -16,7 +16,13 @@
     "settings": "Settings",
     "signOut": "Sign out",
     "wallet": "والیٹ",
-    "institutionDashboard": "ادارہ"
+    "institutionDashboard": "ادارہ",
+    "academic": "تعلیمی",
+    "teacherWorkspace": "اساتذہ",
+    "assessments": "امتحانات",
+    "announcements": "اطلاعات",
+    "parentPortal": "والدین",
+    "transparency": "شفافیت"
   },
   "settings": {
     "language": "Language",

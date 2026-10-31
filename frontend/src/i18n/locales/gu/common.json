@@ -16,7 +16,13 @@
     "settings": "Settings",
     "signOut": "Sign out",
     "wallet": "વોલેટ",
-    "institutionDashboard": "સંસ્થા"
+    "institutionDashboard": "સંસ્થા",
+    "academic": "શૈક્ષણિક",
+    "teacherWorkspace": "શિક્ષક",
+    "assessments": "મૂલ્યાંકન",
+    "announcements": "સૂચનાઓ",
+    "parentPortal": "વાલી",
+    "transparency": "પારદર્શિતા"
   },
   "settings": {
     "language": "Language",

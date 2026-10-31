@@ -49,6 +49,17 @@ COLLECTIONS = (
     "notifications",
     "transfers",
     "verification_tokens",
+    "academic_years",
+    "classes",
+    "subjects",
+    "teacher_assignments",
+    "attendance_sessions",
+    "attendance_records",
+    "assessments",
+    "assessment_marks",
+    "announcements",
+    "guardian_relationships",
+    "institution_registrations",
 )
 
 #: The password hash of the test accounts, computed once for the whole suite.

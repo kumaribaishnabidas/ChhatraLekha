@@ -11,7 +11,16 @@ from __future__ import annotations
 from enum import Enum
 from typing import Iterable
 
-from app.core.security import ROLE_AICTE, ROLE_INSTITUTION, ROLE_STUDENT, ROLE_VERIFIER
+from app.core.security import (
+    ROLE_ACADEMIC_ADMIN,
+    ROLE_AICTE,
+    ROLE_INSTITUTION,
+    ROLE_PARENT,
+    ROLE_PLATFORM_OPERATOR,
+    ROLE_STUDENT,
+    ROLE_TEACHER,
+    ROLE_VERIFIER,
+)
 
 
 class Permission(str, Enum):
@@ -36,6 +45,18 @@ class Permission(str, Enum):
     REVIEW_TASKS = "review_tasks"
     ISSUE_OWN_TOKEN = "issue_own_token"
 
+    # Connected Campus (Schools and Colleges) MVP capabilities:
+    MANAGE_ACADEMIC_SETUP = "manage_academic_setup"
+    RECORD_ATTENDANCE = "record_attendance"
+    VIEW_ATTENDANCE = "view_attendance"
+    RECORD_MARKS = "record_marks"
+    PUBLISH_RESULTS = "publish_results"
+    VIEW_RESULTS = "view_results"
+    MANAGE_ANNOUNCEMENTS = "manage_announcements"
+    VIEW_ANNOUNCEMENTS = "view_announcements"
+    VIEW_PARENT_PORTAL = "view_parent_portal"
+    MANAGE_INSTITUTION_SETTINGS = "manage_institution_settings"
+
 
 _DIRECTORATE = frozenset(
     {
@@ -44,13 +65,13 @@ _DIRECTORATE = frozenset(
         Permission.VIEW_AUDIT_TRAIL,
         Permission.VIEW_COMPLIANCE_MATRIX,
         Permission.EXPORT_REPORTS,
-        # The Directorate is the national authority, so it verifies
-        # credentials and issues the tokens that back them.
         Permission.VERIFY_CREDENTIAL,
         Permission.PREVIEW_CORRECTION,
         Permission.APPLY_CORRECTION,
         Permission.VIEW_IMPACTS,
         Permission.REVIEW_TASKS,
+        Permission.VIEW_ANNOUNCEMENTS,
+        Permission.MANAGE_ANNOUNCEMENTS,
     }
 )
 
@@ -68,6 +89,43 @@ _INSTITUTION = frozenset(
         Permission.APPLY_CORRECTION,
         Permission.VIEW_IMPACTS,
         Permission.REVIEW_TASKS,
+        Permission.MANAGE_ACADEMIC_SETUP,
+        Permission.RECORD_ATTENDANCE,
+        Permission.VIEW_ATTENDANCE,
+        Permission.RECORD_MARKS,
+        Permission.PUBLISH_RESULTS,
+        Permission.VIEW_RESULTS,
+        Permission.MANAGE_ANNOUNCEMENTS,
+        Permission.VIEW_ANNOUNCEMENTS,
+        Permission.MANAGE_INSTITUTION_SETTINGS,
+    }
+)
+
+_ACADEMIC_ADMIN = frozenset(
+    {
+        Permission.VIEW_INSTITUTION_DASHBOARD,
+        Permission.VIEW_STUDENT_REGISTER,
+        Permission.ONBOARD_STUDENTS,
+        Permission.MANAGE_ACADEMIC_SETUP,
+        Permission.RECORD_ATTENDANCE,
+        Permission.VIEW_ATTENDANCE,
+        Permission.PUBLISH_RESULTS,
+        Permission.VIEW_RESULTS,
+        Permission.MANAGE_ANNOUNCEMENTS,
+        Permission.VIEW_ANNOUNCEMENTS,
+        Permission.EXPORT_REPORTS,
+        Permission.VIEW_AUDIT_TRAIL,
+    }
+)
+
+_TEACHER = frozenset(
+    {
+        Permission.VIEW_ATTENDANCE,
+        Permission.RECORD_ATTENDANCE,
+        Permission.RECORD_MARKS,
+        Permission.VIEW_RESULTS,
+        Permission.VIEW_ANNOUNCEMENTS,
+        Permission.MANAGE_ANNOUNCEMENTS,
     }
 )
 
@@ -84,21 +142,41 @@ _STUDENT = frozenset(
         Permission.GENERATE_CERTIFICATE,
         Permission.MANAGE_CONSENT,
         Permission.ISSUE_OWN_TOKEN,
+        Permission.VIEW_ATTENDANCE,
+        Permission.VIEW_RESULTS,
+        Permission.VIEW_ANNOUNCEMENTS,
+    }
+)
+
+_PARENT = frozenset(
+    {
+        Permission.VIEW_PARENT_PORTAL,
+        Permission.VIEW_ATTENDANCE,
+        Permission.VIEW_RESULTS,
+        Permission.VIEW_ANNOUNCEMENTS,
     }
 )
 
 ROLE_PERMISSIONS: dict[str, frozenset[Permission]] = {
     ROLE_AICTE: _DIRECTORATE,
+    ROLE_PLATFORM_OPERATOR: _DIRECTORATE,
     ROLE_INSTITUTION: _INSTITUTION,
+    ROLE_ACADEMIC_ADMIN: _ACADEMIC_ADMIN,
+    ROLE_TEACHER: _TEACHER,
     ROLE_VERIFIER: _VERIFIER,
     ROLE_STUDENT: _STUDENT,
+    ROLE_PARENT: _PARENT,
 }
 
 ROLE_LABELS: dict[str, str] = {
-    ROLE_AICTE: "AICTE Directorate",
-    ROLE_INSTITUTION: "Institution Admin",
-    ROLE_VERIFIER: "Verifier",
+    ROLE_AICTE: "Platform Operator / Directorate",
+    ROLE_PLATFORM_OPERATOR: "Platform Operator",
+    ROLE_INSTITUTION: "Institution Owner / Admin",
+    ROLE_ACADEMIC_ADMIN: "Academic Administrator",
+    ROLE_TEACHER: "Teacher / Faculty",
+    ROLE_VERIFIER: "Credential Verifier",
     ROLE_STUDENT: "Student",
+    ROLE_PARENT: "Parent / Guardian",
 }
 
 

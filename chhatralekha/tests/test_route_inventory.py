@@ -29,6 +29,8 @@ PUBLIC_ROUTE_PATHS = {
     "/api/verify/redirect/{apaar_id}",
     "/api/verify/public-key",
     "/api/verify/jwks",
+    "/api/institutions/register",
+    "/api/transparency",
 }
 
 

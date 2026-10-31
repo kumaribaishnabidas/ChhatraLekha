@@ -30,6 +30,12 @@ const StudentConsentPage = lazy(() => import('./pages/student/StudentConsentPage
 const StudentUploadsPage = lazy(() => import('./pages/student/StudentUploadsPage'))
 const StudentResultsPage = lazy(() => import('./pages/student/StudentResultsPage'))
 const StudentActivityPage = lazy(() => import('./pages/student/StudentActivityPage'))
+const TransparencyPage = lazy(() => import('./pages/TransparencyPage'))
+const TeacherWorkspacePage = lazy(() => import('./pages/TeacherWorkspacePage'))
+const ParentPortalPage = lazy(() => import('./pages/ParentPortalPage'))
+const AcademicSetupPage = lazy(() => import('./pages/AcademicSetupPage'))
+const AnnouncementsPage = lazy(() => import('./pages/AnnouncementsPage'))
+const AssessmentsPage = lazy(() => import('./pages/AssessmentsPage'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage'))
 const FaqPage = lazy(() => import('./pages/FaqPage'))
@@ -75,6 +81,12 @@ function RoleRedirect() {
   if (can(PERMISSIONS.VIEW_INSTITUTION_DASHBOARD)) {
     return <Navigate to="/institution" replace />
   }
+  if (can(PERMISSIONS.RECORD_ATTENDANCE)) {
+    return <Navigate to="/teacher" replace />
+  }
+  if (can(PERMISSIONS.VIEW_PARENT_PORTAL)) {
+    return <Navigate to="/parent" replace />
+  }
   if (can(PERMISSIONS.VIEW_OWN_RECORD)) {
     return <Navigate to="/me" replace />
   }
@@ -96,6 +108,7 @@ export default function App() {
         <Route path="/thank-you" element={<ThankYouPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
+        <Route path="/transparency" element={<TransparencyPage />} />
       </Route>
 
       <Route path="/login" element={<LoginPage />} />
@@ -245,6 +258,46 @@ export default function App() {
           element={
             <Guarded permission={PERMISSIONS.VIEW_INSTITUTION_DASHBOARD}>
               <InstitutionDashboardPage />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/academic"
+          element={
+            <Guarded permission={PERMISSIONS.MANAGE_ACADEMIC_SETUP}>
+              <AcademicSetupPage />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/teacher"
+          element={
+            <Guarded permission={PERMISSIONS.RECORD_ATTENDANCE}>
+              <TeacherWorkspacePage />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/parent"
+          element={
+            <Guarded permission={PERMISSIONS.VIEW_PARENT_PORTAL}>
+              <ParentPortalPage />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/announcements"
+          element={
+            <Guarded permission={PERMISSIONS.VIEW_ANNOUNCEMENTS}>
+              <AnnouncementsPage />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/assessments"
+          element={
+            <Guarded permission={PERMISSIONS.VIEW_RESULTS}>
+              <AssessmentsPage />
             </Guarded>
           }
         />

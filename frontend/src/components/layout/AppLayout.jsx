@@ -16,6 +16,11 @@ import { PERMISSIONS, ROLE_LABELS } from '../../utils/permissions'
 const NAVIGATION = [
   { to: '/dashboard', label: 'nav.dashboard', permission: PERMISSIONS.VIEW_NATIONAL_DASHBOARD },
   { to: '/institution', label: 'nav.institutionDashboard', permission: PERMISSIONS.VIEW_INSTITUTION_DASHBOARD },
+  { to: '/academic', label: 'nav.academic', permission: PERMISSIONS.MANAGE_ACADEMIC_SETUP },
+  { to: '/teacher', label: 'nav.teacherWorkspace', permission: PERMISSIONS.RECORD_ATTENDANCE },
+  { to: '/assessments', label: 'nav.assessments', permission: PERMISSIONS.VIEW_RESULTS },
+  { to: '/announcements', label: 'nav.announcements', permission: PERMISSIONS.VIEW_ANNOUNCEMENTS },
+  { to: '/parent', label: 'nav.parentPortal', permission: PERMISSIONS.VIEW_PARENT_PORTAL },
   { to: '/wallet', label: 'nav.wallet', permission: PERMISSIONS.VIEW_OWN_RECORD },
   { to: '/institutions', label: 'nav.institutions', permission: PERMISSIONS.VIEW_COMPLIANCE_MATRIX },
   { to: '/students', label: 'nav.students', permission: PERMISSIONS.VIEW_STUDENT_REGISTER },
@@ -30,6 +35,7 @@ const STUDENT_NAVIGATION = [
   { to: '/me', label: 'nav.home' },
   { to: '/me/id-card', label: 'nav.idCard' },
   { to: '/me/share', label: 'nav.shares' },
+  { to: '/announcements', label: 'nav.announcements' },
   { to: '/wallet', label: 'nav.wallet' },
   { to: '/me/consent', label: 'nav.consent' },
   { to: '/me/uploads', label: 'nav.uploads' },
@@ -69,6 +75,10 @@ export default function AppLayout() {
 
   const homePath = role === 'student'
     ? '/me'
+    : role === 'parent'
+    ? '/parent'
+    : role === 'teacher'
+    ? '/teacher'
     : can(PERMISSIONS.VIEW_NATIONAL_DASHBOARD)
     ? '/dashboard'
     : can(PERMISSIONS.VIEW_INSTITUTION_DASHBOARD)
