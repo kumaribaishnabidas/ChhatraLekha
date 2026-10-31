@@ -72,7 +72,7 @@
     "featureToken": "Opaque verification tokens - no raw APAAR ID in a URL",
     "featureConsent": "Purpose-wise, revocable student consent",
     "title": "Sign in",
-    "lead": "Use the account issued to you by the AICTE Directorate or your institution.",
+    "lead": "Use the account issued to you by the education authority or your institution.",
     "email": "E-mail address",
     "password": "Password",
     "emailPlaceholder": "you@college.edu.in",
@@ -85,10 +85,10 @@
     "demo": "Demo accounts are created by the seed script. Their password is read from DEMO_PASSWORD, or generated and printed once at seed time."
   },
   "dashboard": {
-    "title": "AICTE Directorate dashboard",
+    "title": "National / Directorate dashboard",
     "lead": "Sanctioned intake against actual enrolment, with supernumerary ceilings, duplicates and the programme-level compliance matrix already worked out.",
     "institutions": "Institutions",
-    "approved": "Approved by AICTE",
+    "approved": "Affiliated and Approved",
     "programmes": "Programmes",
     "seats": "Sanctioned seats tracked",
     "enrolled": "Enrolled",
@@ -131,7 +131,7 @@
   },
   "institutions": {
     "title": "Institutions",
-    "lead": "Every AICTE-approved institution in the registry, together with the sanctioned capacity of each programme.",
+    "lead": "Every school and college in the registry, together with the sanctioned capacity of each programme.",
     "state": "State",
     "statePlaceholder": "e.g. Karnataka",
     "approvedTitle": "Approved institutions",
@@ -198,7 +198,7 @@
   },
   "reports": {
     "title": "Regulatory reports",
-    "lead": "Download the registers the AICTE Directorate and regional offices ask for. Every export is written to the audit trail.",
+    "lead": "Download the official registers requested by educational authorities. Every export is written to the audit trail.",
     "download": "Download",
     "generating": "Generating…",
     "failed": "The report could not be generated.",
@@ -378,7 +378,7 @@
   "demo": {
     "title": "Guided interactive demo",
     "switchRole": "Switch persona",
-    "roleAicte": "AICTE Admin",
+    "roleAicte": "National Admin",
     "roleInstitution": "Institution Admin",
     "roleStudent": "Student",
     "roleVerifier": "Verifier"

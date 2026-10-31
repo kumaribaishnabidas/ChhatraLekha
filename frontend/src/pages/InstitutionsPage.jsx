@@ -26,7 +26,7 @@ export default function InstitutionsPage() {
     <>
       <PageHeader
         title="Institutions"
-        lead="Every AICTE-approved institution in the registry, together with the sanctioned capacity of each programme."
+        lead="Every school, college, and institution in the registry, together with academic unit capacity."
       />
 
       <FilterBar>

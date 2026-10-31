@@ -28,9 +28,9 @@ export default function TermsPage() {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-lg font-bold text-ink">2. No Official AICTE or APAAR Status</h2>
+          <h2 className="text-lg font-bold text-ink">2. No Official Government or Registry Status</h2>
           <p className="text-muted">
-            ChhatraLekha is not an official portal of the All India Council for Technical Education (AICTE), the Ministry of Education, or the Government of India. Verifications, QR badges, and downloadable certificates are issued for demonstration purposes only.
+            ChhatraLekha is an independent educational prototype and is not an official portal of the Ministry of Education, AICTE, CBSE, state education boards, or the Government of India. Verifications, QR badges, and downloadable credentials are demonstration proofs issued for prototype verification only.
           </p>
         </section>
 

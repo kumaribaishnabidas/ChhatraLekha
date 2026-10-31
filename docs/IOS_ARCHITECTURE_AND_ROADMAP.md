@@ -237,3 +237,4 @@ Every milestone for the iOS client must pass the following acceptance gates prio
 3. **Strict Concurrency**: Zero Swift 6 concurrency warnings or data race crashes.
 4. **Accessibility Standards**: 100% WCAG 2.1 AA compliance verified via Apple Accessibility Inspector with VoiceOver support on all interactive controls.
 5. **Localization Completeness**: Zero missing localization keys across all 13 supported Indian languages.
+

@@ -127,7 +127,7 @@ export default function InstitutionDashboardPage() {
         <KpiCard
           label={t('dashboard.seats')}
           value={stats.sanctioned}
-          hint="AICTE sanctioned ceiling"
+          hint="Sanctioned or approved capacity"
           tone="good"
         />
         <KpiCard

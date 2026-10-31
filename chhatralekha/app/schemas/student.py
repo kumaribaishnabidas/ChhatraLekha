@@ -39,6 +39,19 @@ class StudentIn(BaseModel):
     contact_email: Optional[str] = Field(None, max_length=255)
     contact_phone: Optional[str] = Field(None, max_length=40)
     state_of_domicile: Optional[str] = Field(None, max_length=80)
+    # Extended academic unit & school/college fields:
+    education_level: Optional[str] = Field(None, max_length=32)
+    grade_level: Optional[str] = Field(None, max_length=32)
+    section: Optional[str] = Field(None, max_length=16)
+    stream: Optional[str] = Field(None, max_length=32)
+    board: Optional[str] = Field(None, max_length=64)
+    medium_of_instruction: Optional[str] = Field(None, max_length=32)
+    guardian_name: Optional[str] = Field(None, max_length=255)
+    guardian_relationship: Optional[str] = Field(None, max_length=32)
+    guardian_contact: Optional[str] = Field(None, max_length=40)
+    is_minor: Optional[bool] = None
+    semester: Optional[int] = None
+    batch: Optional[str] = Field(None, max_length=32)
 
 
 class StudentCreate(StudentIn):
@@ -67,6 +80,18 @@ class StudentUpdate(BaseModel):
     contact_phone: Optional[str] = None
     state_of_domicile: Optional[str] = None
     record_status: Optional[str] = None
+    education_level: Optional[str] = None
+    grade_level: Optional[str] = None
+    section: Optional[str] = None
+    stream: Optional[str] = None
+    board: Optional[str] = None
+    medium_of_instruction: Optional[str] = None
+    guardian_name: Optional[str] = None
+    guardian_relationship: Optional[str] = None
+    guardian_contact: Optional[str] = None
+    is_minor: Optional[bool] = None
+    semester: Optional[int] = None
+    batch: Optional[str] = None
 
 
 class StudentStatusUpdate(BaseModel):
@@ -111,6 +136,19 @@ class StudentOut(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     masked_apaar_id: str = ""
+    # Extended academic unit / school & college fields:
+    education_level: Optional[str] = None
+    grade_level: Optional[str] = None
+    section: Optional[str] = None
+    stream: Optional[str] = None
+    board: Optional[str] = None
+    medium_of_instruction: Optional[str] = None
+    guardian_name: Optional[str] = None
+    guardian_relationship: Optional[str] = None
+    guardian_contact: Optional[str] = None
+    is_minor: Optional[bool] = None
+    semester: Optional[int] = None
+    batch: Optional[str] = None
 
 
 class VerificationResult(BaseModel):
@@ -161,6 +199,14 @@ class InstitutionOut(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     is_active: bool = True
+    # Multi-tier institution fields:
+    category: Optional[str] = None
+    kind: Optional[str] = None
+    district: Optional[str] = None
+    management_type: Optional[str] = None
+    affiliation: Optional[str] = None
+    identifiers: list[dict] = []
+    rule_pack: Optional[str] = None
 
 
 class ProgrammeIntakeIn(BaseModel):

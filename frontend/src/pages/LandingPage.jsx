@@ -37,7 +37,7 @@ export default function LandingPage() {
               <Link to="/verify/t/demo" className="no-underline"><Button variant="accent">Verify a credential</Button></Link>
               <Link to="/login" className="no-underline"><Button variant="primary">Sign in</Button></Link>
             </div>
-            <p className="m-0 text-xs text-muted">Prototype only - not official APAAR or AICTE verification.</p>
+            <p className="m-0 text-xs text-muted">Prototype only - not official government or registry verification.</p>
           </div>
           <div className="relative">
             <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-accent/15 blur-3xl" aria-hidden="true" />
