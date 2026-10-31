@@ -13,6 +13,12 @@ class LoginRequest(BaseModel):
     institution_id: str | None = None
 
 
+class DemoLoginRequest(BaseModel):
+    """Role presented to ``POST /api/auth/demo-login`` for one-click demo sessions."""
+
+    role: str = Field(..., description="Demo role: student, parent, teacher, school_admin, college_admin, university_admin.")
+
+
 class RefreshRequest(BaseModel):
     """A refresh token presented to ``POST /api/auth/refresh``."""
 

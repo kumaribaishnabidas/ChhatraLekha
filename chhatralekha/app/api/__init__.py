@@ -2,6 +2,7 @@
 
 from app.api import (
     academic,
+    ai,
     announcements,
     anomalies,
     assessments,
@@ -25,6 +26,7 @@ from app.api import (
 
 ALL_ROUTERS = [
     auth.router,
+    ai.router,
     me.router,
     students.router,
     transfers.router,

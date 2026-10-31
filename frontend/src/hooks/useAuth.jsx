@@ -9,7 +9,18 @@ import { createContext, useCallback, useContext, useMemo, useState } from 'react
 import { api, tokenStore } from '../services/api'
 import { can, permissionsFor } from '../utils/permissions'
 
-const AuthContext = createContext(null)
+export const AuthContext = createContext(null)
+
+const DEFAULT_AUTH = {
+  user: null,
+  role: '',
+  isAuthenticated: false,
+  loading: false,
+  login: async () => {},
+  logout: () => {},
+  can: () => false,
+  permissions: [],
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => tokenStore.getUser())
@@ -56,6 +67,5 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (!context) throw new Error('useAuth must be used inside an AuthProvider.')
-  return context
+  return context || DEFAULT_AUTH
 }

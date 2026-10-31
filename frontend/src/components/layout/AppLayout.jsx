@@ -8,6 +8,7 @@ import ThemeToggle from '../common/ThemeToggle'
 import DemoGuide from '../common/DemoGuide'
 import VoiceButton from '../../voice/VoiceButton'
 import VoicePanel from '../../voice/VoicePanel'
+import AiAssistantDrawer from '../ai/AiAssistantDrawer'
 import { useAuth } from '../../hooks/useAuth'
 import { useApi } from '../../hooks/useApi'
 import { api } from '../../services/api'
@@ -156,6 +157,7 @@ export default function AppLayout() {
   const navigate = useNavigate()
   const health = useApi(() => api.get('/health').then((r) => r.data), [])
   const [voiceOpen, setVoiceOpen] = useState(false)
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const [notificationsOpen, setNotificationsOpen] = useState(false)
@@ -280,6 +282,20 @@ export default function AppLayout() {
           ))}
         </nav>
 
+        {/* AI Assistant Quick Trigger in Sidebar */}
+        <div className="px-3 py-2 border-t border-white/10">
+          <button
+            type="button"
+            onClick={() => setAiAssistantOpen(true)}
+            className="w-full flex items-center justify-center gap-2 rounded-lg bg-accent text-on-accent px-3 py-2 text-xs font-bold shadow-xs hover:bg-accent-strong hover:text-white transition-colors cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <span>AI Assistant</span>
+          </button>
+        </div>
+
         {/* User Card & Sign Out at bottom of sidebar */}
         <div className="p-4 border-t border-white/10 bg-black/10">
           <div className="flex items-center gap-3 mb-3">
@@ -384,6 +400,17 @@ export default function AppLayout() {
             )}
             <ThemeToggle label={t('settings.theme.label')} />
             <LanguageSwitcher />
+            <button
+              type="button"
+              onClick={() => setAiAssistantOpen(true)}
+              className="rounded border border-line bg-surface p-2 text-xs font-bold text-ink hover:border-brand cursor-pointer flex items-center gap-1.5 shadow-xs"
+              title="Ask AI Assistant"
+            >
+              <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <span className="hidden md:inline">AI Helper</span>
+            </button>
             <VoiceButton onClick={() => setVoiceOpen(true)} />
           </div>
         </header>
@@ -404,6 +431,7 @@ export default function AppLayout() {
         </main>
 
         {voiceOpen && <VoicePanel onClose={() => setVoiceOpen(false)} />}
+        <AiAssistantDrawer isOpen={aiAssistantOpen} onClose={() => setAiAssistantOpen(false)} />
 
         {/* App Footer */}
         <footer className="border-t border-line bg-surface py-4 text-center text-xs text-muted">
