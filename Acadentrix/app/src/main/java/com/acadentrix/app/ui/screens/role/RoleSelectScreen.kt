@@ -81,14 +81,14 @@ fun RoleSelectScreen(viewModel: ApaarViewModel) {
                             letterSpacing = 1.1.sp
                         )
                         Text(
-                            text = "EDUSYNC",
+                            text = "ChhatraLekha",
                             style = MaterialTheme.typography.headlineMedium,
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp
                         )
                         Text(
-                            text = "APAAR ID platform",
+                            text = "Authenticate · Verify · Empower",
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.White.copy(alpha = 0.70f),
                             letterSpacing = 1.4.sp

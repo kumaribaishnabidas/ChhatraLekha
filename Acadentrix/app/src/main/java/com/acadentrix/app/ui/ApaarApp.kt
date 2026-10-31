@@ -236,14 +236,14 @@ private fun ApaarHeader(
                 Spacer(Modifier.width(11.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "EDUSYNC",
+                        text = "ChhatraLekha",
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.White,
                         letterSpacing = 1.4.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "APAAR ID platform",
+                        text = "Authenticate · Verify · Empower",
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.White.copy(alpha = 0.72f),
                         letterSpacing = 0.4.sp

@@ -4,7 +4,7 @@ import androidx.compose.ui.graphics.Color
 
 // ---------------------------------------------------------------- ChhatraLekha Navy
 // Sampled directly from the supplied ChhatraLekha brand artwork:
-//   deep navy #14246B | primary navy #0F2F73 | mid blue #0F3A8A | bright blue #1558B8
+//   royal blue #2F57D6 | deep blue #16257A | link blue #1F3FBF | bright blue #4169E1
 val NavyDeep = Color(0xFF14246B)
 val NavyPrimary = Color(0xFF0F2F73)
 val NavyLight = Color(0xFF1558B8)

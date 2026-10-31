@@ -26,14 +26,14 @@ def _google_configured(monkeypatch):
 
 def test_the_authorisation_url_points_at_google():
     url = google.authorisation_url(
-        redirect_uri="https://edusync.vercel.app/api/auth/google/callback",
+        redirect_uri="https://chhatralekha.vercel.app/api/auth/google/callback",
         state="state-123",
     )
     assert url.startswith(google.GOOGLE_AUTHORIZE_URL)
     params = parse_qs(urlparse(url).query)
     assert params["client_id"] == ["client-id.apps.googleusercontent.com"]
     assert params["redirect_uri"] == [
-        "https://edusync.vercel.app/api/auth/google/callback"
+        "https://chhatralekha.vercel.app/api/auth/google/callback"
     ]
     assert params["response_type"] == ["code"]
     assert params["state"] == ["state-123"]
@@ -43,7 +43,7 @@ def test_the_authorisation_url_points_at_google():
 
 def test_the_authorisation_url_never_carries_a_secret():
     url = google.authorisation_url(
-        redirect_uri="https://edusync.vercel.app/api/auth/google/callback",
+        redirect_uri="https://chhatralekha.vercel.app/api/auth/google/callback",
         state="state-123",
     )
     assert "client-secret" not in url
@@ -69,7 +69,7 @@ async def test_the_code_is_exchanged_for_tokens():
     async with httpx.AsyncClient(transport=transport) as client:
         tokens = await google.exchange_code(
             "the-code",
-            redirect_uri="https://edusync.vercel.app/api/auth/google/callback",
+            redirect_uri="https://chhatralekha.vercel.app/api/auth/google/callback",
             client=client,
         )
 
@@ -87,7 +87,7 @@ async def test_a_refused_code_raises():
         with pytest.raises(google.GoogleAuthError):
             await google.exchange_code(
                 "bad",
-                redirect_uri="https://edusync.vercel.app/api/auth/google/callback",
+                redirect_uri="https://chhatralekha.vercel.app/api/auth/google/callback",
                 client=client,
             )
 

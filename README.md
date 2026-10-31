@@ -60,7 +60,7 @@ without ever silently changing an official academic record.
 The ChhatraLekha logo is the artwork the team supplied, shipped verbatim — as the launcher icon
 (adaptive, with a themed-monochrome layer), in the app's header, on the degree certificate and
 across the website. The brand palette is sampled directly from that artwork:
-navy `#14246B` / `#0F2F73`, blue `#0F3A8A` / `#1558B8`, teal `#12B886`.
+navy `#2F57D6` / `#16257A`, blue `#1F3FBF` / `#4169E1`, teal `#FF8A00`.
 
 Source assets live in [`docs/assets/brand/`](docs/assets/brand/).
 
@@ -294,7 +294,7 @@ The configuration files are [`render.yaml`](render.yaml) and
 ### 4. Set `FRONTEND_ORIGIN` and redeploy the backend
 
 `FRONTEND_ORIGIN` is the Vercel URL of the frontend, e.g.
-`https://edusync.vercel.app`. It is what the API uses for CORS, and it is
+`https://chhatralekha.vercel.app`. It is what the API uses for CORS, and it is
 the origin printed on a QR badge. Set it on Render and **redeploy the
 backend** — the CORS list is read at start-up.
 
@@ -330,7 +330,7 @@ When `DEMO_PASSWORD` is empty, a password is generated and printed **once**.
 | `SECRET_KEY` | yes | `python -c "import secrets; print(secrets.token_urlsafe(48))"` | Render (secret) |
 | `SEAL_HMAC_KEY` | yes | `python -c "import secrets; print(secrets.token_urlsafe(32))"` | Render (secret) |
 | `MATCH_KEY` | no | falls back to `SEAL_HMAC_KEY` | Render |
-| `FRONTEND_ORIGIN` | yes | `https://edusync.vercel.app` | Render |
+| `FRONTEND_ORIGIN` | yes | `https://chhatralekha.vercel.app` | Render |
 | `CORS_ORIGINS` | no | extra origins, comma separated | Render |
 | `ENVIRONMENT` | yes | `production` | Render (`ENV` also works) |
 | `ALLOW_IN_MEMORY_DB` | no | `false` — never `true` in production | Render |
@@ -351,7 +351,7 @@ When `DEMO_PASSWORD` is empty, a password is generated and printed **once**.
 
 | Name | Required | Placeholder | Where |
 |---|---|---|---|
-| `VITE_API_URL` | no | `https://edusync-api.onrender.com` | Vercel (build time) |
+| `VITE_API_URL` | no | `https://chhatralekha-api.onrender.com` | Vercel (build time) |
 
 ### Smoke test checklist
 
@@ -419,7 +419,7 @@ the FastAPI backend (`http://10.0.2.2:8000/api` for emulator, or configurable re
   and pulls central updates. Duplicate submissions (409 Conflict) and cross-institution
   clashes are caught safely, flagged as anomalies, and never silently overwritten.
 * **QR & Token Contract**: Android `ApaarQrPayload` supports both the deep-link
-  token contract (`https://edusync.vercel.app/verify/t/{token}`) and the canonical
+  token contract (`https://chhatralekha.vercel.app/verify/t/{token}`) and the canonical
   seal verification query (`/verify?apaar=...&seal=...`). Online token lookups resolve
   through `GET /api/verify/token/{token}` with public allowlisted fields only.
 

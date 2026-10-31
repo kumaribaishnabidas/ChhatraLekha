@@ -116,7 +116,7 @@ behind a QR code is the record that was sealed.
 `core/qr/ApaarQrPayload.kt` builds a link that a scanner (or a human with the URL) can resolve:
 
 ```
-https://edusync.vercel.app/verify?apaar=XXXX-XXXX-XXXX&inst=<pid>&prog=<code>&seal=<32hex>&t=<millis>
+https://chhatralekha.vercel.app/verify?apaar=XXXX-XXXX-XXXX&inst=<pid>&prog=<code>&seal=<32hex>&t=<millis>
 ```
 
 The QR matrix itself is produced by `core/qr/QrEncoder.kt` — a **dependency-free ISO/IEC 18004
@@ -161,8 +161,8 @@ ui/
 ### Design language
 
 Dense, data-first, government-grade. The palette is the **ChhatraLekha brand**, sampled directly from the
-supplied logo artwork: navy `#14246B` / `#0F2F73`, mid blue `#0F3A8A`, bright blue `#1558B8`, brand
-teal `#12B886`. Regulatory semantics keep their own colours — saffron gold `#E65100`/`#F57C00`,
+supplied logo artwork: navy `#2F57D6` / `#16257A`, mid blue `#1F3FBF`, bright blue `#4169E1`, brand
+teal `#FF8A00`. Regulatory semantics keep their own colours — saffron gold `#E65100`/`#F57C00`,
 emerald `#1B5E20`/`#2E7D32`, crimson `#B71C1C`/`#C62828` — with surfaces `#F8F9FA` (light) /
 `#121A24` (dark). APAAR IDs render in a monospaced style as `xxxx-xxxx-xxxx`. Motion is
 used functionally: animated intake gauges, validation chip summaries, flip-card transitions on the
@@ -175,12 +175,12 @@ The ChhatraLekha logo is present wherever a user might want to know who built th
 * **Launcher icon** — the supplied mark, shipped as an adaptive icon (`mipmap-anydpi-v26`) with a
   white plate matching the artwork's own ground, density-bucketed legacy PNGs and a monochrome
   silhouette for themed icons on Android 13+.
-* **App header** — the mark on its white plate, `EDUSYNC` as the product and `APAAR ID platform` beneath.
+* **App header** — the mark on its white plate, `ChhatraLekha` as the product and `Authenticate · Verify · Empower` beneath.
 * **Role select** — the brand lockup closes the page, naming the product and the platform.
 * **Degree certificate** — the mark appears in the letterhead and in the signature footer beside
-  `EDUSYNC · APAAR ID platform`.
+  `ChhatraLekha · Authenticate · Verify · Empower`.
 
-The artwork itself is the team's own raster asset (`res/drawable-nodpi/edusync_mark.png`), so what
+The artwork itself is the team's own raster asset (`res/drawable-nodpi/chhatralekha_mark.png`), so what
 ships on screen is pixel-identical to the supplied logo rather than a redrawn approximation.
 `ui/components/Brand.kt` holds the shared `ChhatraLekhaMark`, `ChhatraLekhaPlate` and `ChhatraLekhaLockup`
 composables.

@@ -14,4 +14,4 @@ Disallow: /impact
 Disallow: /verify/t/
 Disallow: /auth/callback
 
-Sitemap: https://edusync.vercel.app/sitemap.xml
+Sitemap: https://chhatralekha.vercel.app/sitemap.xml

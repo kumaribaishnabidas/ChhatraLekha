@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
   <title id="title">ChhatraLekha mark</title>
   <desc id="desc">Shield and open-book mark</desc>
-  <rect width="256" height="256" rx="52" fill="#14246B"/>
+  <rect width="256" height="256" rx="52" fill="#2F57D6"/>
   <path d="M128 34 202 60v58c0 47-32 80-74 104-42-24-74-57-74-104V60l74-26Z" fill="#fff"/>
-  <path d="M79 112c15-13 31-19 49-19s34 6 49 19v47c-15-10-31-15-49-15s-34 5-49 15v-47Z" fill="#14246B"/>
-  <path d="M128 93v51" stroke="#12B886" stroke-width="9" stroke-linecap="round"/>
+  <path d="M79 112c15-13 31-19 49-19s34 6 49 19v47c-15-10-31-15-49-15s-34 5-49 15v-47Z" fill="#2F57D6"/>
+  <path d="M128 93v51" stroke="#FF8A00" stroke-width="9" stroke-linecap="round"/>
   <path d="m170 48 6 16 16 6-16 6-6 16-6-16-16-6 16-6 6-16Z" fill="#F4B942"/>
 </svg>
