@@ -211,10 +211,11 @@ export default function AppLayout() {
       : 'National Administration'
 
   return (
-    <div className="min-h-screen flex bg-canvas">
+    <div className="min-h-screen flex flex-col bg-canvas">
       <DemoGuide />
 
-      {/* Mobile Sidebar Overlay */}
+      <div className="flex-1 flex min-h-0 relative">
+        {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -225,7 +226,7 @@ export default function AppLayout() {
 
       {/* Left Sidebar Navigation */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 lg:w-72 bg-brand-deep text-white flex flex-col border-r border-navy-deep transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 lg:w-72 flex-shrink-0 bg-brand-deep text-white flex flex-col border-r border-navy-deep transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -410,5 +411,6 @@ export default function AppLayout() {
         </footer>
       </div>
     </div>
+  </div>
   )
 }

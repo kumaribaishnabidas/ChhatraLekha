@@ -80,7 +80,7 @@ export default function DemoGuide() {
 
   if (collapsed) {
     return (
-      <aside aria-label="Demo Persona Switcher" className="bg-brand-deep text-white px-4 py-1.5 text-xs flex items-center justify-between border-b border-brand">
+      <aside aria-label="Demo Persona Switcher" className="w-full bg-brand-deep text-white px-4 py-1.5 text-xs flex items-center justify-between border-b border-brand">
         <div className="flex items-center gap-2">
           <span className="font-bold uppercase tracking-wider text-accent text-[11px]">{t('demo.title')}</span>
           <span className="text-white/70">|</span>
@@ -98,7 +98,7 @@ export default function DemoGuide() {
   }
 
   return (
-    <aside aria-label="Interactive Demo Guide" className="bg-surface-2 border-b border-line px-4 py-2 text-xs">
+    <aside aria-label="Interactive Demo Guide" className="w-full bg-surface-2 border-b border-line px-4 py-2 text-xs">
       <div className="mx-auto max-w-[1240px] flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Badge className="bg-accent text-on-accent font-bold uppercase">{t('demo.title')}</Badge>
