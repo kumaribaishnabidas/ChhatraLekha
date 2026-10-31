@@ -15,17 +15,14 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import platform
-import sys
 import time
 from datetime import datetime, timezone
 from typing import Any, Callable
 
 from app.models.documents import Doc
-from app.models.enums import AdmissionQuota, Gender
 from app.repositories.tokens import hash_token
-from app.services import audit_chain, csv_ingestion, seal
+from app.services import audit_chain, seal
 from app.services.csv_ingestion import CsvValidationContext, validate_csv
 
 
@@ -82,7 +79,9 @@ def benchmark_csv_ingestion() -> dict[str, Any]:
 
     for size in sizes:
         csv_text = generate_synthetic_csv(size)
-        latencies, errors = measure(lambda: validate_csv(csv_text, context), iterations=25)
+        latencies, errors = measure(
+            lambda csv_text=csv_text: validate_csv(csv_text, context), iterations=25
+        )
         med = percentile(latencies, 50.0)
         p95 = percentile(latencies, 95.0)
         tput = (size / (med / 1000.0)) if med > 0 else 0.0

@@ -15,7 +15,8 @@ Usage:
 from __future__ import annotations
 
 import sys
-from app.core.config import get_settings, _is_placeholder
+
+from app.core.config import _is_placeholder, get_settings
 
 
 def check_production_settings() -> int:
