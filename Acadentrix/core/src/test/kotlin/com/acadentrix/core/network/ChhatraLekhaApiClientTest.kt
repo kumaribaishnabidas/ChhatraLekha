@@ -29,7 +29,7 @@ class ChhatraLekhaApiClientTest {
 
         // Health endpoint
         server.createContext("/health", HttpHandler { exchange ->
-            respondJson(exchange, 200, "{\"status\":\"ok\",\"service\":\"edusync\"}")
+            respondJson(exchange, 200, "{\"status\":\"ok\",\"service\":\"chhatralekha\"}")
         })
 
         // Token verification endpoint

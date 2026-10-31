@@ -19,7 +19,7 @@ describe('theme, locale and deterministic voice', () => {
     render(<ThemeProvider><Controls /></ThemeProvider>)
     await userEvent.setup().click(screen.getByTitle('Dark'))
     expect(document.documentElement.dataset.theme).toBe('dark')
-    expect(window.localStorage.getItem('edusync.theme')).toBe('dark')
+    expect(window.localStorage.getItem('chhatralekha.theme')).toBe('dark')
   })
 
   it('changes language and html direction', async () => {

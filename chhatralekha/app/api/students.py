@@ -681,7 +681,7 @@ async def student_certificate(
         ip_address=client_ip(request),
     )
 
-    filename = f"edusync-certificate-{student.get('apaar_id')}.pdf"
+    filename = f"chhatralekha-certificate-{student.get('apaar_id')}.pdf"
     return Response(
         content=body,
         media_type="application/pdf",

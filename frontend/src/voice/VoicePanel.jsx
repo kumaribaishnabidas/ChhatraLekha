@@ -10,7 +10,7 @@ import { matchIntent } from './intents'
 import { useSpeechRecognition } from './useSpeechRecognition'
 import { useSpeechSynthesis } from './useSpeechSynthesis'
 
-const CONSENT_KEY = 'edusync.voice.consent'
+const CONSENT_KEY = 'chhatralekha.voice.consent'
 const ROUTES = { 'navigate.dashboard': '/dashboard', 'navigate.institutions': '/institutions', 'navigate.students': '/students', 'navigate.anomalies': '/anomalies', 'navigate.reports': '/reports', 'navigate.impact': '/impact', 'navigate.verify': '/verify' }
 
 function voiceConsent() { try { return localStorage.getItem(CONSENT_KEY) === 'true' } catch { return false } }

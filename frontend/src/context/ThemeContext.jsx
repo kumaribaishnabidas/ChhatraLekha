@@ -15,7 +15,7 @@
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
-const STORAGE_KEY = 'edusync.theme'
+const STORAGE_KEY = 'chhatralekha.theme'
 
 export const THEME_CHOICES = ['light', 'dark', 'system']
 

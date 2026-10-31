@@ -27,7 +27,7 @@ from app.repositories.users import UserRepository
 from app.schemas.auth import LoginRequest, RefreshRequest, TokenPair, UserOut
 from app.services import google
 
-logger = logging.getLogger("edusync.auth")
+logger = logging.getLogger("chhatralekha.auth")
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
