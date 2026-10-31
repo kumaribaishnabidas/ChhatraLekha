@@ -20,8 +20,8 @@ Every command below has been executed on the local workspace and confirmed passi
 | **Frontend Route Links** | `npm.cmd run check:links` (in `frontend/`) | **Passed** | 19 declared router paths verified |
 | **Frontend Translations** | `npm.cmd run i18n:check` (in `frontend/`) | **Passed** | 13 languages, 257 translation keys |
 | **Frontend Production Build** | `npm.cmd run build` (in `frontend/`) | **Passed** | `dist/` bundle created in 11.07s |
-| **Android Core Unit Tests** | `.\gradlew.bat :core:test` (in `Acadentrix/`) | **204 passed**, 0 failures | 15 test XML suites in 29s |
-| **Android Debug APK Build** | `.\gradlew.bat assembleDebug` (in `Acadentrix/`) | **Passed** | `app-debug.apk` built (22.5 MB) |
+| **Android Core Unit Tests** | `.\gradlew.bat :core:test` (in `android/`) | **204 passed**, 0 failures | 15 test XML suites in 29s |
+| **Android Debug APK Build** | `.\gradlew.bat assembleDebug` (in `android/`) | **Passed** | `app-debug.apk` built (22.5 MB) |
 | **Anomaly Evaluation** | `python -m app.scripts.eval_anomalies` | **100% Precision, 100% Recall** | 23 synthetic records, 10 layers |
 | **Performance Benchmark** | `python -m app.scripts.benchmark` | **All Passed (0 errors)** | CSV parse, Ed25519, HMAC, Token |
 
@@ -34,11 +34,11 @@ Every command below has been executed on the local workspace and confirmed passi
 | **1** | **Login & Authorization** | **IMPLEMENTED** | JWT authentication in `chhatralekha/app/api/auth.py` (`/api/auth/login`, `/me`, `/refresh`). Fine-grained RBAC in `chhatralekha/app/core/rbac.py` enforcing 4 distinct roles: `aicte_admin`, `institution_admin`, `verifier`, `student`. Tenant scoping prevents cross-institution data access (`test_tenant_isolation_institution_scoping`). |
 | **2** | **Create / Read / Update Academic Record** | **IMPLEMENTED** | Full CRUD in `chhatralekha/app/api/records.py`. Version incrementing (`version += 1`), change-tracking, and input validation via Pydantic schemas in `chhatralekha/app/schemas/student.py`. Tenant scoping enforced on all mutations. |
 | **3** | **CSV Upload & Batch Validation** | **IMPLEMENTED** | Implemented in `chhatralekha/app/api/records.py` (`/upload-csv`) and `chhatralekha/app/services/csv_ingestion.py`. Validates headers, MIME type, max size (5 MB), and row-level schema constraints. Returns row-by-row errors with line numbers and field names without leaking raw PII. |
-| **4** | **Anomaly Detection & Reviewer Outcome** | **IMPLEMENTED** | 10-layer regulatory rule engine in `chhatralekha/app/services/anomaly_engine.py` (Python) and `Acadentrix/core/.../AnomalyEngine.kt` (Kotlin). Detects APAAR syntax, cross/same institution duplicates, roll collisions, intake breaches, supernumerary caps, quota conflicts, date anomalies, missing fields, and unapproved programs. Tested by `eval_anomalies.py` with 100% precision & recall. |
+| **4** | **Anomaly Detection & Reviewer Outcome** | **IMPLEMENTED** | 10-layer regulatory rule engine in `chhatralekha/app/services/anomaly_engine.py` (Python) and `android/core/.../AnomalyEngine.kt` (Kotlin). Detects APAAR syntax, cross/same institution duplicates, roll collisions, intake breaches, supernumerary caps, quota conflicts, date anomalies, missing fields, and unapproved programs. Tested by `eval_anomalies.py` with 100% precision & recall. |
 | **5** | **Change-Impact Analysis** | **IMPLEMENTED** | Implemented in `chhatralekha/app/services/impact_engine.py` and exposed via `/api/impact/preview` and `/api/impact/apply`. Compares existing vs proposed record, flagging cascade capacity impacts and marking credentials for reissue. Interactive 3-step review UI in `frontend/src/pages/ImpactPage.jsx`. |
 | **6** | **QR Credential Issuance & Verification** | **IMPLEMENTED** | Issuance produces opaque verification tokens (`chhatralekha/app/api/tokens.py`) or signed URLs (`chhatralekha/app/services/qr.py`). Verification: Public opaque token route `GET /api/verify/token/{token}` returns an allowlist (institution, programme, academic year, valid verdict) with zero PII. Authenticated verifiers can query `/api/verify/{apaar_id}`. Public key endpoint `GET /api/verify/public-key` allows offline Ed25519 verification. |
 | **7** | **Credential Expiry & Revocation** | **IMPLEMENTED** | Fails closed immediately on verification. `GET /api/verify/token/{token}` verifies `expires_at < now` -> `EXPIRED`, `document.revoked` -> `REVOKED`, and `document.needs_reissue` -> `NEEDS_REFRESH`. Tested in backend test suites. |
-| **8** | **Android Local Persistence & API Sync** | **IMPLEMENTED** | Room database in `Acadentrix/app` caches students (`StudentRecordDao`), pending operations (`PendingSyncDao`), and audit events (`AuditEntryDao`). Pure Java HTTP client `ChhatraLekhaApiClient.kt` communicates with backend REST API. `SyncManager.kt` provides two-way sync, optimistic concurrency (record versions), HTTP 409 conflict detection, and safe offline fallbacks. |
+| **8** | **Android Local Persistence & API Sync** | **IMPLEMENTED** | Room database in `android/app` caches students (`StudentRecordDao`), pending operations (`PendingSyncDao`), and audit events (`AuditEntryDao`). Pure Java HTTP client `ChhatraLekhaApiClient.kt` communicates with backend REST API. `SyncManager.kt` provides two-way sync, optimistic concurrency (record versions), HTTP 409 conflict detection, and safe offline fallbacks. |
 | **9** | **Audit Event Creation & Retrieval** | **IMPLEMENTED** | Append-only audit log in `chhatralekha/app/audit/writer.py` and `AuditRepository`. Backward-linked hash chaining in `chhatralekha/app/services/audit_chain.py` (`prev_hash || timestamp || actor || action || subject || details || category`). Endpoint `GET /api/audit/verify-chain` verifies cryptographic continuity. |
 
 ---
@@ -47,7 +47,7 @@ Every command below has been executed on the local workspace and confirmed passi
 
 ### 3.1 Android Offline-Only Claims vs. Real Sync Integration
 - **Previous Claim**: The Android app README previously claimed purely offline isolated operation while another document claimed full cloud synchronization.
-- **Reality & Resolution**: The Android codebase (`Acadentrix/core` and `Acadentrix/app`) implements a robust offline-capable client:
+- **Reality & Resolution**: The Android codebase (`android/core` and `android/app`) implements a robust offline-capable client:
   - Local persistence: Room database (`ApaarDatabase`) caches records and queues offline changes in `pending_sync`.
   - Network client: `ChhatraLekhaApiClient.kt` uses standard `java.net.HttpURLConnection` (zero third-party networking library dependencies) with configurable base URLs (`http://10.0.2.2:8000/api` for emulator, or custom server).
   - Sync orchestration: `SyncManager.kt` pushes pending queue operations with idempotency keys and pulls latest records from `/api/sync/pull`. In the event of a concurrent server edit, HTTP 409 Conflict is surfaced to the user.
@@ -70,8 +70,8 @@ Every command below has been executed on the local workspace and confirmed passi
   - Total automated unit/integration tests across the entire repository: **527 tests passed**.
 
 ### 3.4 CI Pipeline Status
-- **Prior State**: `.github/workflows/chhatralekha.yml` tested only backend and frontend, omitting the Android app entirely and missing `Acadentrix/**` in triggers.
-- **Current State**: Extended `.github/workflows/chhatralekha.yml` to trigger on `Acadentrix/**`, install JDK 17, execute `./gradlew :core:test`, and compile the debug APK via `./gradlew assembleDebug`.
+- **Prior State**: `.github/workflows/chhatralekha.yml` tested only backend and frontend, omitting the Android app entirely and missing `android/**` in triggers.
+- **Current State**: Extended `.github/workflows/chhatralekha.yml` to trigger on `android/**`, install JDK 17, execute `./gradlew :core:test`, and compile the debug APK via `./gradlew assembleDebug`.
 
 ---
 

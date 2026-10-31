@@ -295,13 +295,13 @@ def test_the_password_policy_is_enforced():
 
 def test_a_pin_round_trips():
     salt = new_salt()
-    hashed = hash_pin("Acadentrix2024", salt)
-    assert verify_pin("Acadentrix2024", salt, hashed)
+    hashed = hash_pin("ChhatraLekha2024", salt)
+    assert verify_pin("ChhatraLekha2024", salt, hashed)
     assert not verify_pin("wrong", salt, hashed)
 
 
 def test_two_salts_produce_two_hashes():
-    assert hash_pin("Acadentrix2024", new_salt()) != hash_pin("Acadentrix2024", new_salt())
+    assert hash_pin("ChhatraLekha2024", new_salt()) != hash_pin("ChhatraLekha2024", new_salt())
 
 
 def test_an_access_token_round_trips():

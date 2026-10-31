@@ -142,7 +142,7 @@ export default function ContactPage() {
           <div className="p-5 rounded border border-line bg-surface-2 space-y-2">
             <h2 className="text-sm font-bold uppercase tracking-wider text-ink m-0">Prototype Status</h2>
             <p className="text-xs text-muted m-0">
-              Academic verification prototype. Messages are reviewed by the engineering team.
+              Academic verification prototype. Messages are reviewed by the project maintainers.
             </p>
           </div>
         </div>

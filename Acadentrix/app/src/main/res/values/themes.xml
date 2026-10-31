@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <style name="Theme.Acadentrix" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:statusBarColor">#16257A</item>
-        <item name="android:navigationBarColor">#F8F9FA</item>
-        <item name="android:windowBackground">#F8F9FA</item>
-    </style>
-</resources>

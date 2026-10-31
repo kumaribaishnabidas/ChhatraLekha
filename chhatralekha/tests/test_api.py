@@ -221,6 +221,21 @@ async def test_the_issued_badge_verifies_against_the_registry(
     assert body["verdict"] == "VALID"
 
 
+async def test_student_token_endpoint_issues_opaque_token(
+    client, institution_token
+):
+    await create_student(client, institution_token)
+    response = await client.post(
+        "/api/students/984210357890/token",
+        headers=auth(institution_token),
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert isinstance(body["token"], str) and len(body["token"]) >= 16
+    assert "984210357890" not in body["token_url"]
+    assert "/verify/t/" in body["token_url"]
+
+
 # ------------------------------------------------------------- bulk csv
 
 
