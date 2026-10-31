@@ -98,6 +98,13 @@ export default function StudentHomePage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <div className="hidden xl:block rounded bg-white p-1 border border-line shadow-xs">
+              <img
+                src="/brand/chhatralekha-logo.png"
+                alt="ChhatraLekha"
+                className="h-9 w-auto object-contain block"
+              />
+            </div>
             <Link to="/me/id-card" className="no-underline">
               <Button variant="accent">
                 {t('student.home.viewCard', { defaultValue: 'Digital ID Card' })}

@@ -95,10 +95,9 @@ export default function StudentIdCardPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <img
-                  src="/brand/chhatralekha-lockup-inverse.svg"
+                  src="/brand/chhatralekha-logo.png"
                   alt="ChhatraLekha"
-                  className="h-7 w-auto block"
-                  onError={(e) => { e.currentTarget.style.display = 'none' }}
+                  className="h-10 w-auto rounded bg-white p-1 block shadow-xs"
                 />
               </div>
               <span className="rounded bg-accent/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-accent-strong border border-accent/40">

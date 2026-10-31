@@ -230,26 +230,21 @@ export default function AppLayout() {
         }`}
       >
         {/* Brand & Logo Header */}
-        <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between">
-          <NavLink to={homePath} className="flex items-center gap-3 no-underline">
-            <img
-              src="/brand/chhatralekha-logo.png"
-              alt="ChhatraLekha"
-              className="h-9 w-auto rounded bg-white p-1"
-              onError={(event) => {
-                event.currentTarget.style.display = 'none'
-              }}
-            />
-            <div>
-              <span className="font-bold text-white text-base tracking-tight block">ChhatraLekha</span>
-              <span className="text-[10px] text-white/70 uppercase tracking-wider block">Unified Campus</span>
+        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-black/15">
+          <NavLink to={homePath} className="flex-1 block no-underline">
+            <div className="rounded-lg bg-white p-2.5 shadow-sm flex items-center justify-center">
+              <img
+                src="/brand/chhatralekha-logo.png"
+                alt="ChhatraLekha - Authenticate, Verify, Empower"
+                className="w-full max-h-16 object-contain block"
+              />
             </div>
           </NavLink>
 
           <button
             type="button"
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-1.5 rounded text-white/70 hover:text-white hover:bg-white/10 cursor-pointer"
+            className="lg:hidden ml-2 p-1.5 rounded text-white/70 hover:text-white hover:bg-white/10 cursor-pointer"
             aria-label="Close navigation"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -327,10 +322,17 @@ export default function AppLayout() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <div className="hidden sm:flex items-center gap-2 text-xs text-muted">
-              <span className="font-semibold text-ink">{t('app.name')}</span>
-              <span>/</span>
-              <span>{roleContextTitle}</span>
+            <div className="flex items-center gap-2.5">
+              <img
+                src="/brand/chhatralekha-logo.png"
+                alt="ChhatraLekha"
+                className="h-8 w-auto object-contain rounded bg-white p-0.5 border border-line lg:hidden"
+              />
+              <div className="hidden sm:flex items-center gap-2 text-xs text-muted">
+                <span className="font-semibold text-ink">{t('app.name')}</span>
+                <span>/</span>
+                <span>{roleContextTitle}</span>
+              </div>
             </div>
           </div>
 
