@@ -168,6 +168,26 @@ fun RoleSelectScreen(viewModel: ApaarViewModel) {
                 modifier = Modifier.fillMaxWidth()
             ) { viewModel.selectRole(UserRole.STUDENT) }
 
+            Spacer(Modifier.height(10.dp))
+
+            RoleCard(
+                title = UserRole.TEACHER.label,
+                tagline = UserRole.TEACHER.tagline,
+                icon = Icons.Filled.Assignment,
+                accent = colors.primary,
+                modifier = Modifier.fillMaxWidth()
+            ) { viewModel.selectRole(UserRole.TEACHER) }
+
+            Spacer(Modifier.height(10.dp))
+
+            RoleCard(
+                title = UserRole.PARENT.label,
+                tagline = UserRole.PARENT.tagline,
+                icon = Icons.Filled.Person,
+                accent = colors.success,
+                modifier = Modifier.fillMaxWidth()
+            ) { viewModel.selectRole(UserRole.PARENT) }
+
             Spacer(Modifier.height(22.dp))
 
             // ------------------------------------------------ regulatory notice

@@ -1,0 +1,377 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1A0100012D00000100000001 /* ChhatraLekhaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100012D00000100000000 /* ChhatraLekhaApp.swift */; };
+		1A0100022D00000200000001 /* UserRole.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100022D00000200000000 /* UserRole.swift */; };
+		1A0100032D00000300000001 /* DomainModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100032D00000300000000 /* DomainModels.swift */; };
+		1A0100042D00000400000001 /* SyncState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100042D00000400000000 /* SyncState.swift */; };
+		1A0100052D00000500000001 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100052D00000500000000 /* NetworkMonitor.swift */; };
+		1A0100062D00000600000001 /* ApiEndpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100062D00000600000000 /* ApiEndpoint.swift */; };
+		1A0100072D00000700000001 /* ApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100072D00000700000000 /* ApiClient.swift */; };
+		1A0100082D00000800000001 /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100082D00000800000000 /* KeychainManager.swift */; };
+		1A0100092D00000900000001 /* OfflineDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100092D00000900000000 /* OfflineDataStore.swift */; };
+		1A01000A2D00000A00000001 /* SyncQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A01000A2D00000A00000000 /* SyncQueue.swift */; };
+		1A01000B2D00000B00000001 /* BiometricManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A01000B2D00000B00000000 /* BiometricManager.swift */; };
+		1A01000C2D00000C00000001 /* PrivacyProtection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A01000C2D00000C00000000 /* PrivacyProtection.swift */; };
+		1A01000D2D00000D00000001 /* ApaarValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A01000D2D00000D00000000 /* ApaarValidator.swift */; };
+		1A01000E2D00000E00000001 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A01000E2D00000E00000000 /* Colors.swift */; };
+		1A01000F2D00000F00000001 /* StatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A01000F2D00000F00000000 /* StatusBanner.swift */; };
+		1A0100102D00001000000001 /* StatCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100102D00001000000000 /* StatCard.swift */; };
+		1A0100112D00001100000001 /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100112D00001100000000 /* PrimaryButton.swift */; };
+		1A0100122D00001200000001 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100122D00001200000000 /* EmptyStateView.swift */; };
+		1A0100132D00001300000001 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100132D00001300000000 /* AuthViewModel.swift */; };
+		1A0100142D00001400000001 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100142D00001400000000 /* LoginView.swift */; };
+		1A0100152D00001500000001 /* StudentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100152D00001500000000 /* StudentViewModel.swift */; };
+		1A0100162D00001600000001 /* StudentDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100162D00001600000000 /* StudentDashboardView.swift */; };
+		1A0100172D00001700000001 /* AttendanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100172D00001700000000 /* AttendanceView.swift */; };
+		1A0100182D00001800000001 /* AcademicWalletView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100182D00001800000000 /* AcademicWalletView.swift */; };
+		1A0100192D00001900000001 /* GuardianViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100192D00001900000000 /* GuardianViewModel.swift */; };
+		1A01001A2D00001A00000001 /* GuardianDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A01001A2D00001A00000000 /* GuardianDashboardView.swift */; };
+		1A01001B2D00001B00000001 /* TeacherViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A01001B2D00001B00000000 /* TeacherViewModel.swift */; };
+		1A01001C2D00001C00000001 /* TeacherDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A01001C2D00001C00000000 /* TeacherDashboardView.swift */; };
+		1A01001D2D00001D00000001 /* AdminViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A01001D2D00001D00000000 /* AdminViewModel.swift */; };
+		1A01001E2D00001E00000001 /* AdminDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A01001E2D00001E00000000 /* AdminDashboardView.swift */; };
+		1A01001F2D00001F00000001 /* VerifierViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A01001F2D00001F00000000 /* VerifierViewModel.swift */; };
+		1A0100202D00002000000001 /* VerifierView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100202D00002000000000 /* VerifierView.swift */; };
+		1A0100212D00002100000001 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100212D00002100000000 /* SettingsView.swift */; };
+		1A0100222D00002200000001 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0100222D00002200000000 /* MainTabView.swift */; };
+		1A0100232D00002300000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A0100232D00002300000000 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		1A0100002D00000000000001 /* ChhatraLekha.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChhatraLekha.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1A0100012D00000100000000 /* ChhatraLekhaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChhatraLekhaApp.swift; sourceTree = "<group>"; };
+		1A0100022D00000200000000 /* UserRole.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRole.swift; sourceTree = "<group>"; };
+		1A0100032D00000300000000 /* DomainModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainModels.swift; sourceTree = "<group>"; };
+		1A0100042D00000400000000 /* SyncState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncState.swift; sourceTree = "<group>"; };
+		1A0100052D00000500000000 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
+		1A0100062D00000600000000 /* ApiEndpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiEndpoint.swift; sourceTree = "<group>"; };
+		1A0100072D00000700000000 /* ApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiClient.swift; sourceTree = "<group>"; };
+		1A0100082D00000800000000 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
+		1A0100092D00000900000000 /* OfflineDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineDataStore.swift; sourceTree = "<group>"; };
+		1A01000A2D00000A00000000 /* SyncQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncQueue.swift; sourceTree = "<group>"; };
+		1A01000B2D00000B00000000 /* BiometricManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricManager.swift; sourceTree = "<group>"; };
+		1A01000C2D00000C00000000 /* PrivacyProtection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyProtection.swift; sourceTree = "<group>"; };
+		1A01000D2D00000D00000000 /* ApaarValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApaarValidator.swift; sourceTree = "<group>"; };
+		1A01000E2D00000E00000000 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
+		1A01000F2D00000F00000000 /* StatusBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBanner.swift; sourceTree = "<group>"; };
+		1A0100102D00001000000000 /* StatCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatCard.swift; sourceTree = "<group>"; };
+		1A0100112D00001100000000 /* PrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrimaryButton.swift; sourceTree = "<group>"; };
+		1A0100122D00001200000000 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		1A0100132D00001300000000 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
+		1A0100142D00001400000000 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		1A0100152D00001500000000 /* StudentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudentViewModel.swift; sourceTree = "<group>"; };
+		1A0100162D00001600000000 /* StudentDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudentDashboardView.swift; sourceTree = "<group>"; };
+		1A0100172D00001700000000 /* AttendanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceView.swift; sourceTree = "<group>"; };
+		1A0100182D00001800000000 /* AcademicWalletView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AcademicWalletView.swift; sourceTree = "<group>"; };
+		1A0100192D00001900000000 /* GuardianViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianViewModel.swift; sourceTree = "<group>"; };
+		1A01001A2D00001A00000000 /* GuardianDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianDashboardView.swift; sourceTree = "<group>"; };
+		1A01001B2D00001B00000000 /* TeacherViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeacherViewModel.swift; sourceTree = "<group>"; };
+		1A01001C2D00001C00000000 /* TeacherDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeacherDashboardView.swift; sourceTree = "<group>"; };
+		1A01001D2D00001D00000000 /* AdminViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminViewModel.swift; sourceTree = "<group>"; };
+		1A01001E2D00001E00000000 /* AdminDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminDashboardView.swift; sourceTree = "<group>"; };
+		1A01001F2D00001F00000000 /* VerifierViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerifierViewModel.swift; sourceTree = "<group>"; };
+		1A0100202D00002000000000 /* VerifierView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerifierView.swift; sourceTree = "<group>"; };
+		1A0100212D00002100000000 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		1A0100222D00002200000000 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		1A0100232D00002300000000 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		1A0100242D00002400000000 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		1A0100252D00002500000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1A0100262D00002600000001 = {
+			isa = PBXGroup;
+			children = (
+				1A0100272D00002700000001 /* ChhatraLekha */,
+				1A0100002D00000000000001 /* ChhatraLekha.app */,
+			);
+			sourceTree = "<group>";
+		};
+		1A0100272D00002700000001 /* ChhatraLekha */ = {
+			isa = PBXGroup;
+			children = (
+				1A0100012D00000100000000 /* ChhatraLekhaApp.swift */,
+				1A0100222D00002200000000 /* MainTabView.swift */,
+				1A0100242D00002400000000 /* Info.plist */,
+				1A0100232D00002300000000 /* Assets.xcassets */,
+				1A0100022D00000200000000 /* UserRole.swift */,
+				1A0100032D00000300000000 /* DomainModels.swift */,
+				1A0100042D00000400000000 /* SyncState.swift */,
+				1A0100052D00000500000000 /* NetworkMonitor.swift */,
+				1A0100062D00000600000000 /* ApiEndpoint.swift */,
+				1A0100072D00000700000000 /* ApiClient.swift */,
+				1A0100082D00000800000000 /* KeychainManager.swift */,
+				1A0100092D00000900000000 /* OfflineDataStore.swift */,
+				1A01000A2D00000A00000000 /* SyncQueue.swift */,
+				1A01000B2D00000B00000000 /* BiometricManager.swift */,
+				1A01000C2D00000C00000000 /* PrivacyProtection.swift */,
+				1A01000D2D00000D00000000 /* ApaarValidator.swift */,
+				1A01000E2D00000E00000000 /* Colors.swift */,
+				1A01000F2D00000F00000000 /* StatusBanner.swift */,
+				1A0100102D00001000000000 /* StatCard.swift */,
+				1A0100112D00001100000000 /* PrimaryButton.swift */,
+				1A0100122D00001200000000 /* EmptyStateView.swift */,
+				1A0100132D00001300000000 /* AuthViewModel.swift */,
+				1A0100142D00001400000000 /* LoginView.swift */,
+				1A0100152D00001500000000 /* StudentViewModel.swift */,
+				1A0100162D00001600000000 /* StudentDashboardView.swift */,
+				1A0100172D00001700000000 /* AttendanceView.swift */,
+				1A0100182D00001800000000 /* AcademicWalletView.swift */,
+				1A0100192D00001900000000 /* GuardianViewModel.swift */,
+				1A01001A2D00001A00000000 /* GuardianDashboardView.swift */,
+				1A01001B2D00001B00000000 /* TeacherViewModel.swift */,
+				1A01001C2D00001C00000000 /* TeacherDashboardView.swift */,
+				1A01001D2D00001D00000000 /* AdminViewModel.swift */,
+				1A01001E2D00001E00000000 /* AdminDashboardView.swift */,
+				1A01001F2D00001F00000000 /* VerifierViewModel.swift */,
+				1A0100202D00002000000000 /* VerifierView.swift */,
+				1A0100212D00002100000000 /* SettingsView.swift */,
+			);
+			path = ChhatraLekha;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		1A0100282D00002800000001 /* ChhatraLekha */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1A0100292D00002900000001 /* Build configuration list for PBXNativeTarget "ChhatraLekha" */;
+			buildPhases = (
+				1A01002A2D00002A00000001 /* Sources */,
+				1A0100252D00002500000001 /* Frameworks */,
+				1A01002B2D00002B00000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ChhatraLekha;
+			productName = ChhatraLekha;
+			productReference = 1A0100002D00000000000001 /* ChhatraLekha.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1A01002C2D00002C00000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+			};
+			buildConfigurationList = 1A01002D2D00002D00000001 /* Build configuration list for PBXProject "ChhatraLekha" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 1A0100262D00002600000001;
+			productRefGroup = 1A0100262D00002600000001;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				1A0100282D00002800000001 /* ChhatraLekha */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		1A01002B2D00002B00000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A0100232D00002300000001 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		1A01002A2D00002A00000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A0100012D00000100000001 /* ChhatraLekhaApp.swift in Sources */,
+				1A0100022D00000200000001 /* UserRole.swift in Sources */,
+				1A0100032D00000300000001 /* DomainModels.swift in Sources */,
+				1A0100042D00000400000001 /* SyncState.swift in Sources */,
+				1A0100052D00000500000001 /* NetworkMonitor.swift in Sources */,
+				1A0100062D00000600000001 /* ApiEndpoint.swift in Sources */,
+				1A0100072D00000700000001 /* ApiClient.swift in Sources */,
+				1A0100082D00000800000001 /* KeychainManager.swift in Sources */,
+				1A0100092D00000900000001 /* OfflineDataStore.swift in Sources */,
+				1A01000A2D00000A00000001 /* SyncQueue.swift in Sources */,
+				1A01000B2D00000B00000001 /* BiometricManager.swift in Sources */,
+				1A01000C2D00000C00000001 /* PrivacyProtection.swift in Sources */,
+				1A01000D2D00000D00000001 /* ApaarValidator.swift in Sources */,
+				1A01000E2D00000E00000001 /* Colors.swift in Sources */,
+				1A01000F2D00000F00000001 /* StatusBanner.swift in Sources */,
+				1A0100102D00001000000001 /* StatCard.swift in Sources */,
+				1A0100112D00001100000001 /* PrimaryButton.swift in Sources */,
+				1A0100122D00001200000001 /* EmptyStateView.swift in Sources */,
+				1A0100132D00001300000001 /* AuthViewModel.swift in Sources */,
+				1A0100142D00001400000001 /* LoginView.swift in Sources */,
+				1A0100152D00001500000001 /* StudentViewModel.swift in Sources */,
+				1A0100162D00001600000001 /* StudentDashboardView.swift in Sources */,
+				1A0100172D00001700000001 /* AttendanceView.swift in Sources */,
+				1A0100182D00001800000001 /* AcademicWalletView.swift in Sources */,
+				1A0100192D00001900000001 /* GuardianViewModel.swift in Sources */,
+				1A01001A2D00001A00000001 /* GuardianDashboardView.swift in Sources */,
+				1A01001B2D00001B00000001 /* TeacherViewModel.swift in Sources */,
+				1A01001C2D00001C00000001 /* TeacherDashboardView.swift in Sources */,
+				1A01001D2D00001D00000001 /* AdminViewModel.swift in Sources */,
+				1A01001E2D00001E00000001 /* AdminDashboardView.swift in Sources */,
+				1A01001F2D00001F00000001 /* VerifierViewModel.swift in Sources */,
+				1A0100202D00002000000001 /* VerifierView.swift in Sources */,
+				1A0100212D00002100000001 /* SettingsView.swift in Sources */,
+				1A0100222D00002200000001 /* MainTabView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		1A01002D2D00002D00000002 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		1A01002D2D00002D00000003 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		1A0100292D00002900000002 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ChhatraLekha/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.chhatralekha.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		1A0100292D00002900000003 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ChhatraLekha/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.chhatralekha.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1A01002D2D00002D00000001 /* Build configuration list for PBXProject "ChhatraLekha" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1A01002D2D00002D00000002 /* Debug */,
+				1A01002D2D00002D00000003 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1A0100292D00002900000001 /* Build configuration list for PBXNativeTarget "ChhatraLekha" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1A0100292D00002900000002 /* Debug */,
+				1A0100292D00002900000003 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = 1A01002C2D00002C00000001 /* Project object */;
+}
+
