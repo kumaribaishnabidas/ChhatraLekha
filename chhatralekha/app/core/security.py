@@ -24,11 +24,24 @@ settings = get_settings()
 # --------------------------------------------------------------------- types
 
 ROLE_AICTE = "aicte_admin"
+ROLE_PLATFORM_OPERATOR = "platform_operator"
 ROLE_INSTITUTION = "institution_admin"
-ROLE_VERIFIER = "verifier"
+ROLE_ACADEMIC_ADMIN = "academic_admin"
+ROLE_TEACHER = "teacher"
 ROLE_STUDENT = "student"
+ROLE_PARENT = "parent"
+ROLE_VERIFIER = "verifier"
 
-ALL_ROLES = (ROLE_AICTE, ROLE_INSTITUTION, ROLE_VERIFIER, ROLE_STUDENT)
+ALL_ROLES = (
+    ROLE_AICTE,
+    ROLE_PLATFORM_OPERATOR,
+    ROLE_INSTITUTION,
+    ROLE_ACADEMIC_ADMIN,
+    ROLE_TEACHER,
+    ROLE_STUDENT,
+    ROLE_PARENT,
+    ROLE_VERIFIER,
+)
 
 
 # ------------------------------------------------------------------ passwords

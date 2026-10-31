@@ -1,17 +1,24 @@
 """API routers."""
 
 from app.api import (
+    academic,
+    announcements,
     anomalies,
+    assessments,
+    attendance,
     auth,
     consent,
     corrections,
     dashboard,
     institutions,
     me,
+    parent,
     reports,
     students,
+    teacher,
     tokens,
     transfers,
+    transparency,
     verify,
 )
 
@@ -21,6 +28,13 @@ ALL_ROUTERS = [
     students.router,
     transfers.router,
     institutions.router,
+    academic.router,
+    attendance.router,
+    assessments.router,
+    announcements.router,
+    parent.router,
+    teacher.router,
+    transparency.router,
     anomalies.router,
     verify.router,
     consent.router,

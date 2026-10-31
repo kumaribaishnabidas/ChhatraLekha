@@ -129,7 +129,7 @@ class Principal:
 
     def require_scope(self, institution_id: str) -> None:
         """Raise ``403`` when the principal may not touch that institution."""
-        if self.role == "aicte_admin":
+        if self.role in {"aicte_admin", "platform_operator"}:
             return
         if self.institution_id and self.institution_id == institution_id:
             return

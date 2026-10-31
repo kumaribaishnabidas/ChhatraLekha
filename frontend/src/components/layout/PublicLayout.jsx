@@ -87,6 +87,16 @@ export default function PublicLayout() {
             >
               Contact
             </NavLink>
+            <NavLink
+              to="/transparency"
+              className={({ isActive }) =>
+                `text-sm font-medium transition-colors no-underline ${
+                  isActive ? 'text-brand font-semibold' : 'text-muted hover:text-ink'
+                }`
+              }
+            >
+              Transparency
+            </NavLink>
           </nav>
 
           {/* Action CTAs & Controls */}
@@ -222,6 +232,7 @@ export default function PublicLayout() {
               <ul className="space-y-2 text-sm">
                 <li><Link to="/privacy" className="text-muted hover:text-brand no-underline">Privacy Policy (Draft)</Link></li>
                 <li><Link to="/terms" className="text-muted hover:text-brand no-underline">Terms of Service (Draft)</Link></li>
+                <li><Link to="/transparency" className="text-muted hover:text-brand no-underline">Transparency Charter</Link></li>
               </ul>
             </div>
           </div>

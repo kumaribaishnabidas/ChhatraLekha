@@ -16,11 +16,14 @@ from app.api.deps import (
 )
 from app.audit import writer
 from app.core import rbac
+from app.core.security import hash_password
 from app.models.documents import Doc
+from app.models.enums import InstitutionCategory, InstitutionVerificationStatus
 from app.repositories.audit import AuditRepository
 from app.repositories.institutions import InstitutionRepository
 from app.repositories.programmes import ProgrammeRepository
 from app.repositories.students import StudentRepository
+from app.schemas.campus import InstitutionRegisterIn, InstitutionReviewIn
 from app.schemas.student import InstitutionOut, ProgrammeIntakeIn, ProgrammeIntakeOut
 
 router = APIRouter(prefix="/institutions", tags=["institutions"])
@@ -178,4 +181,125 @@ async def institution_summary(
         "flagged": sum(
             1 for row in active if row.get("verification_status") == "FLAGGED_ANOMALY"
         ),
+    }
+
+
+@router.post(
+    "/register",
+    summary="Register a school or college on ChhatraLekha",
+    status_code=status.HTTP_201_CREATED,
+)
+async def register_institution(
+    payload: InstitutionRegisterIn,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> dict:
+    """Submit an institution registration request (School or College)."""
+    import secrets
+    from datetime import datetime, timezone
+
+    prefix = "SCH" if payload.category == InstitutionCategory.SCHOOL else "COL"
+    clean_city = payload.city.strip()[:3].upper()
+    institution_id = f"{prefix}-{clean_city}-{secrets.token_hex(4).upper()}"
+    now = datetime.now(timezone.utc)
+
+    # 1. Store institution record with PENDING_REVIEW status
+    inst_doc = {
+        "_id": institution_id,
+        "institution_id": institution_id,
+        "name": payload.name,
+        "category": payload.category.value,
+        "institution_type": payload.institution_type.upper(),
+        "state": payload.state,
+        "city": payload.city,
+        "address": payload.address,
+        "affiliation_university": payload.affiliation,
+        "email": payload.contact_email,
+        "phone": payload.contact_phone,
+        "verification_status": InstitutionVerificationStatus.PENDING_REVIEW.value,
+        "is_active": False,
+        "created_at": now,
+    }
+    await db["institutions"].insert_one(inst_doc)
+
+    # 2. Provision initial institution admin account
+    user_id = f"USR-{secrets.token_hex(6)}"
+    pw_hash = hash_password(payload.admin_password)
+    admin_user = {
+        "_id": user_id,
+        "user_id": user_id,
+        "email": payload.contact_email,
+        "full_name": payload.admin_name,
+        "role": "institution_admin",
+        "institution_id": institution_id,
+        "password_hash": pw_hash,
+        "is_active": True,
+        "created_at": now,
+    }
+    await db["users"].insert_one(admin_user)
+
+    await writer.log(
+        AuditRepository(db["audit_events"]),
+        actor=user_id,
+        actor_role="institution_admin",
+        action="REGISTER_INSTITUTION",
+        subject=institution_id,
+        details=f"Registered {payload.category.value} '{payload.name}' in {payload.city}, {payload.state}.",
+        category="ONBOARDING",
+        ip_address=client_ip(request),
+    )
+
+    return {
+        "message": "Institution registration submitted. Awaiting verification review.",
+        "institution_id": institution_id,
+        "name": payload.name,
+        "category": payload.category.value,
+        "verification_status": InstitutionVerificationStatus.PENDING_REVIEW.value,
+        "admin_email": payload.contact_email,
+    }
+
+
+@router.post(
+    "/{institution_id}/review",
+    summary="Platform operator reviews and approves institution onboarding",
+)
+async def review_institution_onboarding(
+    institution_id: str,
+    payload: InstitutionReviewIn,
+    request: Request,
+    principal: Principal = Depends(require_permission(rbac.Permission.REVIEW_ANOMALIES)),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> dict:
+    """Platform operator verifies and activates or suspends an institution."""
+    inst = await db["institutions"].find_one({"institution_id": institution_id})
+    if not inst:
+        raise HTTPException(status_code=404, detail="Institution not found.")
+
+    is_active = (payload.decision == InstitutionVerificationStatus.VERIFIED)
+    await db["institutions"].update_one(
+        {"institution_id": institution_id},
+        {"$set": {
+            "verification_status": payload.decision.value,
+            "is_active": is_active,
+            "reviewed_by": principal.subject,
+            "review_notes": payload.notes,
+        }},
+    )
+
+    await writer.log(
+        AuditRepository(db["audit_events"]),
+        actor=principal.subject,
+        actor_role=principal.role,
+        action="REVIEW_INSTITUTION_ONBOARDING",
+        subject=institution_id,
+        details=f"Institution {institution_id} review decision: {payload.decision.value}. Notes: {payload.notes}",
+        category="ONBOARDING",
+        ip_address=client_ip(request),
+    )
+
+    return {
+        "institution_id": institution_id,
+        "verification_status": payload.decision.value,
+        "is_active": is_active,
+        "notes": payload.notes,
     }

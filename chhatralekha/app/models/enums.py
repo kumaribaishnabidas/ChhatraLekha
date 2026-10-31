@@ -5,10 +5,27 @@ from __future__ import annotations
 from enum import Enum
 
 
+class InstitutionCategory(str, Enum):
+    """Broad institutional category."""
+
+    SCHOOL = "SCHOOL"
+    COLLEGE = "COLLEGE"
+
+    @property
+    def label(self) -> str:
+        return {
+            InstitutionCategory.SCHOOL: "School (K-12)",
+            InstitutionCategory.COLLEGE: "Higher Education / College",
+        }[self]
+
+
 class InstitutionType(str, Enum):
     ENGINEERING = "ENGINEERING"
     MANAGEMENT = "MANAGEMENT"
     POLYTECHNIC = "POLYTECHNIC"
+    SCHOOL = "SCHOOL"
+    COLLEGE = "COLLEGE"
+    K12 = "K12"
 
     @property
     def label(self) -> str:
@@ -16,7 +33,81 @@ class InstitutionType(str, Enum):
             InstitutionType.ENGINEERING: "Engineering & Technology",
             InstitutionType.MANAGEMENT: "Management / PGDM",
             InstitutionType.POLYTECHNIC: "Polytechnic / Diploma",
+            InstitutionType.SCHOOL: "School Education",
+            InstitutionType.COLLEGE: "Higher Education College",
+            InstitutionType.K12: "K-12 School",
         }[self]
+
+
+class InstitutionVerificationStatus(str, Enum):
+    """Verification/review state of an onboarded institution."""
+
+    PENDING_REVIEW = "PENDING_REVIEW"
+    VERIFIED = "VERIFIED"
+    REJECTED = "REJECTED"
+    SUSPENDED = "SUSPENDED"
+
+
+class AttendanceMode(str, Enum):
+    """Whether attendance is taken once daily or per class period/session."""
+
+    DAILY = "DAILY"
+    PERIOD_WISE = "PERIOD_WISE"
+
+
+class AttendanceStatus(str, Enum):
+    """Attendance state for a student in a session."""
+
+    PRESENT = "PRESENT"
+    ABSENT = "ABSENT"
+    LATE = "LATE"
+    EXCUSED = "EXCUSED"
+
+
+class AssessmentStatus(str, Enum):
+    """Lifecycle state of an examination or assessment."""
+
+    DRAFT = "DRAFT"
+    MODERATED = "MODERATED"
+    PUBLISHED = "PUBLISHED"
+    ARCHIVED = "ARCHIVED"
+
+
+class AnnouncementPriority(str, Enum):
+    """Urgency level of a published notice."""
+
+    NORMAL = "NORMAL"
+    HIGH = "HIGH"
+    URGENT = "URGENT"
+
+
+class TargetAudienceScope(str, Enum):
+    """Scope target for an announcement."""
+
+    ALL = "ALL"
+    CLASS = "CLASS"
+    SECTION = "SECTION"
+    PROGRAMME = "PROGRAMME"
+    BATCH = "BATCH"
+    ROLE = "ROLE"
+
+
+class GuardianRelationshipType(str, Enum):
+    """Relationship of an authorised guardian to a student."""
+
+    FATHER = "FATHER"
+    MOTHER = "MOTHER"
+    LEGAL_GUARDIAN = "LEGAL_GUARDIAN"
+    OTHER = "OTHER"
+
+
+class GuardianVerificationStatus(str, Enum):
+    """Institution approval status of a parent/guardian relationship."""
+
+    PENDING = "PENDING"
+    VERIFIED = "VERIFIED"
+    REJECTED = "REJECTED"
+    REVOKED = "REVOKED"
 
 
 class Gender(str, Enum):

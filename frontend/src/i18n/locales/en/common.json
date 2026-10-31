@@ -16,7 +16,13 @@
     "settings": "Settings",
     "signOut": "Sign out",
     "wallet": "Wallet",
-    "institutionDashboard": "Institution"
+    "institutionDashboard": "Institution",
+    "academic": "Academic",
+    "teacherWorkspace": "Faculty",
+    "assessments": "Assessments",
+    "announcements": "Notices",
+    "parentPortal": "Parent",
+    "transparency": "Transparency"
   },
   "settings": {
     "language": "Language",

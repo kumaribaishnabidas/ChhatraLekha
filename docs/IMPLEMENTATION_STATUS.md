@@ -1,11 +1,11 @@
 # ChhatraLekha — Implementation Status & Baseline Audit
 
-**Date**: 2026-10-24
-**Repository**: [ChhatraLekha](https://github.com/kumaribaishnabidas/ChhatraLekha.git)
-**Branch**: `main`
-**Commit**: Latest HEAD
+**Date**: 2026-10-31  
+**Repository**: [ChhatraLekha](https://github.com/kumaribaishnabidas/ChhatraLekha.git)  
+**Branch**: `main`  
+**Commit**: Latest HEAD  
 
-This document records the factual, tested state of the ChhatraLekha codebase across all tiers: Web Frontend (React / Vite), API Backend (Python / FastAPI / MongoDB), Android Client (Kotlin / Jetpack Compose / Room), and CI / Tooling.
+This document records the factual, tested state of the ChhatraLekha codebase across all tiers: Web Frontend (React / Vite), API Backend (Python / FastAPI / MongoDB), Android Client (Kotlin / Jetpack Compose / Room), iOS Client Roadmap, and CI / Tooling.
 
 ---
 
@@ -15,11 +15,11 @@ Every command below has been executed on the local workspace and confirmed passi
 
 | Component | Test / Build Command | Result | Duration / Scope |
 | :--- | :--- | :--- | :--- |
-| **API Backend** | `pytest --tb=no` (in `chhatralekha/`) | **293 passed**, 0 failures, 1 warning | ~10s across 31 test suites |
-| **Frontend Unit Tests** | `npm.cmd test -- --run` (in `frontend/`) | **68 passed**, 0 failures | 9 test files, 19.28s |
-| **Frontend Route Links** | `npm.cmd run check:links` (in `frontend/`) | **Passed** | 28 declared router paths verified |
-| **Frontend Translations** | `npm.cmd run i18n:check` (in `frontend/`) | **Passed** | 13 languages, 417 translation keys |
-| **Frontend Production Build** | `npm.cmd run build` (in `frontend/`) | **Passed** | `dist/` bundle created in 12.79s |
+| **API Backend** | `pytest --tb=no` (in `chhatralekha/`) | **300 passed**, 0 failures, 1 warning | ~11s across 32 test suites |
+| **Frontend Unit Tests** | `npm.cmd test -- --run` (in `frontend/`) | **68 passed**, 0 failures | 9 test files |
+| **Frontend Route Links** | `npm.cmd run check:links` (in `frontend/`) | **Passed** | 34 configured application routes, 25 verified internal routes |
+| **Frontend Translations** | `npm.cmd run i18n:check` (in `frontend/`) | **Passed** | 13 languages, 423 translation keys each |
+| **Frontend Production Build** | `npm.cmd run build` (in `frontend/`) | **Passed** | `dist/` bundle created with code splitting |
 | **Android Core Unit Tests** | `.\gradlew.bat :core:test` (in `android/`) | **204 passed**, 0 failures | 15 test XML suites in 29s |
 | **Android Debug APK Build** | `.\gradlew.bat assembleDebug` (in `android/`) | **Passed** | `app-debug.apk` built (22.5 MB) |
 | **Anomaly Evaluation** | `python -m app.scripts.eval_anomalies` | **100% Precision, 100% Recall** | 23 synthetic records, 10 layers |
@@ -31,7 +31,7 @@ Every command below has been executed on the local workspace and confirmed passi
 
 | # | Workflow | Status | Description & Code Verification |
 | :--- | :--- | :--- | :--- |
-| **1** | **Login & Authorization** | **IMPLEMENTED** | JWT authentication in `chhatralekha/app/api/auth.py` (`/api/auth/login`, `/me`, `/refresh`). Fine-grained RBAC in `chhatralekha/app/core/rbac.py` enforcing 4 distinct roles: `aicte_admin`, `institution_admin`, `verifier`, `student`. Tenant scoping prevents cross-institution data access (`test_tenant_isolation_institution_scoping`). |
+| **1** | **Login & Authorization** | **IMPLEMENTED** | JWT authentication in `chhatralekha/app/api/auth.py` (`/api/auth/login`, `/me`, `/refresh`). Fine-grained RBAC in `chhatralekha/app/core/rbac.py` enforcing multi-role memberships: `platform_operator`, `aicte_admin`, `institution_admin`, `academic_admin`, `teacher`, `student`, `parent`, `verifier`. Tenant scoping prevents cross-institution data access. |
 | **2** | **Create / Read / Update Academic Record** | **IMPLEMENTED** | Full CRUD in `chhatralekha/app/api/records.py`. Version incrementing (`version += 1`), change-tracking, and input validation via Pydantic schemas in `chhatralekha/app/schemas/student.py`. Tenant scoping enforced on all mutations. |
 | **3** | **CSV Upload & Batch Validation** | **IMPLEMENTED** | Implemented in `chhatralekha/app/api/records.py` (`/upload-csv`) and `chhatralekha/app/services/csv_ingestion.py`. Validates headers, MIME type, max size (5 MB), and row-level schema constraints. Returns row-by-row errors with line numbers and field names without leaking raw PII. |
 | **4** | **Anomaly Detection & Reviewer Outcome** | **IMPLEMENTED** | 10-layer regulatory rule engine in `chhatralekha/app/services/anomaly_engine.py` (Python) and `android/core/.../AnomalyEngine.kt` (Kotlin). Detects APAAR syntax, cross/same institution duplicates, roll collisions, intake breaches, supernumerary caps, quota conflicts, date anomalies, missing fields, and unapproved programs. Tested by `eval_anomalies.py` with 100% precision & recall. |
@@ -45,6 +45,8 @@ Every command below has been executed on the local workspace and confirmed passi
 | **12** | **Student Lifecycle State Management** | **IMPLEMENTED** | State machine in `chhatralekha/app/models/enums.py` (`ADMITTED`, `ACTIVE`, `ON_LEAVE`, `TRANSFERRED`, `GRADUATED`, `WITHDRAWN`) and `POST /api/students/{apaar_id}/status`. Tracks reason, effective date, and audit trail. |
 | **13** | **Anomaly Case Review & Key Rotation** | **IMPLEMENTED** | Case assignment (`/api/anomalies/{id}/assign`), internal case notes (`/api/anomalies/{id}/notes`), and structured dismissal reasons with pre-mutation institution checks. Key rotation lifecycle via `KeyRegistry` in `seal.py`, supporting active, rotated, and revoked keys, with versioned `/api/verify/jwks` endpoint. |
 | **14** | **Shared Canonical Rule Fixtures** | **IMPLEMENTED** | Canonical rule specification and vectors in `chhatralekha/app/resources/rule_test_fixtures.json` and `android/core/src/test/resources/rule_test_fixtures.json` preventing backend and mobile validator drift. |
+| **15** | **Connected Campus Multi-Tenant Core (Schools & Colleges)** | **IMPLEMENTED** | Unified configurable model supporting both schools and higher education colleges. Self-registration with operator review (`/api/institutions/register`, `/api/institutions/{id}/review`). Academic structure management (`/api/academic/*`), teacher workspace and timetables (`/api/teacher/*`), daily/period-wise attendance (`/api/attendance/*`), draft marks entry with moderation and publication privacy guards (`/api/assessments/*`), targeted notice board (`/api/announcements/*`), verified parent-child linkage (`/api/parent/*`), and public sustainability transparency charter (`/api/transparency` and `/transparency`). |
+| **16** | **iOS Native Client Architecture & Roadmap** | **DOCUMENTED** | Complete architectural blueprint in `docs/IOS_ARCHITECTURE_AND_ROADMAP.md` detailing Swift 6, SwiftUI, GRDB.swift offline outbox synchronization, Keychain security, CryptoKit verification, and Apple Privacy Manifest compliance. |
 
 ---
 
@@ -70,10 +72,10 @@ Every command below has been executed on the local workspace and confirmed passi
 ### 3.3 Test Totals Alignment
 - **Discrepancy**: Prior notes in various drafts claimed conflicting test numbers (ranging from 160 to 250).
 - **Verified Ground Truth**:
-  - Backend pytest: **293 tests passed** (0 failures).
+  - Backend pytest: **300 tests passed** (0 failures).
   - Frontend vitest: **68 tests passed** (0 failures).
   - Android core unit tests: **204 tests passed** across 15 XML test suites (0 failures).
-  - Total automated unit/integration tests across the entire repository: **565 tests passed**.
+  - Total automated unit/integration tests across the entire repository: **572 tests passed**.
 
 ### 3.4 CI Pipeline Status
 - **Prior State**: `.github/workflows/chhatralekha.yml` tested only backend and frontend, omitting the Android app entirely and missing `android/**` in triggers.

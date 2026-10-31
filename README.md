@@ -26,18 +26,19 @@
 
 ## What this repository is
 
-A three-part implementation of the APAAR ID platform for AICTE-approved
-institutions:
+A unified multi-tenant platform for schools and colleges across India, connecting
+academic operations, student credentials, attendance, examinations, and families:
 
 | Part | Directory | Stack |
 |---|---|---|
 | Web frontend | `frontend/` | React 19, Vite 6, Tailwind CSS 4, Recharts 3, React Router 7 |
 | Python backend | `chhatralekha/` | FastAPI, Motor (async MongoDB), Pydantic v2, `cryptography` |
 | Android client | `android/` | Kotlin 2.2, Jetpack Compose, Material 3, Room |
+| iOS client roadmap | [`docs/IOS_ARCHITECTURE_AND_ROADMAP.md`](docs/IOS_ARCHITECTURE_AND_ROADMAP.md) | Swift 6, SwiftUI, GRDB.swift, CryptoKit |
 
-The **Academic Record Change Impact Detector** is the headline feature: preview a
-correction, see exactly which linked records it would affect, and apply it
-without ever silently changing an official academic record.
+The **Connected Campus Core** unites school and college academic operations with
+**Academic Record Change Impact Detection**: preview corrections, verify credentials
+tamper-evidently, take attendance, publish examinations, and connect parents securely.
 
 ---
 
@@ -539,7 +540,7 @@ cp .env.example .env            # then edit the secrets
 python -m app.scripts.seed
 python -m app.scripts.check_prod_settings # verify 12/12 production safety checks
 uvicorn app.main:app --reload
-pytest -q                       # 293 passed
+pytest -q                       # 300 passed
 ```
 
 ### The web frontend
@@ -548,8 +549,8 @@ pytest -q                       # 293 passed
 cd frontend
 npm install
 npm test                        # 68 passed (including 7 design system lint tests and 7 student portal component tests)
-npm run i18n:check              # 13 locales, 417 keys each
-npm run check:links             # verified internal routes and static assets
+npm run i18n:check              # 13 locales, 423 keys each
+npm run check:links             # verified 25 internal routes (34 configured application routes)
 npm run build                   # route-level code splitting
 ```
 

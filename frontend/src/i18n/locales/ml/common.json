@@ -16,7 +16,13 @@
     "settings": "Settings",
     "signOut": "Sign out",
     "wallet": "വാലറ്റ്",
-    "institutionDashboard": "സ്ഥാപനം"
+    "institutionDashboard": "സ്ഥാപനം",
+    "academic": "അക്കാദമിക്",
+    "teacherWorkspace": "അധ്യാപകർ",
+    "assessments": "മൂല്യനിർണ്ണയം",
+    "announcements": "അറിയിപ്പുകൾ",
+    "parentPortal": "രക്ഷിതാവ്",
+    "transparency": "സുതാര്യത"
   },
   "settings": {
     "language": "Language",
