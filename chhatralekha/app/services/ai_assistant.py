@@ -294,3 +294,4 @@ def find_grounded_answer(
 def get_quick_prompts_for_role(role: str) -> List[str]:
     """Return tailored quick question prompts for the user's role."""
     return ROLE_QUICK_PROMPTS.get(role, ROLE_QUICK_PROMPTS["student"])
+

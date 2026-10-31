@@ -119,3 +119,4 @@ Positioned directly beneath the primary hero section on the landing page, titled
 8. **Statutory Privacy & Verification Standards:** DPDP Act 2023, offline cryptographic validation.
 9. **Frequently Asked Questions (FAQ):** Searchable common questions.
 10. **Footer:** Contact, grievance redressal, legal policies, and accessibility declaration.
+
