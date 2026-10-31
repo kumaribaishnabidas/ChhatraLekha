@@ -32,6 +32,9 @@ PUBLIC_ROUTE_PATHS = {
     "/api/institutions/register",
     "/api/schools/template",
     "/api/transparency",
+    "/api/auth/demo-login",
+    "/api/ai/chat",
+    "/api/ai/prompts",
 }
 
 

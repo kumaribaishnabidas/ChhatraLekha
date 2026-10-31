@@ -99,112 +99,6 @@ async def login(
     )
 
 
-DEMO_PERSONA_CATALOG = {
-    "student": {
-        "email": "student.demo@example.com",
-        "full_name": "Aarav Sharma (Student)",
-        "role": "student",
-        "apaar_id": "992100000001",
-        "institution_id": "INST-0421",
-    },
-    "parent": {
-        "email": "parent.demo@example.com",
-        "full_name": "Sunita Sharma (Parent/Guardian)",
-        "role": "parent",
-        "apaar_id": "992100000001",
-        "institution_id": "INST-0421",
-    },
-    "teacher": {
-        "email": "teacher.demo@example.com",
-        "full_name": "Prof. Rajesh Kumar (Faculty)",
-        "role": "teacher",
-        "institution_id": "INST-0421",
-    },
-    "school_admin": {
-        "email": "schooladmin.demo@example.com",
-        "full_name": "Principal Meera Nair (School Administrator)",
-        "role": "institution_admin",
-        "institution_id": "SCH-DEL-001",
-    },
-    "college_admin": {
-        "email": "collegeadmin.demo@example.com",
-        "full_name": "Director Ramesh Kulkarni (College Administrator)",
-        "role": "institution_admin",
-        "institution_id": "INST-0421",
-    },
-    "university_admin": {
-        "email": "universityadmin.demo@example.com",
-        "full_name": "Dr. Ananya Iyer (University Administrator)",
-        "role": "aicte_admin",
-        "institution_id": None,
-    },
-}
-
-
-@router.post("/demo-login", response_model=TokenPair, summary="One-click demo persona session")
-async def demo_login(
-    payload: DemoLoginRequest,
-    request: Request,
-    db: AsyncIOMotorDatabase = Depends(get_db),
-) -> TokenPair:
-    """Create a temporary restricted demo session for the selected persona."""
-    key = payload.role.strip().lower()
-    persona = DEMO_PERSONA_CATALOG.get(key)
-    if not persona:
-        # Fallback to student persona if unknown
-        persona = DEMO_PERSONA_CATALOG["student"]
-
-    users = UserRepository(db["users"], db["api_keys"], db["revoked_credentials"])
-    audit = AuditRepository(db["audit_events"])
-
-    user = await users.by_email(persona["email"])
-    if user is None:
-        # Create ephemeral demo user if not yet seeded
-        demo_user_id = f"DEMO-{key.upper()}-01"
-        user_doc = {
-            "user_id": demo_user_id,
-            "email": persona["email"],
-            "full_name": persona["full_name"],
-            "role": persona["role"],
-            "institution_id": persona.get("institution_id"),
-            "apaar_id": persona.get("apaar_id"),
-            "is_active": True,
-            "is_demo": True,
-        }
-        await db["users"].replace_one({"user_id": demo_user_id}, user_doc, upsert=True)
-        user = user_doc
-
-    await writer.log(
-        audit,
-        actor=user["user_id"],
-        actor_role=user["role"],
-        action="DEMO_LOGIN",
-        subject=user["user_id"],
-        details=f"Demo visitor selected persona '{key}' ({persona['full_name']}).",
-        category="DEMO",
-        ip_address=client_ip(request),
-    )
-
-    extra = {
-        "is_demo": True,
-        "apaar_id": user.get("apaar_id"),
-    }
-    return TokenPair(
-        access_token=create_access_token(
-            subject=user["user_id"],
-            role=user["role"],
-            institution_id=user.get("institution_id"),
-            extra_claims=extra,
-        ),
-        refresh_token=create_refresh_token(user["user_id"]),
-        expires_in=settings.access_token_expire_minutes * 60,
-        role=user["role"],
-        user_id=user["user_id"],
-        display_name=user.get("full_name") or persona["full_name"],
-        institution_id=user.get("institution_id"),
-        apaar_id=user.get("apaar_id"),
-    )
-
 
 @router.post("/refresh", response_model=TokenPair, summary="Exchange a refresh token")
 async def refresh(
@@ -243,6 +137,8 @@ async def refresh(
         institution_id=user.get("institution_id"),
         apaar_id=user.get("apaar_id"),
     )
+
+
 
 
 DEMO_PERSONA_CATALOG = {
