@@ -58,7 +58,7 @@ def password_policy_violations(password: str) -> list[str]:
         violations.append("The password must contain at least one digit.")
     if not any(char.isalpha() for char in password):
         violations.append("The password must contain at least one letter.")
-    if password.lower() in {"password", "admin", "edusync", "aicte", "12345678"}:
+    if password.lower() in {"password", "admin", "chhatralekha", "aicte", "12345678"}:
         violations.append("The password is too common.")
     return violations
 
@@ -139,7 +139,7 @@ def decode_token(token: str, expected_type: str = "access") -> Dict[str, Any]:
 
 # ------------------------------------------------------------------ api keys
 
-def generate_api_key(prefix: str = "edusync") -> tuple[str, str]:
+def generate_api_key(prefix: str = "chhatralekha") -> tuple[str, str]:
     """Return ``(plaintext_key, hashed_key)`` for a machine-to-machine client."""
     raw = f"{prefix}_{secrets.token_urlsafe(32)}"
     return raw, hash_api_key(raw)

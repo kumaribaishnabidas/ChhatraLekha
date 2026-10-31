@@ -21,7 +21,7 @@ from typing import Any
 
 from app.core.config import get_settings
 
-logger = logging.getLogger("edusync.db")
+logger = logging.getLogger("chhatralekha.db")
 
 settings = get_settings()
 

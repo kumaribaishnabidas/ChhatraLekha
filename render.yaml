@@ -32,7 +32,7 @@ services:
       - key: MONGODB_URL
         sync: false
       - key: MONGODB_DATABASE
-        value: edusync
+        value: chhatralekha
       # The in-memory demo database is never used in production.
       - key: ALLOW_IN_MEMORY_DB
         value: "false"

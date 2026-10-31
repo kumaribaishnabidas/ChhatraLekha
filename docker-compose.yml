@@ -13,7 +13,7 @@ services:
     image: mongo:7
     restart: unless-stopped
     environment:
-      MONGO_INITDB_DATABASE: edusync
+      MONGO_INITDB_DATABASE: chhatralekha
     volumes:
       - mongodb-data:/data/db
     ports:
@@ -34,7 +34,7 @@ services:
         condition: service_healthy
     environment:
       MONGODB_URL: mongodb://mongodb:27017
-      MONGODB_DATABASE: edusync
+      MONGODB_DATABASE: chhatralekha
       ALLOW_IN_MEMORY_DB: "false"
       SECRET_KEY: ${SECRET_KEY:-change-me-to-a-long-random-string-at-least-32-characters}
       SEAL_HMAC_KEY: ${SEAL_HMAC_KEY:-change-me-to-a-random-hmac-key}

@@ -64,7 +64,7 @@ The demo accounts are:
 
 | E-mail | Role |
 |---|---|
-| `aicte.admin@edusync.gov.in` | AICTE Directorate |
+| `aicte.admin@chhatralekha.gov.in` | AICTE Directorate |
 | `principal@vidyavikas.edu.in` | Institution admin (INST-0421) |
 | `principal@bhartiya.edu.in` | Institution admin (INST-0422) |
 | `verifier@acme-corp.com` | Verifier |
@@ -268,7 +268,7 @@ button in React is not a security control.
 | Variable | Purpose |
 |---|---|
 | `MONGODB_URL` | The MongoDB connection string. **Required** outside the demo mode. |
-| `MONGODB_DATABASE` | The database name. Default `edusync`. |
+| `MONGODB_DATABASE` | The database name. Default `chhatralekha`. |
 | `ALLOW_IN_MEMORY_DB` | `true` to run the throwaway demo database. Never in production. |
 | `SECRET_KEY` | The JWT signing key. At least 32 characters. |
 | `SEAL_HMAC_KEY` | The HMAC sealing key. |

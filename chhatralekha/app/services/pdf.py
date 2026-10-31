@@ -40,7 +40,7 @@ def _styles() -> dict:
     base = getSampleStyleSheet()
     return {
         "title": ParagraphStyle(
-            "EdusyncTitle",
+            "ChhatraLekhaTitle",
             parent=base["Title"],
             fontName="Helvetica-Bold",
             fontSize=20,
@@ -48,7 +48,7 @@ def _styles() -> dict:
             spaceAfter=4,
         ),
         "subtitle": ParagraphStyle(
-            "EdusyncSubtitle",
+            "ChhatraLekhaSubtitle",
             parent=base["Normal"],
             fontSize=10,
             textColor=GREY,
@@ -56,7 +56,7 @@ def _styles() -> dict:
             spaceAfter=12,
         ),
         "heading": ParagraphStyle(
-            "EdusyncHeading",
+            "ChhatraLekhaHeading",
             parent=base["Heading2"],
             fontName="Helvetica-Bold",
             fontSize=12,
@@ -65,21 +65,21 @@ def _styles() -> dict:
             spaceAfter=6,
         ),
         "body": ParagraphStyle(
-            "EdusyncBody",
+            "ChhatraLekhaBody",
             parent=base["Normal"],
             fontSize=9,
             leading=13,
             textColor=colors.HexColor("#1A1F2B"),
         ),
         "small": ParagraphStyle(
-            "EdusyncSmall",
+            "ChhatraLekhaSmall",
             parent=base["Normal"],
             fontSize=7.5,
             leading=10,
             textColor=GREY,
         ),
         "centre": ParagraphStyle(
-            "EdusyncCentre",
+            "ChhatraLekhaCentre",
             parent=base["Normal"],
             fontSize=9,
             alignment=TA_CENTER,
