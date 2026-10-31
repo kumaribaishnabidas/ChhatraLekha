@@ -1,19 +1,20 @@
-# ChhatraLekha - APAAR ID Student Data Management & Verification Platform
+# ChhatraLekha - Unified Academic Operations and Digital Identity Platform
 
-> Product Prototype: Verification against this prototype's database, not official APAAR or AICTE verification.
+> Product Prototype: Verification against this prototype's database, not official government or regulatory registry verification.
 
 ## Summary
-ChhatraLekha is an academic credential verification and reconciliation platform developed for AICTE-approved institutions. It automates APAAR (Automated Permanent Academic Account Registry) student record validation, anomaly detection, change impact analysis, and privacy-preserving credential verification.
+ChhatraLekha is a free, multi-tenant digital academic operations and identity platform designed for schools, colleges, students, parents, teachers, and authorized verifiers across India. It provides a single connected system for academic administration, attendance, grades, and privacy-preserving credential verification.
 
-## Core Capabilities
-1. 10-Layer Anomaly Detection Engine: Deterministic rule-based validation checking format syntax, cross-institution duplicate enrollment, duplicate roll numbers, sanctioned intake ceilings, supernumerary quotas (NRI, OCI/FN, TFW, PMSSS), impossible dates, missing mandatory fields, and unsanctioned programmes.
-2. Academic Record Change Impact Detector: Previews corrections and assesses downstream effects (seat recalculations, stale credentials, reviewer checklists) before committing.
-3. Cryptographic Tamper-Evident Verification: HMAC-SHA256 and Ed25519 digital seals bound to academic facts.
-4. Opaque Token Verification: High-entropy, expiring, revocable verification tokens that allow public verification without exposing raw APAAR IDs or sensitive personal data.
-5. Offline-First Android Client: Standalone native verification engine with dependency-free ISO/IEC 18004 QR generation and offline Room database.
+## Core Pillars
+1. Multi-Tenant Campus Operations: Unified data models supporting both K-12 schools and higher education colleges with configurable terms, classes, departments, and course structures.
+2. Student Digital Identity: Student-owned academic identity with consent-driven credential sharing, tamper-evident cryptographic seals, and revocable verification tokens.
+3. Connected Campus Workflows: Daily student attendance recording, academic calendars, assessment management, and official institutional announcements.
+4. Privacy and Minor Protection: Built in accordance with DPDP Act 2023 principles, requiring verifiable parental consent for minors under 18 and enforcing zero monetization of student information.
+5. Deterministic Validation Engine: Multi-layer validation checking enrollment anomalies, quota thresholds, duplicate roll numbers, and academic requirements.
+6. Offline-First Mobile Client: Native Android client with local Room persistence, offline credential verification, and bidirectional sync.
 
 ## Architecture
 - Frontend: React 19, Vite 6, Tailwind CSS 4, React Router 7.
 - Backend: Python 3.11+, FastAPI, Motor (MongoDB async driver), Pydantic v2.
 - Mobile: Kotlin 2.2, Jetpack Compose, Material 3, Room 2.8.5.
-- Data Policy: Synthetic demo dataset only. No real APAAR IDs or personal data are stored or processed.
+- Data Policy: Synthetic demonstration dataset only. No real personal records or identifiers are stored.

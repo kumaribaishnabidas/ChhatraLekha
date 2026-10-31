@@ -1,16 +1,27 @@
 User-agent: *
 Allow: /
 Allow: /about
+Allow: /early-access
+Allow: /help
 Allow: /faq
 Allow: /contact
 Allow: /privacy
 Allow: /terms
+Allow: /transparency
 Disallow: /dashboard
 Disallow: /institutions
 Disallow: /students
 Disallow: /upload
 Disallow: /anomalies
 Disallow: /impact
+Disallow: /reports
+Disallow: /me
+Disallow: /student/
+Disallow: /teacher
+Disallow: /parent
+Disallow: /academic
+Disallow: /assessments
+Disallow: /announcements
 Disallow: /verify/t/
 Disallow: /auth/callback
 

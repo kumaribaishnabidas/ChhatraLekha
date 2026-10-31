@@ -23,6 +23,22 @@ const FAQS = [
     a: 'Yes. The Android application (ChhatraLekha Android) is fully offline-first. It packages Room database storage and an in-house dependency-free ISO/IEC 18004 QR encoder/decoder with Reed-Solomon error correction, allowing field inspectors to verify credentials without internet access.',
   },
   {
+    q: 'Does ChhatraLekha support schools as well as colleges?',
+    a: 'Yes. Through configurable academic unit abstractions and modular rule packs, ChhatraLekha supports K-12 schools (classes, sections, streams, and parental guardians) as well as polytechnics, colleges, and universities (programmes, semesters, and sanctioned intakes).',
+  },
+  {
+    q: 'Is ChhatraLekha truly free to use for our institution?',
+    a: 'Yes. ChhatraLekha is a public-benefit educational platform with a strict non-commercial pledge. It is 100% free for students, families, educators, and institutions. There are no software subscription costs, no tier limits, and zero advertising or monetization of student records.',
+  },
+  {
+    q: 'How are school students and minors protected under Indian privacy law?',
+    a: 'Under the Digital Personal Data Protection (DPDP) Act 2023, minor students (<18) require verified parental or guardian consent before profile activation. Student contact details are strictly masked, and public verification views reveal only non-identifying credential validity verdicts.',
+  },
+  {
+    q: 'How can our school or college join the early access pilot?',
+    a: 'Institutions can register on the Early Access page (/early-access). The onboarding workflow includes sample CSV template verification, academic calendar setup, and guided digital ID roll-out with dedicated pilot support.',
+  },
+  {
     q: 'Is real student data processed on this site?',
     a: 'No. The platform strictly uses deterministically generated synthetic demo data. No real personal records, Aadhaar numbers, or authentic government IDs are ever stored or transmitted.',
   },

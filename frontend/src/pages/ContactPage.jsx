@@ -124,20 +124,25 @@ export default function ContactPage() {
 
         <div className="space-y-6">
           <div className="p-5 rounded border border-line bg-surface-2 space-y-2">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-ink m-0">Direct Email</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-ink m-0">Direct Inquiries</h2>
             <p className="text-sm font-mono text-muted break-all m-0">
               {contactEmail}
             </p>
           </div>
 
-          {contactAddress && (
-            <div className="p-5 rounded border border-line bg-surface-2 space-y-2">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-ink m-0">Postal Address</h2>
-              <p className="text-sm text-muted m-0 whitespace-pre-line">
-                {contactAddress}
-              </p>
-            </div>
-          )}
+          <div className="p-5 rounded border border-line bg-surface-2 space-y-2">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-ink m-0">Grievance &amp; DPDP Officer</h2>
+            <p className="text-xs text-muted m-0">Grievance Redressal Desk, ChhatraLekha Platform</p>
+            <p className="text-xs font-mono text-brand font-semibold m-0">grievance@chhatralekha.in</p>
+            <p className="text-xs text-muted m-0">48-hour response acknowledgment under Indian DPDP Act 2023</p>
+          </div>
+
+          <div className="p-5 rounded border border-line bg-surface-2 space-y-2">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-ink m-0">Registered Office</h2>
+            <p className="text-xs text-muted m-0 leading-relaxed">
+              {contactAddress || 'ChhatraLekha Open Education Initiative\nNew Delhi, India'}
+            </p>
+          </div>
 
           <div className="p-5 rounded border border-line bg-surface-2 space-y-2">
             <h2 className="text-sm font-bold uppercase tracking-wider text-ink m-0">Prototype Status</h2>
