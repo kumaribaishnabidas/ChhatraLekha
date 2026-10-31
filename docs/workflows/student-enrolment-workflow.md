@@ -50,3 +50,4 @@ sequenceDiagram
    - If the same match token exists in another active higher education institution for the same academic year, a `DUPLICATE_CROSS_COLLEGE` anomaly is automatically flagged.
 3. **Roll Number Uniqueness:**
    - Roll numbers must be strictly unique within the composite tuple `(institution_id, programme_id, academic_year)`.
+

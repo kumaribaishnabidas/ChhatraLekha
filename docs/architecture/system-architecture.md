@@ -6,9 +6,49 @@
 
 ---
 
-## 1. Architectural Overview
+## 1. Existing Architecture (Verified Repository Audit)
 
-ChhatraLekha is architected as a **Modular Monolith** supporting schools (K-12), colleges (UG/PG), universities, and regulatory directorates across Web, Android, and iOS. The modular monolith pattern delivers clean domain boundaries, unified transactions, simplified deployment, and shared security without the operational overhead of microservices, while maintaining strict domain separation to allow future microservice extraction if scale demands.
+The source of truth for the existing system is the actual codebase in the Git repository:
+
+```
+ChhatraLekha/
+├── frontend/                     # React 19 + Vite 6 + Tailwind CSS v4 SPA
+│   ├── src/components/           # Layouts (AppLayout, PublicLayout, DemoGuide), common UI, AI drawer
+│   ├── src/pages/                # 29 pages (Dashboard, Student, Teacher, Parent, Verification)
+│   ├── src/services/api.js       # Axios client with interceptors, tokenStore, base URL configuration
+│   ├── src/i18n/                 # 22 Eighth Schedule Indian languages catalogue & JSON bundles
+│   └── src/test/                 # 68 Vitest test cases (DesignLint, API, Format, Auth, Pages)
+├── chhatralekha/                 # FastAPI (Python 3.12+) asynchronous ASGI backend
+│   ├── app/main.py               # Lifespan events, CORS, security headers, router mounts
+│   ├── app/api/                  # 21 REST routers (auth, ai, students, academic, attendance, etc.)
+│   ├── app/core/                 # config (Pydantic), security (JWT/bcrypt/HMAC), database (Motor)
+│   ├── app/models/               # documents.py (Doc wrapper), enums.py (Domain enumerations)
+│   ├── app/repositories/         # Data access classes (users, students, tokens, audit, institutions)
+│   ├── app/services/             # Domain logic (apaar_validator, anomaly_engine, ai_assistant)
+│   └── tests/                    # 24 pytest suites using in-memory MongoDB
+├── android/                      # Native Android Kotlin application
+│   └── app/src/main/             # Jetpack Compose UI, Room DB (AppDatabase), WorkManager sync
+├── ios/                          # Native iOS application
+│   └── ChhatraLekha/             # Swift 6, SwiftUI, SwiftData, Keychain token storage
+├── docs/                         # Specifications, ADRs, user guides, landing page HTML
+├── docker-compose.yml            # Multi-service container orchestration
+└── README.md                     # Project documentation & statutory disclaimers
+```
+
+### Verified Existing Functionality:
+1. **Multi-Role Authentication & Demo Access:** JWT access tokens (`15m`), refresh tokens (`7d`), bcrypt hashing, rate limiting, and 1-click ephemeral demo logins for 6 personas (`student.demo`, `parent.demo`, `teacher.demo`, `schooladmin.demo`, `collegeadmin.demo`, `universityadmin.demo`).
+2. **Student Digital ID & Wallet:** Masked APAAR ID (`****-****-1234`), printable digital badge, opaque revocable QR verification tokens, and PDF certificates.
+3. **Campus Operations:** Teacher session attendance marking, daily period timetables, internal assessment entry.
+4. **Regulatory Anomaly Detection:** Real-time compliance engine enforcing AICTE Approval Process Handbook (APH) intake ceilings, supernumerary quotas, and cross-college duplicate enrollment detection.
+5. **Cryptographic Audit Trail:** Immutable SHA-256 hash-chained log (`audit_events`) recording credential issuance, verification scans, and record revisions.
+6. **Multilingual AI Assistant:** Permission-aware RAG query engine grounded in official documentation and regulatory rules with text/voice input and audio TTS playback in 22 languages.
+7. **5,000 Fictional Synthetic Student Records:** Procedurally generated load-test database across Indian states with `is_demo: true`.
+
+---
+
+## 2. Proposed Target Architecture (Modular Monolith)
+
+The platform is evolving into a unified **Education Super Platform** serving schools, colleges, universities, students, parents, and teachers without fragmenting into disconnected apps.
 
 ```mermaid
 graph TD
@@ -22,7 +62,7 @@ graph TD
     subgraph Access & Gateway Layer
         Gateway["API Gateway / FastAPI Core"]
         AuthMid["Authentication & Session Middleware"]
-        TenantMid["Tenant Resolver (X-Institution-ID)"]
+        TenantMid["Tenant Context Resolver (X-Institution-ID)"]
         RBACMid["Role & Resource Permission Guard"]
         AuditMid["Cryptographic Audit Middleware"]
     end
@@ -37,7 +77,7 @@ graph TD
     TenantMid --> RBACMid
     RBACMid --> AuditMid
 
-    subgraph Modular Backend Services
+    subgraph Modular Backend Core
         M1["Identity & Membership"]
         M2["Academics & Enrolment"]
         M3["Attendance & Timetable"]
@@ -71,29 +111,59 @@ graph TD
 
 ---
 
-## 2. Core Architectural Principles
+## 3. Frontend, Backend & Mobile Communication Contract
 
-1. **Central Identity, Scoped Memberships:**
-   A single user account (`User`) holds central credentials and demographic details. Institutional access is mediated entirely through `InstitutionMembership` records (`User -> InstitutionMembership -> Role -> Permissions`). A user can be an undergraduate student at College A, an alumnus of School B, and a parent of a student at School C.
-2. **Tenant Isolation by Construction:**
-   Every institution-owned entity carries an immutable `institution_id`. Backend data repositories reject queries that fail to enforce institution scoping.
-3. **History-Preserving Academic Records:**
-   Published marks, locked attendance sessions, and degree credentials are append-only. Corrections do not overwrite existing rows; they record versioned change-impact entries in the cryptographic audit trail.
-4. **Offline-First Mobile Parity:**
-   Mobile clients maintain a local SQLite/Room/SwiftData cache. Offline actions are queued and synchronized server-authoritatively with cryptographic nonces and conflict detection.
-5. **Grounded AI with Strict Authorization:**
-   The ChhatraLekha AI Assistant operates exclusively through the same permission-checked APIs as regular users, retrieving facts only from records the user is authorized to see.
+All clients (Web, Android, iOS) interact with the same versioned RESTful backend (`/api/v1/`):
+
+1. **Protocol:** HTTPS with strict TLS 1.3 encryption.
+2. **Standard Request Headers:**
+   - `Authorization: Bearer <jwt_access_token>`
+   - `X-Institution-ID: <target_institution_id>` (Specifies active institutional membership context)
+   - `X-Request-ID: <uuid>` (Unique per client request for distributed tracing)
+   - `Accept-Language: <iso_code>` (`en`, `hi`, `or`, `ta`, etc.)
+3. **Response Envelope Conventions:**
+   - Standard 2xx payloads return data directly or wrapped in domain objects: `{ "data": ... }`.
+   - Error responses adhere to RFC 7807: `{ "detail": "Human readable message", "code": "ERROR_CODE", "field": "optional_field" }`.
+4. **Mobile Synchronization Contract:**
+   - Mobile clients send batch synchronization payloads containing an array of timestamped operations with client-generated UUIDs (`sync_id`).
+   - Server validates tenant permissions, checks optimistic concurrency locks, applies valid operations, and returns a reconciliation state.
 
 ---
 
-## 3. Technology Stack Reference
+## 4. Authentication and Authorization Flow
 
-| Tier | Technology | Purpose & Rationale |
-| :--- | :--- | :--- |
-| **Web Frontend** | React 19, TypeScript, Vite 6, Tailwind CSS v4 | High-performance, accessible, bundle-optimized SPA with strict design system enforcement. |
-| **Android App** | Kotlin 2.0+, Jetpack Compose, Room, WorkManager | Modern declarative UI, offline-first local database, reliable background syncing. |
-| **iOS App** | Swift 6, SwiftUI, SwiftData, AVFoundation | Native performance, Keychain token security, system-level voice integration. |
-| **Backend** | Python 3.12+, FastAPI, Pydantic v2, Uvicorn | Async ASGI framework, high-throughput REST APIs, automated OpenAPI documentation. |
-| **Database** | Motor async MongoDB (Current) / PostgreSQL (Target) | Dual-mode in-memory test harness; clean domain repository abstraction for future relational transition. |
-| **Security** | PyJWT, bcrypt, HMAC-SHA256, cryptography | Tamper-evident verifiable credentials, encrypted local stores, masked APAAR tokens. |
-| **i18n & Voice** | i18next, Web Speech API, BHASHINI-ready abstraction | Full 22 Eighth Schedule languages catalogue, STT voice input, TTS audio playback. |
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User
+    participant App as Web / Mobile App
+    participant Gateway as API Gateway
+    participant Auth as Auth & Membership Module
+    participant Tenant as Tenant Resolver
+    participant Repo as Domain Repository
+    
+    User->>App: Input Credentials / Biometric
+    App->>Gateway: POST /api/v1/auth/login { email, password }
+    Gateway->>Auth: Validate Credentials & Fetch Memberships
+    Auth-->>App: Return TokenPair + Active Memberships List
+    
+    App->>Gateway: GET /api/v1/attendance/session/current (Header: X-Institution-ID: INST-0421)
+    Gateway->>Tenant: Resolve Membership for User at INST-0421
+    Tenant->>Tenant: Verify Membership is ACTIVE & Has "attendance:record" Permission
+    Tenant->>Repo: Execute Query with Injected Filter: { "institution_id": "INST-0421", ... }
+    Repo-->>App: Return Tenant-Isolated Records
+```
+
+---
+
+## 5. Deployment and Infrastructure
+
+1. **Containerized Architecture:**
+   - Backend packaged as non-root container with Uvicorn worker threads.
+   - Frontend built into static bundle hosted on high-performance CDN / edge caches.
+   - Docker Compose orchestrates local development environments with MongoDB and test mocks.
+2. **Storage Architecture:**
+   - Sensitive student documents (marksheets, transfer certificates) are stored in private object storage (S3/GCS compliant) with presigned, time-limited download URLs.
+3. **Monitoring & Auditing:**
+   - Structured JSON logging with request tracing (`X-Request-ID`).
+   - Hash-chained audit records (`audit_events`) backed up to write-once append-only storage.

@@ -47,3 +47,4 @@ sequenceDiagram
 2. **Immutable Result Records:**
    - Published transcripts receive an opaque SHA-256 verification token.
    - Any post-publication grade correction requires a formal Academic Council review ticket and produces a new sealed transcript version (`v2`), preserving `v1` in the audit ledger.
+

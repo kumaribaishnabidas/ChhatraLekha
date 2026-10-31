@@ -7,7 +7,7 @@
 
 ## 1. Domain Boundary Rules
 
-To ensure modularity and prevent spaghetti dependencies, all business logic is organized into bounded contexts. 
+To ensure modularity and prevent spaghetti dependencies, all business logic is organized into bounded contexts.
 
 1. **No Direct Inter-Module Database Access:**
    Module A must never directly query or mutate collections/tables owned by Module B. Cross-module data retrieval must occur via documented service methods or domain events.
@@ -18,93 +18,99 @@ To ensure modularity and prevent spaghetti dependencies, all business logic is o
 
 ---
 
-## 2. Bounded Contexts & Module Registry
+## 2. Comprehensive 19-Module Functional Specification
 
-```mermaid
-graph LR
-    subgraph Core
-        ID["Identity & Memberships"]
-        INST["Institutions & Structure"]
-    end
-
-    subgraph Academic Operations
-        ACAD["Academics & Enrolments"]
-        ATT["Attendance & Timetables"]
-        EXAM["Examinations & Results"]
-        LMS["Learning Hub (LMS)"]
-    end
-
-    subgraph Services & Support
-        DOC["Documents & Wallet"]
-        NOTIF["Communications & Notices"]
-        OPP["Opportunities & Career"]
-        CAMP["Campus & Library"]
-        HELP["Support & Grievances"]
-    end
-
-    subgraph Cross-Cutting
-        AI["ChhatraLekha AI Assistant"]
-        VOICE["Bharat Voice & Multilingual"]
-        AUDIT["Cryptographic Audit Trail"]
-    end
-
-    ID --> INST
-    INST --> ACAD
-    ACAD --> ATT & EXAM & LMS
-    ATT & EXAM --> NOTIF
-    EXAM --> DOC
-    ACAD --> OPP
-    INST --> CAMP & HELP
-    
-    ACAD -.-> AI
-    ATT -.-> AI
-    EXAM -.-> AI
-    AI -.-> VOICE
-    
-    ID & ACAD & ATT & EXAM & DOC -.-> AUDIT
-```
-
----
-
-## 3. Module Specifications & Responsibilities
-
-### Module 1: Identity & Membership (`app/modules/identity/`)
+### 1. Identity Module (`app/modules/identity/`)
 - **Owns:** `User`, `InstitutionMembership`, `Session`, `APIKey`.
-- **Responsibilities:** Central account creation, authentication, password recovery, membership role attachment, session token generation (`JWT`).
-- **Public Interface:** `get_user(user_id)`, `resolve_membership(user_id, institution_id)`, `verify_permission(membership, permission)`.
+- **Responsibilities:** Central identity management, credentials, multi-institution membership linkages, session management, and authentication token issuance.
+- **Boundaries:** Does not store academic enrolments or class details.
 
-### Module 2: Institutions & Academics (`app/modules/academics/`)
-- **Owns:** `Institution`, `AcademicYear`, `Department`, `Programme`, `Course`, `ClassGroup`, `Section`, `Subject`.
-- **Responsibilities:** Academic structure hierarchy, sanctioned seat capacity, stream definitions (Science, Commerce, Arts, Vocational), course prerequisite management.
-- **Public Interface:** `get_active_academic_year(institution_id)`, `get_class_roster(class_id)`.
+### 2. Institutions Module (`app/modules/institutions/`)
+- **Owns:** `Institution`, `InstitutionSettings`, `Department`.
+- **Responsibilities:** Institutional metadata, grading scale policies, institutional category (School, College, University), department configurations.
+- **Boundaries:** Isolated from student-specific records.
 
-### Module 3: People & Enrolments (`app/modules/enrolments/`)
-- **Owns:** `StudentProfile`, `StaffProfile`, `StudentEnrolment`, `GuardianRelationship`, `TeacherAssignment`.
-- **Responsibilities:** Time-bounded student class placements, staff appointments, teacher subject assignments, verified guardian connections.
-- **Public Interface:** `is_guardian_verified(guardian_id, student_id)`, `get_teacher_assignments(teacher_id)`.
+### 3. Students Module (`app/modules/students/`)
+- **Owns:** `StudentProfile`, `AcademicHistory`.
+- **Responsibilities:** Core student demographic data, date of birth, APAAR ID masking, category, and historical institutional records.
+- **Boundaries:** Independent of login accounts; links to central `User` identity via verified claim codes.
 
-### Module 4: Attendance & Timetable (`app/modules/attendance/`)
-- **Owns:** `AttendanceSession`, `AttendanceRecord`, `TimetableSlot`.
-- **Responsibilities:** Period scheduling, real-time classroom attendance taking, cumulative attendance calculation, holiday overrides, attendance notification triggers.
-- **Public Interface:** `get_student_attendance_summary(student_id, term_id)`, `get_timetable_for_day(entity_type, entity_id, day)`.
+### 4. Parents & Guardians Module (`app/modules/guardians/`)
+- **Owns:** `GuardianRelationship`.
+- **Responsibilities:** Formal linkage between a parent user and an enrolled student, relationship verification workflow, and authorized ward access control.
+- **Boundaries:** Cannot access another student's data or administrative records.
 
-### Module 5: Examinations & Results (`app/modules/examinations/`)
+### 5. Teachers & Staff Module (`app/modules/staff/`)
+- **Owns:** `StaffProfile`, `TeacherAssignment`.
+- **Responsibilities:** Faculty profiles, departmental appointments, class/subject assignments, and teacher permissions.
+- **Boundaries:** Teachers can only access classes and subjects explicitly assigned to them.
+
+### 6. Academics Module (`app/modules/academics/`)
+- **Owns:** `AcademicYear`, `Programme`, `Course`, `ClassGroup`, `Section`, `Subject`.
+- **Responsibilities:** Academic calendar, course syllabus definitions, intake capacities, senior secondary streams, and prerequisite structures.
+- **Boundaries:** Reusable across schools, colleges, and universities.
+
+### 7. Attendance Module (`app/modules/attendance/`)
+- **Owns:** `AttendanceSession`, `AttendanceRecord`.
+- **Responsibilities:** Classroom attendance taking, period locking, cumulative percentage computation, holiday overrides, and change-impact audit tracking.
+- **Boundaries:** Never overwrites locked history without formal audit reason.
+
+### 8. Timetable Module (`app/modules/timetable/`)
+- **Owns:** `TimetableSlot`, `RoomAllocation`.
+- **Responsibilities:** Daily scheduled periods, room and faculty allocations, voice-assisted timetable queries.
+- **Boundaries:** Coordinates with teacher assignments and campus facilities.
+
+### 9. Learning Management (LMS) Module (`app/modules/learning/`)
+- **Owns:** `LearningMaterial`, `SyllabusTopic`, `QuizSession`.
+- **Responsibilities:** Faculty notes, PDF resources, video lecture links, subject-wise organization, student self-quizzes.
+- **Boundaries:** Material access is restricted to students enrolled in that specific subject/class.
+
+### 10. Assignments Module (`app/modules/assignments/`)
+- **Owns:** `Assignment`, `Submission`.
+- **Responsibilities:** Assignment prompts, rubrics, due dates, student file submissions, teacher evaluation, marks, and feedback.
+- **Boundaries:** Submissions are private to the submitting student and the assigned grading teacher.
+
+### 11. Examinations & Results Module (`app/modules/examinations/`)
 - **Owns:** `Assessment`, `AssessmentMarks`, `ResultPublication`, `TranscriptRecord`.
-- **Responsibilities:** Continuous assessments, semester exams, marks entry, moderation approval workflow, GPA/CGPA computation, transcript publication.
-- **Public Interface:** `get_published_results(student_id)`, `submit_marks_for_moderation(assessment_id)`.
+- **Responsibilities:** Exam scheduling, internal assessment scoring, grade moderation committee review, result publication, and transcripts.
+- **Boundaries:** Final results cannot be published automatically by AI; requires authorized staff approval.
 
-### Module 6: Learning Hub & LMS (`app/modules/learning/`)
-- **Owns:** `LearningMaterial`, `Assignment`, `Submission`, `QuizSession`.
-- **Responsibilities:** Syllabus materials, PDF/notes repository, assignment distribution, student document submissions, teacher grading and feedback.
+### 12. Admissions Module (`app/modules/admissions/`)
+- **Owns:** `AdmissionApplication`, `MeritList`, `ApplicationDocument`.
+- **Responsibilities:** Configurable admission forms, document checklists, application status tracking, and conversion to active enrolment.
+- **Boundaries:** Pre-enrolment data is kept separate from active student registers.
 
-### Module 7: Opportunities & Career (`app/modules/opportunities/`)
+### 13. Communication Module (`app/modules/communication/`)
+- **Owns:** `Announcement`, `Notification`, `NotificationPreference`.
+- **Responsibilities:** Institutional announcements, targeted class broadcasts, urgent parent alerts, and user notification delivery preferences.
+- **Boundaries:** Does not support unrestricted unmoderated peer-to-peer social messaging.
+
+### 14. Documents Module (`app/modules/documents/`)
+- **Owns:** `DocumentVault`, `Certificate`, `VerificationToken`.
+- **Responsibilities:** Tamper-evident verifiable credentials, degree certificates, transfer certificates, and opaque QR token verification.
+- **Boundaries:** Verification links reveal only minimum necessary validation fields; zero raw PII.
+
+### 15. Digital Library Module (`app/modules/library/`)
+- **Owns:** `LibraryBook`, `BookCopy`, `BookLoan`.
+- **Responsibilities:** OPAC catalog search (Title, Author, ISBN, Subject), copy availability tracking, loan issuing, due date reminders.
+- **Boundaries:** Isolated from non-library academic workflows.
+
+### 16. Finance Module (`app/modules/finance/`)
+- **Owns:** `FeeStructure`, `StudentInvoice`, `PaymentReceipt`.
+- **Responsibilities:** Institutional fee structure definitions, concessions, invoice generation, payment status tracking.
+- **Boundaries:** Financial ledgers are append-only; receipts are cryptographically sealed.
+
+### 17. Career & Opportunities Module (`app/modules/opportunities/`)
 - **Owns:** `Opportunity`, `Scholarship`, `Internship`, `StudentPortfolio`.
-- **Responsibilities:** Scholarship catalog, placement drives, demographic eligibility verification, student resume and project showcase.
+- **Responsibilities:** Central scholarship directory, campus placement drives, student skill profiles, and verifiable resume export.
+- **Boundaries:** Opportunities clearly distinguish institution-verified listings from external resources.
 
-### Module 8: Campus, Library & Helpdesk (`app/modules/campus/`)
-- **Owns:** `LibraryBook`, `BookLoan`, `Facility`, `FacilityBooking`, `SupportTicket`.
-- **Responsibilities:** OPAC book inventory, borrowing limits, due dates, classroom/lab reservation, confidential student grievance ticketing with policy escalation.
+### 18. Campus Services Module (`app/modules/campus/`)
+- **Owns:** `CampusFacility`, `FacilityBooking`, `MaintenanceRequest`.
+- **Responsibilities:** Classroom, laboratory, and auditorium reservations; facility maintenance ticketing and status tracking.
+- **Boundaries:** Bookings check for timetable conflicts before confirmation.
 
-### Module 9: ChhatraLekha AI & Voice (`app/modules/ai/`)
+### 19. AI Assistant & Multilingual Voice Module (`app/modules/ai/`)
 - **Owns:** `KnowledgeChunk`, `ConversationThread`, `VoiceIntent`.
-- **Responsibilities:** Permission-filtered document retrieval (RAG), intent classification in 22 languages, speech-to-text transcript normalization, text-to-speech synthesis.
+- **Responsibilities:** Role-aware grounded RAG retrieval, speech-to-text voice commands, text-to-speech audio playback across all 22 Eighth Schedule languages.
+- **Boundaries:** Strictly enforces signed-in user permissions; cannot bypass database security guards.

@@ -140,3 +140,4 @@ flowchart TD
 | **Performance Overhead of Tenant Checks** | Medium | Tenant context is cached in request state (`request.state.tenant`); membership queries are indexed by compound key `(user_id, institution_id)`. |
 | **Silent Offline Overwrites** | High | The server enforces optimistic concurrency checks (`version` number); outdated client updates are rejected and flagged for manual resolution. |
 | **Database Migration Data Loss** | Critical | Stage 11 maintains dual-write shadow logging before traffic switchover; rollback scripts restore MongoDB snapshot in under 60 seconds. |
+

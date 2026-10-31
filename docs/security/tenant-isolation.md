@@ -64,3 +64,4 @@ Automated test suites must instantiate at least two synthetic institutions (`INS
 3. **APAAR Masking:**
    - Raw 12-digit APAAR numbers are permanently masked (`****-****-1234`) in web views and public APIs.
    - External verification relies solely on opaque, revocable cryptographic tokens (`/verify/t/{token}`).
+

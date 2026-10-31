@@ -57,3 +57,4 @@ sequenceDiagram
   1. The client clears local stores (Keychain on iOS, EncryptedSharedPreferences on Android, memory in Web).
   2. The server records the token JTI in `revoked_credentials`.
   3. A cryptographic audit event (`USER_LOGOUT`) is permanently appended.
+
