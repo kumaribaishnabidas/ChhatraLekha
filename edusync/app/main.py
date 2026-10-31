@@ -103,15 +103,9 @@ app = FastAPI(
     ),
     version="2.0.0",
     lifespan=lifespan,
-<<<<<<< HEAD
     docs_url=_docs_url,
     redoc_url=_redoc_url,
     openapi_url=_openapi_url,
-=======
-    docs_url=None if settings.is_production else "/docs",
-    redoc_url=None if settings.is_production else "/redoc",
-    openapi_url=None if settings.is_production else "/openapi.json",
->>>>>>> 92abb0106e7af41c4caa35b11a70b4159b24e4df
 )
 
 @app.middleware("http")
