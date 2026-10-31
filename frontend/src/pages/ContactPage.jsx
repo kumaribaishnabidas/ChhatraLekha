@@ -5,12 +5,12 @@ import { usePageMeta } from '../hooks/usePageMeta'
 export default function ContactPage() {
   usePageMeta({
     title: 'Contact & Feedback',
-    description: 'Get in touch regarding the EduSynC prototype, bug reports, or technical inquiries.',
+    description: 'Get in touch regarding the ChhatraLekha prototype, bug reports, or technical inquiries.',
     canonical: '/contact',
   })
 
   const navigate = useNavigate()
-  const contactEmail = import.meta.env.VITE_CONTACT_EMAIL || 'contact@edusync.example'
+  const contactEmail = import.meta.env.VITE_CONTACT_EMAIL || 'contact@chhatralekha.example'
   const contactAddress = import.meta.env.VITE_CONTACT_ADDRESS || ''
 
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
@@ -40,7 +40,7 @@ export default function ContactPage() {
           Contact Us
         </h1>
         <p className="text-base text-muted">
-          Have questions regarding the EduSynC verification prototype or need to report a defect? Send us a note below.
+          Have questions regarding the ChhatraLekha verification prototype or need to report a defect? Send us a note below.
         </p>
       </div>
 

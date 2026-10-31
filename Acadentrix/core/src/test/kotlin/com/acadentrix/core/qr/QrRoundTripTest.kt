@@ -98,7 +98,7 @@ class QrRoundTripTest {
 
     @Test
     fun decodesASymbolThatWasRenderedIntoAPicture() {
-        val payload = "https://edusync.vercel.app/verify?apaar=984210357890&seal=ABC123"
+        val payload = "https://chhatralekha.vercel.app/verify?apaar=984210357890&seal=ABC123"
         val matrix = QrEncoder.encode(payload)
         val (image, width, height) = render(matrix)
         assertEquals(payload, QrDecoder.decodeImage(image, width, height))
@@ -106,7 +106,7 @@ class QrRoundTripTest {
 
     @Test
     fun decodesASymbolThatWasPhotographedAtADifferentScale() {
-        val payload = "https://edusync.vercel.app/verify?apaar=984210357890&seal=ABC123"
+        val payload = "https://chhatralekha.vercel.app/verify?apaar=984210357890&seal=ABC123"
         val matrix = QrEncoder.encode(payload)
         val (image, width, height) = render(matrix, scale = 6)
         assertEquals(payload, QrDecoder.decodeImage(image, width, height))

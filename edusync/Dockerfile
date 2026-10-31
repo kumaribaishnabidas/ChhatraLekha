@@ -1,4 +1,4 @@
-# EduSynC - APAAR ID Student Data Management & Verification Platform
+# ChhatraLekha - APAAR ID Student Data Management & Verification Platform
 #
 # Two stages:
 #   1. build the React frontend with Vite;

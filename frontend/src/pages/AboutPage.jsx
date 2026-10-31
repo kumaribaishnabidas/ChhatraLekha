@@ -4,7 +4,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 export default function AboutPage() {
   usePageMeta({
     title: 'About the Platform',
-    description: 'Overview of the EduSynC APAAR Verification architecture, technical specifications, and system design.',
+    description: 'Overview of the ChhatraLekha APAAR Verification architecture, technical specifications, and system design.',
     canonical: '/about',
   })
 
@@ -15,7 +15,7 @@ export default function AboutPage() {
           Academic Record Verification
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-brand tracking-tight m-0">
-          About EduSynC
+          About ChhatraLekha
         </h1>
         <p className="text-base text-muted leading-relaxed">
           The Automated Permanent Academic Account Registry (APAAR) was established under the Ministry of Education's <em>One Nation, One Student ID</em> initiative to act as an all-India lifelong academic identifier.
@@ -23,7 +23,7 @@ export default function AboutPage() {
       </div>
 
       <div className="p-4 rounded border border-warning/40 bg-warning-surface text-warning-strong text-sm">
-        <strong>Notice:</strong> EduSynC is an academic verification prototype. Verification performed through this site is checked against this prototype's synthetic database and is not official APAAR or AICTE verification.
+        <strong>Notice:</strong> ChhatraLekha is an academic verification prototype. Verification performed through this site is checked against this prototype's synthetic database and is not official APAAR or AICTE verification.
       </div>
 
       <div className="space-y-6 text-sm sm:text-base leading-relaxed text-ink">
@@ -44,7 +44,7 @@ export default function AboutPage() {
         <section className="space-y-3">
           <h2 className="text-xl font-bold text-ink">The Solution Architecture</h2>
           <p>
-            EduSynC provides a unified platform comprising a modern web portal (React 19 + Tailwind CSS 4), an asynchronous high-performance backend (FastAPI + Motor async MongoDB), and an offline-first native Android client (Kotlin + Jetpack Compose + Room).
+            ChhatraLekha provides a unified platform comprising a modern web portal (React 19 + Tailwind CSS 4), an asynchronous high-performance backend (FastAPI + Motor async MongoDB), and an offline-first native Android client (Kotlin + Jetpack Compose + Room).
           </p>
           <p>
             Crucially, the validation rules, cryptographic seal structure, and anomaly algorithms are specified identically in both Python and Kotlin. A credential verified on an offline Android device and a credential checked on the central web portal will always reach the exact same verdict.

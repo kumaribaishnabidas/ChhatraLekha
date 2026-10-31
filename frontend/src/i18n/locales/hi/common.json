@@ -1,6 +1,6 @@
 {
     "app":  {
-                "name":  "EduSynC",
+                "name":  "ChhatraLekha",
                 "prototypeNotice":  "केवल सिंथेटिक प्रदर्शन डेटा। सत्यापन इस प्रोटोटाइप के डेटाबेस के विरुद्ध है, आधिकारिक APAAR या AICTE सत्यापन नहीं।",
                 "notOfficial":  "Verification against this prototype\u0027s database, not official APAAR or AICTE verification."
             },
@@ -58,7 +58,7 @@
                },
     "login":  {
                   "headline":  "One APAAR ID. One verifiable academic record.",
-                  "description":  "EduSynC validates every enrolment as it is uploaded, detects regulatory breaches before they reach the national registry, and issues credentials that any employer can check with a signed, expiring, revocable token.",
+                  "description":  "ChhatraLekha validates every enrolment as it is uploaded, detects regulatory breaches before they reach the national registry, and issues credentials that any employer can check with a signed, expiring, revocable token.",
                   "featureAnomaly":  "Ten-layer automated anomaly detection",
                   "featureImpact":  "Change impact detection before a correction is applied",
                   "featureToken":  "Opaque verification tokens â€” no raw APAAR ID in a URL",
@@ -253,7 +253,7 @@
                   "title":  "Voice assistant",
                   "open":  "Open voice assistant",
                   "privacyTitle":  "Voice privacy",
-                  "privacy":  "Voice input is opt-in. In some browsers, audio is processed by the browser vendorâ€™s cloud speech service. EduSynC never records, stores or sends audio to its backend.",
+                  "privacy":  "Voice input is opt-in. In some browsers, audio is processed by the browser vendorâ€™s cloud speech service. ChhatraLekha never records, stores or sends audio to its backend.",
                   "allow":  "I understand â€” enable voice",
                   "decline":  "Not now",
                   "listening":  "Listeningâ€¦",

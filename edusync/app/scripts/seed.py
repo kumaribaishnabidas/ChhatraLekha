@@ -1,4 +1,4 @@
-"""Seed the EduSynC registry with a synthetic pan-India dataset.
+"""Seed the ChhatraLekha registry with a synthetic pan-India dataset.
 
 The dataset is **entirely synthetic**: no real student, institution or APAAR
 identifier is used. It is designed to exercise every detection layer so the
@@ -739,7 +739,7 @@ async def _seed_impact_scenarios(
 
 
 async def main() -> None:
-    parser = argparse.ArgumentParser(description="Seed the EduSynC registry.")
+    parser = argparse.ArgumentParser(description="Seed the ChhatraLekha registry.")
     parser.add_argument("--students", type=int, default=2219)
     parser.add_argument("--no-reset", action="store_true")
     args = parser.parse_args()
@@ -754,7 +754,7 @@ async def main() -> None:
         )
 
     summary = await seed(student_count=args.students, reset=not args.no_reset)
-    print("EduSynC demo data seeded:")
+    print("ChhatraLekha demo data seeded:")
     for key, value in summary.items():
         if key == "scenarios":
             print("  scenarios:")

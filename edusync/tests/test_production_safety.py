@@ -37,35 +37,35 @@ def _production(**overrides) -> Settings:
 
 
 def test_an_empty_cors_list_leaves_only_the_frontend_origin():
-    settings = _production(cors_origins="", frontend_origin="https://edusync.vercel.app")
-    assert settings.cors_origins == ["https://edusync.vercel.app"]
+    settings = _production(cors_origins="", frontend_origin="https://chhatralekha.vercel.app")
+    assert settings.cors_origins == ["https://chhatralekha.vercel.app"]
 
 
 def test_a_missing_cors_list_leaves_only_the_frontend_origin():
-    settings = _production(frontend_origin="https://edusync.vercel.app")
-    assert settings.cors_origins == ["https://edusync.vercel.app"]
+    settings = _production(frontend_origin="https://chhatralekha.vercel.app")
+    assert settings.cors_origins == ["https://chhatralekha.vercel.app"]
 
 
 def test_the_trailing_slash_is_normalised_away():
     settings = _production(
         cors_origins="https://extra.example/",
-        frontend_origin="https://edusync.vercel.app/",
+        frontend_origin="https://chhatralekha.vercel.app/",
     )
-    assert settings.cors_origins == ["https://extra.example", "https://edusync.vercel.app"]
+    assert settings.cors_origins == ["https://extra.example", "https://chhatralekha.vercel.app"]
     assert all(not origin.endswith("/") for origin in settings.cors_origins)
 
 
 def test_a_wildcard_is_never_allowed():
-    settings = _production(cors_origins="*", frontend_origin="https://edusync.vercel.app")
+    settings = _production(cors_origins="*", frontend_origin="https://chhatralekha.vercel.app")
     assert "*" not in settings.cors_origins
-    assert settings.cors_origins == ["https://edusync.vercel.app"]
+    assert settings.cors_origins == ["https://chhatralekha.vercel.app"]
 
 
 def test_the_frontend_origin_is_always_included():
     settings = _production(
-        cors_origins="https://extra.example", frontend_origin="https://edusync.vercel.app"
+        cors_origins="https://extra.example", frontend_origin="https://chhatralekha.vercel.app"
     )
-    assert "https://edusync.vercel.app" in settings.cors_origins
+    assert "https://chhatralekha.vercel.app" in settings.cors_origins
 
 
 # ------------------------------------------------- the production refusals

@@ -1,4 +1,4 @@
-# EduSynC - Architecture
+# ChhatraLekha - Architecture
 
 ## 1. The problem in one paragraph
 
@@ -6,7 +6,7 @@ AICTE-approved institutions each hold their own student registers. The national
 picture of *sanctioned intake against actual enrolment* only exists after the
 data is collected, and by the time it is collected it is already wrong: a
 student is admitted twice, a foreign-national seat is filled by an Indian
-citizen, a supernumerary ceiling is quietly exceeded. EduSynC moves the
+citizen, a supernumerary ceiling is quietly exceeded. ChhatraLekha moves the
 validation to the moment the data arrives, and makes the resulting record
 verifiable by anyone who holds the APAAR ID.
 

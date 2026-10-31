@@ -4,7 +4,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 export default function NotFoundPage() {
   usePageMeta({
     title: 'Page Not Found (404)',
-    description: 'The requested resource was not found on EduSynC.',
+    description: 'The requested resource was not found on ChhatraLekha.',
     noindex: true,
   })
 
@@ -14,7 +14,7 @@ export default function NotFoundPage() {
       <div className="space-y-2">
         <h1 className="text-2xl font-bold text-ink tracking-tight m-0">Resource Not Found</h1>
         <p className="text-sm text-muted max-w-[45ch] mx-auto">
-          The requested path does not exist on this EduSynC deployment. Please verify the URL or navigate to one of the main sections below.
+          The requested path does not exist on this ChhatraLekha deployment. Please verify the URL or navigate to one of the main sections below.
         </p>
       </div>
 

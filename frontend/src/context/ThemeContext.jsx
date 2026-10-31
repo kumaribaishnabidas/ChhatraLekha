@@ -20,7 +20,7 @@ const STORAGE_KEY = 'edusync.theme'
 export const THEME_CHOICES = ['light', 'dark', 'system']
 
 /** The colour of the browser chrome, per theme. */
-const THEME_COLOR = { light: '#14246B', dark: '#0a0f1a' }
+const THEME_COLOR = { light: '#2F57D6', dark: '#0B1437' }
 
 const ThemeContext = createContext(null)
 

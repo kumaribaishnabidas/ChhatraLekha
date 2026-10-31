@@ -1,11 +1,11 @@
-# EduSynC — Implementation Status & Baseline Audit
+# ChhatraLekha — Implementation Status & Baseline Audit
 
-**Date**: 2026-10-24  
-**Repository**: [EduSynC](https://github.com/kumaribaishnabidas/EduSynC.git)  
-**Branch**: `main`  
-**Commit**: Latest HEAD  
+**Date**: 2026-10-24
+**Repository**: [ChhatraLekha](https://github.com/kumaribaishnabidas/ChhatraLekha.git)
+**Branch**: `main`
+**Commit**: Latest HEAD
 
-This document records the factual, tested state of the EduSynC codebase across all tiers: Web Frontend (React / Vite), API Backend (Python / FastAPI / MongoDB), Android Client (Kotlin / Jetpack Compose / Room), and CI / Tooling.
+This document records the factual, tested state of the ChhatraLekha codebase across all tiers: Web Frontend (React / Vite), API Backend (Python / FastAPI / MongoDB), Android Client (Kotlin / Jetpack Compose / Room), and CI / Tooling.
 
 ---
 
@@ -56,7 +56,7 @@ Every command below has been executed on the local workspace and confirmed passi
 ### 3.2 SHA-256 "Seals" vs. Cryptographic Signatures
 - **Previous Claim**: Early design documents referred to SHA-256 hashes as "tamper-proof cryptographic seals".
 - **Reality & Resolution**: A bare SHA-256 hash is an unkeyed digest; anyone can modify a record and recompute the hash.
-  - EduSynC implements three distinct generations in `seal.py` and `SealVerification`:
+  - ChhatraLekha implements three distinct generations in `seal.py` and `SealVerification`:
     1. `LEGACY` (unkeyed SHA-256): Explicitly marked as `LEGACY_UNVERIFIED`. It is never accepted as an authentic signature.
     2. `HMAC` (`HMAC-SHA256`): Keyed with a server-held secret. Authenticates that the issuing server produced the seal.
     3. `ED25519` (Asymmetric Digital Signature): Signed with an Ed25519 private key kept server-side. Third parties can verify credentials independently using the public key published at `GET /api/verify/public-key`.

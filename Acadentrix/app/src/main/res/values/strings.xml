@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Product name: EduSynC -->
-    <string name="app_name">EduSynC</string>
+    <!-- Product name: ChhatraLekha -->
+    <string name="app_name">ChhatraLekha</string>
 
     <!-- Brand -->
-    <string name="brand_name">EduSynC</string>
-    <string name="brand_owner">APAAR ID platform</string>
-    <string name="brand_tagline">One ID. One Truth.</string>
+    <string name="brand_name">ChhatraLekha</string>
+    <string name="brand_owner">Authenticate · Verify · Empower</string>
+    <string name="brand_tagline">Authenticate • Verify • Empower</string>
 
     <!-- Product descriptor -->
     <string name="product_descriptor">Automated Permanent Academic Account Registry</string>
@@ -17,6 +17,6 @@
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="language">Language</string>
-    <string name="voice_privacy">Voice input is opt-in. Some devices process speech using their vendor service. EduSynC never records, stores, or sends audio to its backend.</string>
+    <string name="voice_privacy">Voice input is opt-in. Some devices process speech using their vendor service. ChhatraLekha never records, stores, or sends audio to its backend.</string>
     <string name="not_official_verification">Synthetic demonstration data only. Verification is against this prototype’s database, not official APAAR or AICTE verification.</string>
 </resources>

@@ -2,7 +2,7 @@ package com.acadentrix.core.network
 
 /**
  * Result wrapper for all network interactions between the Android client
- * and the EduSynC backend API.
+ * and the ChhatraLekha backend API.
  */
 sealed class NetworkResult<out T> {
     data class Success<out T>(val data: T, val statusCode: Int = 200) : NetworkResult<T>()

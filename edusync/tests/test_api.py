@@ -340,7 +340,7 @@ async def test_a_scanned_payload_is_verified(client, institution_token, verifier
     )
     # The legacy link format - the one a badge printed before the token flow
     # existed - is still readable, so a verifier can check an old badge.
-    link = "https://edusync.vercel.app/verify?apaar=984210357890&seal=" + payload
+    link = "https://chhatralekha.vercel.app/verify?apaar=984210357890&seal=" + payload
     response = await client.post(
         "/api/verify/scan", params={"payload": link}, headers=auth(verifier_token)
     )

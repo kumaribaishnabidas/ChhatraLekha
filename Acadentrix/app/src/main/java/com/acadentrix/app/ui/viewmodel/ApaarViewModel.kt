@@ -645,7 +645,7 @@ class ApaarViewModel(private val repository: ApaarRepository) : ViewModel() {
 
     /**
 
-     * Synchronizes local Room database with the remote EduSynC backend.
+     * Synchronizes local Room database with the remote ChhatraLekha backend.
      */
     fun syncWithServer(baseUrl: String = EduSyncApiClient.DEFAULT_BASE_URL) {
         viewModelScope.launch {

@@ -1,4 +1,4 @@
-# EduSynC - Render deployment
+# ChhatraLekha - Render deployment
 #
 # The backend is a FastAPI application backed by MongoDB. Point MONGODB_URL at
 # a MongoDB Atlas cluster: Atlas clusters are replica sets, so the correction
@@ -14,7 +14,7 @@
 
 services:
   - type: web
-    name: edusync-api
+    name: chhatralekha-api
     runtime: python
     plan: free
     # The backend lives in edusync/: requirements.txt and app/main.py are there.
@@ -44,7 +44,7 @@ services:
       #   python -c "import secrets; print(secrets.token_urlsafe(32))"
       - key: SEAL_HMAC_KEY
         sync: false
-      # The public origin of the Vercel frontend, e.g. https://edusync.vercel.app
+      # The public origin of the Vercel frontend, e.g. https://chhatralekha.vercel.app
       # This alone determines the allowed CORS origins - there is no wildcard,
       # and the trailing slash is normalised away.
       - key: FRONTEND_ORIGIN

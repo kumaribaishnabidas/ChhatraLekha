@@ -4,10 +4,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   Legend,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -103,8 +100,8 @@ export default function DashboardPage() {
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="Enrolled" fill="var(--app-accent)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Sanctioned" fill="var(--app-brand-bright)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Enrolled" fill="var(--app-brand)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Sanctioned" fill="var(--app-accent)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -124,8 +121,8 @@ export default function DashboardPage() {
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={140} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="Enrolled" fill="var(--app-brand-bright)" radius={[0, 4, 4, 0]} />
-                <Bar dataKey="Sanctioned" fill="var(--app-line)" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="Enrolled" fill="var(--app-brand)" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="Sanctioned" fill="var(--app-accent)" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}

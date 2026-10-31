@@ -7,8 +7,8 @@ const FAQS = [
     a: 'APAAR stands for Automated Permanent Academic Account Registry. It is a 12-digit lifelong academic identifier issued under the Ministry of Education\'s "One Nation, One Student ID" initiative to track degrees, credits, and academic milestones seamlessly across institutions.',
   },
   {
-    q: 'What is EduSynC, and is this an official government registry?',
-    a: 'EduSynC is an academic credential verification prototype. It is not an official AICTE or Ministry of Education service. Verification performed on this prototype is checked against its own demonstration database, not the national registry.',
+    q: 'What is ChhatraLekha, and is this an official government registry?',
+    a: 'ChhatraLekha is an academic credential verification prototype. It is not an official AICTE or Ministry of Education service. Verification performed on this prototype is checked against its own demonstration database, not the national registry.',
   },
   {
     q: 'What does a public verification token disclose, and what is kept private?',
@@ -31,7 +31,7 @@ const FAQS = [
 export default function FaqPage() {
   usePageMeta({
     title: 'Frequently Asked Questions',
-    description: 'Frequently asked questions regarding APAAR ID verification, EduSynC prototype, privacy policies, and change impact detection.',
+    description: 'Frequently asked questions regarding APAAR ID verification, ChhatraLekha prototype, privacy policies, and change impact detection.',
     canonical: '/faq',
   })
 
@@ -44,7 +44,7 @@ export default function FaqPage() {
           Frequently Asked Questions
         </h1>
         <p className="text-base text-muted">
-          Clear answers about APAAR, verification tokens, data privacy, and the EduSynC architecture.
+          Clear answers about APAAR, verification tokens, data privacy, and the ChhatraLekha architecture.
         </p>
       </div>
 

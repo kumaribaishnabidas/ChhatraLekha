@@ -16,7 +16,7 @@ from app.services import qr
 @pytest.fixture(autouse=True)
 def _frontend_origin(monkeypatch):
     """Point the badge at a known origin."""
-    monkeypatch.setattr(get_settings(), "frontend_origin", "https://edusync.vercel.app")
+    monkeypatch.setattr(get_settings(), "frontend_origin", "https://chhatralekha.vercel.app")
     yield
 
 
@@ -25,7 +25,7 @@ def _frontend_origin(monkeypatch):
 
 def test_the_payload_is_a_token_link_on_our_own_origin():
     payload = qr.build_token_payload("opaque-token-value")
-    assert payload == "https://edusync.vercel.app/verify/t/opaque-token-value"
+    assert payload == "https://chhatralekha.vercel.app/verify/t/opaque-token-value"
 
 
 def test_the_payload_never_carries_the_apaar_id():
@@ -61,9 +61,9 @@ def test_a_trailing_slash_on_the_origin_is_normalised():
     settings = get_settings()
     original = settings.frontend_origin
     try:
-        settings.frontend_origin = "https://edusync.vercel.app///"
+        settings.frontend_origin = "https://chhatralekha.vercel.app///"
         payload = qr.build_token_payload("token")
-        assert payload == "https://edusync.vercel.app/verify/t/token"
+        assert payload == "https://chhatralekha.vercel.app/verify/t/token"
     finally:
         settings.frontend_origin = original
 
@@ -81,7 +81,7 @@ def test_a_token_link_is_parsed():
 
 
 def test_a_token_in_the_query_string_is_parsed():
-    parsed = qr.parse_payload("https://edusync.vercel.app/verify?token=abc123")
+    parsed = qr.parse_payload("https://chhatralekha.vercel.app/verify?token=abc123")
     assert parsed is not None
     assert parsed.token == "abc123"
 
@@ -97,7 +97,7 @@ def test_the_legacy_link_format_is_still_readable():
     # A badge printed before the token flow existed carries the APAAR ID. It
     # can still be parsed, but the server never builds one.
     parsed = qr.parse_payload(
-        "https://edusync.vercel.app/verify?apaar=984210357890&inst=INST-0421"
+        "https://chhatralekha.vercel.app/verify?apaar=984210357890&inst=INST-0421"
     )
     assert parsed is not None
     assert parsed.apaar_id == "984210357890"

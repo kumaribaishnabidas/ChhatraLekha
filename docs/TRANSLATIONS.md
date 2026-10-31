@@ -1,6 +1,6 @@
 # Translation review register
 
-EduSynC's browser keeps English as the source locale. `npm run i18n:check`
+ChhatraLekha's browser keeps English as the source locale. `npm run i18n:check`
 requires every locale to have exactly the English key set and the same
 `{{placeholder}}` names; it does **not** certify linguistic quality.
 

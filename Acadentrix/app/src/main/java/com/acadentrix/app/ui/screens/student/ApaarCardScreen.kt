@@ -475,7 +475,7 @@ private fun CardBack(
         QrCodeView(matrix = matrix, size = 178.dp, backgroundColor = Color.White)
         Spacer(Modifier.height(12.dp))
         Text(
-            text = "SCAN TO VERIFY AT edusync.vercel.app/verify",
+            text = "SCAN TO VERIFY AT chhatralekha.vercel.app/verify",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center

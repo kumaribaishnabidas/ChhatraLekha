@@ -7,7 +7,7 @@ Two rules govern what goes into that link:
 
 * It points at **this deployment's own verification page**, derived from
   ``FRONTEND_ORIGIN``. It never points at an official government service:
-  EduSynC is a prototype, a badge that resolved to somebody else's registry
+  ChhatraLekha is a prototype, a badge that resolved to somebody else's registry
   would claim an authenticity the platform does not have, and would send a
   stranger's browser to a domain nobody on the team controls.
 * It carries an **opaque, expiring, revocable token** - never the raw APAAR

@@ -500,7 +500,7 @@ def run_evaluation() -> dict:
         },
         "explainability_samples": explainability_samples,
         "disclaimer": (
-            "The EduSynC Anomaly Engine uses transparent, deterministic regulatory business rules "
+            "The ChhatraLekha Anomaly Engine uses transparent, deterministic regulatory business rules "
             "codified to AICTE Approval Process Handbook specifications. It does not use stochastic "
             "or opaque statistical machine learning. All 10 layers execute as pure functions of "
             "the registry snapshot with zero false positives on compliant records."
@@ -556,7 +556,7 @@ def print_report(results: dict) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Evaluate EduSynC Anomaly Engine")
+    parser = argparse.ArgumentParser(description="Evaluate ChhatraLekha Anomaly Engine")
     parser.add_argument("--json", action="store_true", help="Output results as JSON")
     args = parser.parse_args()
 

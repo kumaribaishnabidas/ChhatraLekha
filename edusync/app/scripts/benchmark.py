@@ -1,4 +1,4 @@
-"""Reproducible performance benchmark script for EduSynC.
+"""Reproducible performance benchmark script for ChhatraLekha.
 
 Measures latency and throughput on synthetic datasets for:
 1. Batch CSV Ingestion & Validation (50, 100, 250 rows)
@@ -309,7 +309,7 @@ def print_benchmark_report(data: dict[str, Any]) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run EduSynC Performance Benchmark")
+    parser = argparse.ArgumentParser(description="Run ChhatraLekha Performance Benchmark")
     parser.add_argument("--json", action="store_true", help="Output results as JSON")
     args = parser.parse_args()
 

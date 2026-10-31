@@ -1,9 +1,9 @@
-# EduSynC - APAAR ID Student Data Management & Verification Platform
+# ChhatraLekha - APAAR ID Student Data Management & Verification Platform
 
 > Product Prototype: Verification against this prototype's database, not official APAAR or AICTE verification.
 
 ## Summary
-EduSynC is an academic credential verification and reconciliation platform developed for AICTE-approved institutions. It automates APAAR (Automated Permanent Academic Account Registry) student record validation, anomaly detection, change impact analysis, and privacy-preserving credential verification.
+ChhatraLekha is an academic credential verification and reconciliation platform developed for AICTE-approved institutions. It automates APAAR (Automated Permanent Academic Account Registry) student record validation, anomaly detection, change impact analysis, and privacy-preserving credential verification.
 
 ## Core Capabilities
 1. 10-Layer Anomaly Detection Engine: Deterministic rule-based validation checking format syntax, cross-institution duplicate enrollment, duplicate roll numbers, sanctioned intake ceilings, supernumerary quotas (NRI, OCI/FN, TFW, PMSSS), impossible dates, missing mandatory fields, and unsanctioned programmes.

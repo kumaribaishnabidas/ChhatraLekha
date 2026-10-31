@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="620" height="150" viewBox="0 0 620 150" role="img" aria-labelledby="title desc">
+  <title id="title">ChhatraLekha</title>
+  <desc id="desc">ChhatraLekha academic identity and credential platform</desc>
+  <g transform="translate(12 15)">
+    <path d="M62 6 112 24v39c0 31-22 53-50 66C34 116 12 94 12 63V24L62 6Z" fill="#2F57D6"/>
+    <path d="M31 55c10-9 20-13 31-13s21 4 31 13v31c-10-7-20-10-31-10s-21 3-31 10V55Z" fill="#fff" opacity=".98"/>
+    <path d="M62 42v34" stroke="#FF8A00" stroke-width="5" stroke-linecap="round"/>
+    <path d="m90 16 4 10 10 4-10 4-4 10-4-10-10-4 10-4 4-10Z" fill="#F4B942"/>
+  </g>
+  <text x="142" y="82" fill="#2F57D6" font-family="Noto Sans, Segoe UI, Arial, sans-serif" font-size="54" font-weight="800" letter-spacing="-1.4">Chhatra<tspan fill="#FF8A00">Lekha</tspan></text>
+  <text x="146" y="116" fill="#5A6472" font-family="Noto Sans, Segoe UI, Arial, sans-serif" font-size="15" font-weight="600" letter-spacing="2.5">ACADEMIC IDENTITY • VERIFY WITH CONFIDENCE</text>
+</svg>

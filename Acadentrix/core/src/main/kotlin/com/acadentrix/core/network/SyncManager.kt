@@ -35,7 +35,7 @@ class SyncManager(
                 pushedCount = 0,
                 conflictsCount = 0,
                 isOffline = true,
-                message = "EduSynC backend is offline or unreachable. Continuing in offline-first mode."
+                message = "ChhatraLekha backend is offline or unreachable. Continuing in offline-first mode."
             )
         }
 

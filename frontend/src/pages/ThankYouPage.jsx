@@ -4,7 +4,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 export default function ThankYouPage() {
   usePageMeta({
     title: 'Message Transmitted',
-    description: 'Confirmation that your inquiry has been received by EduSynC.',
+    description: 'Confirmation that your inquiry has been received by ChhatraLekha.',
     noindex: true,
   })
 

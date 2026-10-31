@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "edusync"
 version = "1.0.0"
-description = "EduSynC - APAAR ID Student Data Management & Verification Platform"
+description = "ChhatraLekha - APAAR ID Student Data Management & Verification Platform"
 requires-python = ">=3.11"
 
 [tool.setuptools.packages.find]

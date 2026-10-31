@@ -1,5 +1,5 @@
 /**
- * The single HTTP client of the EduSynC web frontend.
+ * The single HTTP client of the ChhatraLekha web frontend.
  *
  * Every request carries the bearer token, and a 401 automatically sends the
  * user back to the sign-in page. The React components never talk to Axios
@@ -9,7 +9,7 @@
 import axios from 'axios'
 
 /**
- * The origin of the EduSynC API.
+ * The origin of the ChhatraLekha API.
  *
  * `VITE_API_URL` is read at BUILD time, so changing it needs a new
  * deployment, not just a restart.
@@ -53,7 +53,7 @@ const BASE_URL = apiBaseUrl()
 if (import.meta.env.PROD && !import.meta.env.VITE_API_URL) {
   // eslint-disable-next-line no-console
   console.error(
-    'EduSynC: VITE_API_URL is not set. This build talks to "/api" on its own ' +
+    'ChhatraLekha: VITE_API_URL is not set. This build talks to "/api" on its own ' +
       'origin, which only works when the API serves the frontend. On a split ' +
       'deployment set VITE_API_URL to the backend URL and rebuild.',
   )
