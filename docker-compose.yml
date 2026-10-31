@@ -27,7 +27,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: edusync/Dockerfile
+      dockerfile: chhatralekha/Dockerfile
     restart: unless-stopped
     depends_on:
       mongodb:

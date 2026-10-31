@@ -21,7 +21,7 @@ import com.acadentrix.app.data.local.entity.AuditLogEntity
 import com.acadentrix.app.data.local.entity.InstitutionEntity
 import com.acadentrix.app.data.local.entity.ProgramIntakeEntity
 import com.acadentrix.app.data.local.entity.StudentEntity
-import com.acadentrix.core.network.EduSyncApiClient
+import com.acadentrix.core.network.ChhatraLekhaApiClient
 import com.acadentrix.core.network.NetworkResult
 import com.acadentrix.core.network.RemoteStudentDto
 import com.acadentrix.core.network.RemoteTokenVerification
@@ -289,7 +289,7 @@ class ApaarRepository(private val database: ApaarDatabase) {
     suspend fun programsOf(institutionId: String): List<ProgramIntake> =
         programDao.getByInstitution(institutionId).map { it.toDomain() }
 
-    private val apiClient = EduSyncApiClient()
+    private val apiClient = ChhatraLekhaApiClient()
     private val syncManager = SyncManager(apiClient)
 
     /**
@@ -298,7 +298,7 @@ class ApaarRepository(private val database: ApaarDatabase) {
      * handles offline mode and conflicts.
      */
     suspend fun syncWithBackend(
-        baseUrl: String = EduSyncApiClient.DEFAULT_BASE_URL,
+        baseUrl: String = ChhatraLekhaApiClient.DEFAULT_BASE_URL,
         authToken: String? = null
     ): SyncSummary = withContext(Dispatchers.IO) {
         val localEntities = studentDao.getAll()
@@ -385,7 +385,7 @@ class ApaarRepository(private val database: ApaarDatabase) {
      */
     suspend fun verifyTokenRemote(
         token: String,
-        baseUrl: String = EduSyncApiClient.DEFAULT_BASE_URL
+        baseUrl: String = ChhatraLekhaApiClient.DEFAULT_BASE_URL
     ): NetworkResult<RemoteTokenVerification> = withContext(Dispatchers.IO) {
         apiClient.verifyToken(token, baseUrl)
     }

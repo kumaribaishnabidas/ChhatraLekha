@@ -6,14 +6,14 @@
 
 **The APAAR ID Student Data Management &amp; Verification Platform**
 
-[Website &amp; landing page →](https://kumaribaishnabidas.github.io/ChhatraLekha/) · [Source code](https://github.com/kumaribaishnabidas/ChhatraLekha) · [Backend documentation](edusync/README.md) · [App documentation](Acadentrix/README.md)
+[Website &amp; landing page →](https://kumaribaishnabidas.github.io/ChhatraLekha/) · [Source code](https://github.com/kumaribaishnabidas/ChhatraLekha) · [Backend documentation](chhatralekha/README.md) · [App documentation](Acadentrix/README.md)
 
 </div>
 
 ---
 
 > **A note on the names.** The product is **ChhatraLekha**. The code base keeps its
-> earlier internal identifiers - the `edusync/` Python package and the
+> earlier internal identifiers - the `chhatralekha/` Python package and the
 > `com.acadentrix.app` Android package - because renaming them would be a
 > large, risky change with no functional benefit. The user-facing text is
 > consistent everywhere.
@@ -38,7 +38,7 @@ institutions:
 | Part | Directory | Stack |
 |---|---|---|
 | Web frontend | `frontend/` | React 19, Vite 6, Tailwind CSS 4, Recharts 3, React Router 7 |
-| Python backend | `edusync/` | FastAPI, Motor (async MongoDB), Pydantic v2, `cryptography` |
+| Python backend | `chhatralekha/` | FastAPI, Motor (async MongoDB), Pydantic v2, `cryptography` |
 | Android client | `Acadentrix/` | Kotlin 2.2, Jetpack Compose, Material 3, Room |
 
 The **Academic Record Change Impact Detector** is the headline feature: preview a
@@ -55,7 +55,7 @@ without ever silently changing an official academic record.
 | **Brand name and logo** | **ChhatraLekha** |
 | **Package / application id** | `com.acadentrix.app` |
 | **Gradle project name** | `Acadentrix` |
-| **Backend package** | `edusync/` |
+| **Backend package** | `chhatralekha/` |
 
 The ChhatraLekha logo is the artwork the team supplied, shipped verbatim — as the launcher icon
 (adaptive, with a themed-monochrome layer), in the app's header, on the degree certificate and
@@ -79,7 +79,7 @@ ChhatraLekha/
 ├── docs/                     ← the website & landing page (GitHub Pages)
 │   ├── index.html
 │   └── assets/brand/         ← ChhatraLekha logo artwork
-├── edusync/                  ← the Python backend (FastAPI + MongoDB)
+├── chhatralekha/                  ← the Python backend (FastAPI + MongoDB)
 │   ├── app/                  ← core, models, schemas, api, repositories, services, audit
 │   ├── tests/                ← the pytest suite
 │   ├── Dockerfile
@@ -103,7 +103,7 @@ ChhatraLekha/
 There are **two implementations of the same rules**, and that is deliberate:
 
 * **`Acadentrix/`** is the offline-first Android client (Kotlin, Compose, Room).
-* **`edusync/`** is the server (FastAPI, MongoDB) and the web portal.
+* **`chhatralekha/`** is the server (FastAPI, MongoDB) and the web portal.
 
 The APAAR validator, the anomaly engine, the seal format and the QR payload
 are specified identically in both, so the phone and the server can never
@@ -129,10 +129,10 @@ sanctioned capacity, the student register, the CSV batch uploader with a
 row-by-row validation preview, the anomaly inspector with a review workflow,
 the **change impact** page, the credential verifier, and the report centre.
 
-### 2. The Python backend (`edusync/`)
+### 2. The Python backend (`chhatralekha/`)
 
 ```bash
-cd edusync
+cd chhatralekha
 python -m venv .venv && .venv\Scripts\activate   # Windows
 pip install -r requirements.txt
 cp .env.example .env                              # then edit the secrets
@@ -159,8 +159,8 @@ APAAR QR badges, PDF certificates carrying the APAAR ID, CSV/PDF regulatory
 reports, an explainable per-institution risk score, versioned seat policy, and
 a hash-chained audit trail.
 
-**262 pytest tests, all passing.** See [`edusync/README.md`](edusync/README.md)
-and [`edusync/docs/architecture.md`](edusync/docs/architecture.md).
+**262 pytest tests, all passing.** See [`chhatralekha/README.md`](chhatralekha/README.md)
+and [`chhatralekha/docs/architecture.md`](chhatralekha/docs/architecture.md).
 
 #### Google sign-in
 
@@ -178,7 +178,7 @@ attaches the Google identity to it, and only a genuinely new person gets a
 new account with the restricted `verifier` role.
 
 It is off until you give the backend a client of your own — see
-[`edusync/README.md`](edusync/README.md#google-sign-in).
+[`chhatralekha/README.md`](chhatralekha/README.md#google-sign-in).
 
 ### 3. The Android client (`Acadentrix/`)
 
@@ -211,7 +211,7 @@ builds clean (`app-debug.apk`).
 | `ConsentPolicyTest` | 10 |
 | `CredentialsTest` | 10 |
 | `ApaarQrPayloadTest` | 10 |
-| `EduSyncApiClientTest` | 9 |
+| `ChhatraLekhaApiClientTest` | 9 |
 | `AuditChainTest` | 9 |
 | `AccessControlTest` | 8 |
 | `VoiceIntentMatcherTest` | 5 |
@@ -239,7 +239,7 @@ docker compose up --build     # MongoDB + the API + the React frontend
 | Frontend (React 19 + Vite + Tailwind 4) | **Vercel** | Root directory `frontend/`, output `dist` |
 | Backend (FastAPI + Motor) | **Render** (web service) | `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, health check `/health` |
 | Database (MongoDB) | **MongoDB Atlas** | An Atlas cluster is a replica set, so multi-document transactions are available |
-| Android client (`Acadentrix/`) | Direct APK / Play Internal Testing | Offline-capable with Room database, pure Java runtime HTTP client (`EduSyncApiClient`), two-way sync (`SyncManager`), and optimistic concurrency (HTTP 409 conflict handling) |
+| Android client (`Acadentrix/`) | Direct APK / Play Internal Testing | Offline-capable with Room database, pure Java runtime HTTP client (`ChhatraLekhaApiClient`), two-way sync (`SyncManager`), and optimistic concurrency (HTTP 409 conflict handling) |
 
 The configuration files are [`render.yaml`](render.yaml) and
 [`frontend/vercel.json`](frontend/vercel.json).
@@ -304,7 +304,7 @@ Seeding **never** runs on start-up against a real database. Run it from a
 machine that can reach Atlas:
 
 ```bash
-cd edusync
+cd chhatralekha
 MONGODB_URL='mongodb+srv://...' \
 MONGODB_DATABASE=edusync \
 ENVIRONMENT=production \
@@ -321,7 +321,7 @@ When `DEMO_PASSWORD` is empty, a password is generated and printed **once**.
 
 ### Environment variables
 
-**Backend** (set on Render, or in `edusync/.env` locally):
+**Backend** (set on Render, or in `chhatralekha/.env` locally):
 
 | Name | Required | Placeholder | Where |
 |---|---|---|---|
@@ -405,7 +405,7 @@ curl -s https://<service>.onrender.com/health
 ### The Android client
 
 The client is **offline-first with bidirectional network synchronisation capability**:
-it features an in-built `EduSyncApiClient` and `SyncManager` (`com.acadentrix.core.network`),
+it features an in-built `ChhatraLekhaApiClient` and `SyncManager` (`com.acadentrix.core.network`),
 using standard Java runtime networking (zero external dependencies). It connects to
 the FastAPI backend (`http://10.0.2.2:8000/api` for emulator, or configurable remote URL).
 
@@ -538,7 +538,7 @@ document.
 ### The Python platform
 
 ```bash
-cd edusync
+cd chhatralekha
 pip install -r requirements.txt
 cp .env.example .env            # then edit the secrets
 python -m app.scripts.seed

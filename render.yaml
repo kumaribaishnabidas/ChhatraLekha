@@ -17,8 +17,8 @@ services:
     name: chhatralekha-api
     runtime: python
     plan: free
-    # The backend lives in edusync/: requirements.txt and app/main.py are there.
-    rootDir: edusync
+    # The backend lives in chhatralekha/: requirements.txt and app/main.py are there.
+    rootDir: chhatralekha
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
