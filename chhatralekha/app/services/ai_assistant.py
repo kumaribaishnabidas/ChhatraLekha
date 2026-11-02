@@ -251,7 +251,6 @@ def find_grounded_answer(
         reply_text = best_match.get(lang) or best_match.get("en", "")
         # Add personalized context if available
         if user_context and user_context.get("name"):
-            name = user_context["name"]
             if "my" in clean_q or "ମୋର" in clean_q or "मेरा" in clean_q:
                 if best_match["id"] == "id_card_and_apaar" and user_context.get("student_id"):
                     reply_text += f" (Record: {user_context['student_id']})"
@@ -294,4 +293,3 @@ def find_grounded_answer(
 def get_quick_prompts_for_role(role: str) -> List[str]:
     """Return tailored quick question prompts for the user's role."""
     return ROLE_QUICK_PROMPTS.get(role, ROLE_QUICK_PROMPTS["student"])
-

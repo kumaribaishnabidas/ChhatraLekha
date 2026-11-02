@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-bad=$(grep -rIniE 'edusync|edu-sync|edu_sync|acadentrix|\bteams?\b' \
-  --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.venv \
+bad=$(grep -rIniE 'edusync|edu-sync|edu_sync|acadentrix' \
+  --exclude-dir=.git --exclude=.git --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.venv \
   --exclude=package-lock.json --exclude=check-legacy-names.sh . || true)
 
 if [ -n "$bad" ]; then

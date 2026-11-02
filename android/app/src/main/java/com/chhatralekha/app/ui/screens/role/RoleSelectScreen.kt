@@ -18,7 +18,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.MaterialTheme
@@ -174,7 +176,7 @@ fun RoleSelectScreen(viewModel: ApaarViewModel) {
                 title = UserRole.TEACHER.label,
                 tagline = UserRole.TEACHER.tagline,
                 icon = Icons.Filled.Assignment,
-                accent = colors.primary,
+                accent = NavyPrimary,
                 modifier = Modifier.fillMaxWidth()
             ) { viewModel.selectRole(UserRole.TEACHER) }
 
