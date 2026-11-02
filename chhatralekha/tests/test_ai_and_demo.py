@@ -4,11 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from app.services.ai_assistant import (
-    find_grounded_answer,
-    get_quick_prompts_for_role,
-    KNOWLEDGE_BASE,
-)
+from app.services.ai_assistant import find_grounded_answer
 
 
 @pytest.mark.asyncio
