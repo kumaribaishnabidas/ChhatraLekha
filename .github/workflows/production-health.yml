@@ -1,0 +1,55 @@
+name: Production health monitor
+
+on:
+  release:
+    types: [published]
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FRONTEND_URL: ${{ vars.CHHATRALEKHA_FRONTEND_URL || 'https://chhatralekha.vercel.app' }}
+  BACKEND_URL: ${{ vars.CHHATRALEKHA_BACKEND_URL || 'https://chhatralekha-api.onrender.com' }}
+
+jobs:
+  health:
+    name: Check production endpoints
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          frontend_url="${FRONTEND_URL%/}"
+          status=$(curl --location --silent --show-error --output frontend.html --write-out '%{http_code}' --max-time 30 "$frontend_url/")
+          [[ "$status" == 2* ]] || { echo "Frontend returned HTTP $status"; exit 1; }
+          grep -qi 'ChhatraLekha' frontend.html || { echo 'Frontend response did not contain the ChhatraLekha brand'; exit 1; }
+          echo "Frontend healthy: HTTP $status ($frontend_url/)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check backend health endpoints
+        shell: bash
+        run: |
+          set -euo pipefail
+          backend_url="${BACKEND_URL%/}"
+          for path in /health /api/health; do
+            status=$(curl --location --silent --show-error --output response.json --write-out '%{http_code}' --max-time 30 "$backend_url$path")
+            [[ "$status" == 2* ]] || { echo "Backend $path returned HTTP $status"; cat response.json; exit 1; }
+            grep -q '"status"' response.json || { echo "Backend $path returned an unexpected payload"; cat response.json; exit 1; }
+            echo "Backend healthy: HTTP $status ($backend_url$path)" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - name: Check frontend-to-backend CORS
+        shell: bash
+        run: |
+          set -euo pipefail
+          frontend_url="${FRONTEND_URL%/}"
+          backend_url="${BACKEND_URL%/}"
+          status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' --max-time 30 \
+            -X OPTIONS "$backend_url/api/health" \
+            -H "Origin: $frontend_url" \
+            -H 'Access-Control-Request-Method: GET')
+          [[ "$status" == 2* || "$status" == 3* ]] || { echo "CORS preflight returned HTTP $status"; exit 1; }
+          echo "CORS preflight healthy: HTTP $status ($frontend_url -> $backend_url)" >> "$GITHUB_STEP_SUMMARY"
