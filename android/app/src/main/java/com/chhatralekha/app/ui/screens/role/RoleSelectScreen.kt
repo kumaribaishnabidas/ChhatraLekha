@@ -176,7 +176,7 @@ fun RoleSelectScreen(viewModel: ApaarViewModel) {
                 title = UserRole.TEACHER.label,
                 tagline = UserRole.TEACHER.tagline,
                 icon = Icons.Filled.Assignment,
-                accent = colors.primary,
+                accent = NavyPrimary,
                 modifier = Modifier.fillMaxWidth()
             ) { viewModel.selectRole(UserRole.TEACHER) }
 
