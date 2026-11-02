@@ -91,7 +91,12 @@ jobs:
           import os
           from pathlib import Path
           report = json.loads(Path("pip-audit.json").read_text())
-          vulnerabilities = sum(len(item.get("vulns", [])) for item in report)
+          dependencies = report.get("dependencies", []) if isinstance(report, dict) else report
+          vulnerabilities = sum(
+              len(item.get("vulns", []))
+              for item in dependencies
+              if isinstance(item, dict)
+          )
           with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as summary:
               summary.write(f"\n### pip-audit\n\nPackages with reported vulnerabilities: {vulnerabilities}\n")
           PY
