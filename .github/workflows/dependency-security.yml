@@ -1,0 +1,106 @@
+name: Dependency and security audit
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "frontend/package.json"
+      - "frontend/package-lock.json"
+      - "chhatralekha/requirements.txt"
+      - "android/**"
+      - ".github/workflows/dependency-security.yml"
+      - ".github/dependabot.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  npm-audit:
+    name: npm audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        shell: bash
+        run: |
+          audit_status=0
+          npm audit --json > npm-audit.json || audit_status=$?
+          echo "npm audit exit code: ${audit_status}" >> "$GITHUB_STEP_SUMMARY"
+          node -e '
+            const fs = require("fs");
+            const report = JSON.parse(fs.readFileSync("npm-audit.json", "utf8"));
+            const counts = report.metadata?.vulnerabilities || {};
+            const line = `npm audit vulnerabilities — info: ${counts.info || 0}, low: ${counts.low || 0}, moderate: ${counts.moderate || 0}, high: ${counts.high || 0}, critical: ${counts.critical || 0}`;
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n### npm audit\n\n${line}\n`);
+          '
+          exit 0
+
+      - name: Upload npm audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: frontend/npm-audit.json
+          if-no-files-found: warn
+
+  pip-audit:
+    name: pip-audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: chhatralekha
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: chhatralekha/requirements.txt
+
+      - name: Install pip-audit
+        run: python -m pip install --upgrade pip pip-audit
+
+      - name: Run pip-audit
+        shell: bash
+        run: |
+          audit_status=0
+          pip-audit -r requirements.txt -f json -o pip-audit.json || audit_status=$?
+          echo "pip-audit exit code: ${audit_status}" >> "$GITHUB_STEP_SUMMARY"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          report = json.loads(Path("pip-audit.json").read_text())
+          vulnerabilities = sum(len(item.get("vulns", [])) for item in report)
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as summary:
+              summary.write(f"\n### pip-audit\n\nPackages with reported vulnerabilities: {vulnerabilities}\n")
+          PY
+          exit 0
+
+      - name: Upload pip audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit-report
+          path: chhatralekha/pip-audit.json
+          if-no-files-found: warn
