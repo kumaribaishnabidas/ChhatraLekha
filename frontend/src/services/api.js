@@ -112,6 +112,66 @@ export const tokenStore = {
   },
 }
 
+let inFlightRefreshPromise = null
+
+/**
+ * Exchange the stored refresh token for a fresh token pair.
+ *
+ * Concurrent refresh requests are de-duplicated so that only a single network
+ * request is dispatched to the backend, preventing race conditions during
+ * refresh token rotation.
+ */
+export async function refreshAccessToken() {
+  const refresh = tokenStore.getRefresh()
+  if (!refresh) {
+    tokenStore.clear()
+    throw new Error('No refresh token available')
+  }
+
+  if (!inFlightRefreshPromise) {
+    inFlightRefreshPromise = (async () => {
+      try {
+        const { data } = await axios.post(
+          `${BASE_URL}/auth/refresh`,
+          { refresh_token: refresh },
+          { headers: { 'Content-Type': 'application/json' } },
+        )
+        tokenStore.set(data)
+        return data.access_token
+      } catch (err) {
+        tokenStore.clear()
+        throw err
+      } finally {
+        inFlightRefreshPromise = null
+      }
+    })()
+  }
+
+  return inFlightRefreshPromise
+}
+
+/**
+ * Perform server-side session revocation and purge local client state.
+ */
+export async function logoutUser(allSessions = false) {
+  const refresh = tokenStore.getRefresh()
+  try {
+    if (tokenStore.get()) {
+      await api.post('/auth/logout', {
+        refresh_token: refresh || undefined,
+        all_sessions: allSessions,
+      }).catch(() => {})
+    }
+  } finally {
+    tokenStore.clear()
+    try {
+      sessionStorage.removeItem('chhatralekha.session_expired')
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
 api.interceptors.request.use((config) => {
   const token = tokenStore.get()
   if (token) config.headers.Authorization = `Bearer ${token}`
@@ -137,26 +197,31 @@ api.interceptors.response.use(
   },
   async (error) => {
     const original = error.config
-    if (error.response?.status === 401 && !original?._retried) {
+    const isAuthRoute =
+      original?.url?.includes('/auth/login') ||
+      original?.url?.includes('/auth/refresh') ||
+      original?.url?.includes('/auth/logout')
+
+    if (error.response?.status === 401 && !original?._retried && !isAuthRoute) {
       original._retried = true
-      const refresh = tokenStore.getRefresh()
-      if (refresh) {
-        try {
-          const { data } = await axios.post(
-            `${BASE_URL}/auth/refresh`,
-            { refresh_token: refresh },
-            { headers: { 'Content-Type': 'application/json' } },
-          )
-          tokenStore.set(data)
-          original.headers = { ...original.headers, Authorization: `Bearer ${data.access_token}` }
-          return api(original)
-        } catch {
-          tokenStore.clear()
+      try {
+        const newAccessToken = await refreshAccessToken()
+        original.headers = {
+          ...original.headers,
+          Authorization: `Bearer ${newAccessToken}`,
         }
-      }
-      tokenStore.clear()
-      if (window.location.pathname !== '/login') {
-        window.location.assign('/login')
+        return api(original)
+      } catch (refreshErr) {
+        tokenStore.clear()
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+          try {
+            sessionStorage.setItem('chhatralekha.session_expired', '1')
+          } catch {
+            /* ignore */
+          }
+          window.location.assign('/login?expired=1')
+        }
+        return Promise.reject(refreshErr)
       }
     }
     return Promise.reject(error)

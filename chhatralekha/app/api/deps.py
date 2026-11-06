@@ -21,6 +21,7 @@ from app.repositories.audit import AuditRepository
 from app.repositories.consents import ConsentRepository
 from app.repositories.institutions import InstitutionRepository
 from app.repositories.programmes import ProgrammeRepository
+from app.repositories.sessions import SessionRepository
 from app.repositories.students import StudentRepository
 from app.repositories.submissions import SubmissionRepository
 from app.repositories.users import UserRepository
@@ -91,6 +92,10 @@ def get_audit_repo(db: AsyncIOMotorDatabase = Depends(get_db)) -> AuditRepositor
 
 def get_submission_repo(db: AsyncIOMotorDatabase = Depends(get_db)) -> SubmissionRepository:
     return SubmissionRepository(db["submissions"])
+
+
+def get_session_repo(db: AsyncIOMotorDatabase = Depends(get_db)) -> SessionRepository:
+    return SessionRepository(db["refresh_sessions"])
 
 
 # ------------------------------------------------------------ authentication
@@ -419,3 +424,8 @@ def client_ip(request: Request) -> Optional[str]:
     if forwarded:
         return forwarded.split(",")[0].strip()
     return request.client.host if request.client else None
+
+
+def client_user_agent(request: Request) -> Optional[str]:
+    """The caller's User-Agent header value."""
+    return request.headers.get("User-Agent")

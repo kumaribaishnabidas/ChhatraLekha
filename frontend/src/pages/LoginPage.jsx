@@ -32,14 +32,18 @@ export default function LoginPage() {
   const [demoSigningIn, setDemoSigningIn] = useState(null)
 
   useEffect(() => {
-    // If redirected from registration
+    // If redirected from registration or session expiration
     if (location.state?.registeredEmail) {
       setEmail(location.state.registeredEmail)
     }
     if (location.state?.notice) {
       setNotice(location.state.notice)
     }
-  }, [location.state])
+    const params = new URLSearchParams(location.search)
+    if (params.get('expired') === '1') {
+      setNotice('Your session has expired. Please sign in again.')
+    }
+  }, [location.state, location.search])
 
   useEffect(() => {
     // The backend tells the portal whether Google sign-in is configured.

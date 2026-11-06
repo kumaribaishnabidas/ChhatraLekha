@@ -25,6 +25,21 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 
+class LogoutRequest(BaseModel):
+    """Payload presented to ``POST /api/auth/logout``."""
+
+    refresh_token: str | None = Field(None, description="The refresh token of the session to terminate.")
+    all_sessions: bool = Field(False, description="Whether to revoke all active sessions for the user.")
+
+
+class LogoutResponse(BaseModel):
+    """Response returned by ``POST /api/auth/logout``."""
+
+    status: str = "success"
+    message: str = "Logged out successfully."
+    revoked_sessions_count: int = 1
+
+
 class TokenPair(BaseModel):
     """The issued token pair."""
 

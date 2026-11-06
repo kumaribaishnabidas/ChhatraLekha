@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+import secrets
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from urllib.parse import urlencode
 
@@ -12,19 +13,36 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.api.deps import client_ip, get_db, get_principal
+from app.api.deps import (
+    Principal,
+    client_ip,
+    client_user_agent,
+    get_db,
+    get_principal,
+    get_session_repo,
+)
 from app.audit import writer
 from app.core.config import get_settings
 from app.core.security import (
     create_access_token,
     create_refresh_token,
     decode_token,
+    hash_refresh_token,
     password_policy_violations,
     verify_password,
 )
 from app.repositories.audit import AuditRepository
+from app.repositories.sessions import SessionRepository
 from app.repositories.users import UserRepository
-from app.schemas.auth import DemoLoginRequest, LoginRequest, RefreshRequest, TokenPair, UserOut
+from app.schemas.auth import (
+    DemoLoginRequest,
+    LoginRequest,
+    LogoutRequest,
+    LogoutResponse,
+    RefreshRequest,
+    TokenPair,
+    UserOut,
+)
 from app.services import google
 
 logger = logging.getLogger("chhatralekha.auth")
@@ -34,11 +52,39 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 settings = get_settings()
 
 
+async def _issue_and_persist_refresh_token(
+    sessions: SessionRepository,
+    user_id: str,
+    request: Optional[Request] = None,
+    session_id: Optional[str] = None,
+    family_id: Optional[str] = None,
+) -> str:
+    """Issue a signed refresh token with a unique jti and persist its cryptographic hash."""
+    jti = secrets.token_urlsafe(32)
+    effective_family = family_id or f"fam_{secrets.token_urlsafe(24)}"
+    token = create_refresh_token(subject=user_id, jti=jti, family_id=effective_family)
+    token_hash = hash_refresh_token(token)
+    expires_at = datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_expire_days)
+
+    await sessions.create_session(
+        user_id=user_id,
+        jti=jti,
+        token_hash=token_hash,
+        expires_at=expires_at,
+        session_id=session_id,
+        family_id=effective_family,
+        ip_address=client_ip(request) if request else None,
+        user_agent=client_user_agent(request) if request else None,
+    )
+    return token
+
+
 @router.post("/login", response_model=TokenPair, summary="Sign in and receive a JWT pair")
 async def login(
     payload: LoginRequest,
     request: Request,
     db: AsyncIOMotorDatabase = Depends(get_db),
+    sessions: SessionRepository = Depends(get_session_repo),
 ) -> TokenPair:
     """Exchange credentials for an access token and a refresh token."""
     users = UserRepository(db["users"], db["api_keys"], db["revoked_credentials"])
@@ -81,6 +127,9 @@ async def login(
         ip_address=client_ip(request),
     )
 
+    refresh_token = await _issue_and_persist_refresh_token(
+        sessions, user["user_id"], request=request
+    )
     extra = {"apaar_id": user["apaar_id"]} if user.get("apaar_id") else None
     return TokenPair(
         access_token=create_access_token(
@@ -89,7 +138,7 @@ async def login(
             institution_id=user.get("institution_id"),
             extra_claims=extra,
         ),
-        refresh_token=create_refresh_token(user["user_id"]),
+        refresh_token=refresh_token,
         expires_in=settings.access_token_expire_minutes * 60,
         role=user["role"],
         user_id=user["user_id"],
@@ -99,13 +148,14 @@ async def login(
     )
 
 
-
 @router.post("/refresh", response_model=TokenPair, summary="Exchange a refresh token")
 async def refresh(
     payload: RefreshRequest,
+    request: Request,
     db: AsyncIOMotorDatabase = Depends(get_db),
+    sessions: SessionRepository = Depends(get_session_repo),
 ) -> TokenPair:
-    """Issue a new access token from a valid refresh token."""
+    """Issue a new access token and rotated refresh token from a valid refresh token."""
     try:
         claims = decode_token(payload.refresh_token, expected_type="refresh")
     except jwt.PyJWTError as exc:
@@ -114,11 +164,117 @@ async def refresh(
             detail=f"Invalid or expired refresh token: {exc}",
         ) from exc
 
+    presented_hash = hash_refresh_token(payload.refresh_token)
+    session = await sessions.by_token_hash(presented_hash)
+    if session is None and claims.get("jti"):
+        session = await sessions.by_jti(claims["jti"])
+
     users = UserRepository(db["users"], db["api_keys"], db["revoked_credentials"])
-    user = await users.by_user_id(claims.get("sub") or "")
+    audit = AuditRepository(db["audit_events"])
+
+    # If session not found in database:
+    if session is None:
+        if claims.get("jti") is None:
+            # Safe compatibility path for pre-existing legacy tokens without a jti
+            user = await users.by_user_id(claims.get("sub") or "")
+            if user is None or not user.get("is_active", True):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail="The account is not active."
+                )
+            new_refresh = await _issue_and_persist_refresh_token(
+                sessions, user["user_id"], request=request
+            )
+            extra = {"apaar_id": user["apaar_id"]} if user.get("apaar_id") else None
+            return TokenPair(
+                access_token=create_access_token(
+                    subject=user["user_id"],
+                    role=user["role"],
+                    institution_id=user.get("institution_id"),
+                    extra_claims=extra,
+                ),
+                refresh_token=new_refresh,
+                expires_in=settings.access_token_expire_minutes * 60,
+                role=user["role"],
+                user_id=user["user_id"],
+                display_name=user.get("full_name") or user.get("email", ""),
+                institution_id=user.get("institution_id"),
+                apaar_id=user.get("apaar_id"),
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or unknown refresh token identifier.",
+            )
+
+    # 1. Expiration validation
+    now = datetime.now(timezone.utc)
+    exp = session.get("expires_at")
+    if exp:
+        if exp.tzinfo is None:
+            exp = exp.replace(tzinfo=timezone.utc)
+        if exp <= now:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Refresh token has expired.",
+            )
+
+    # 2. Revocation validation
+    if session.get("is_revoked"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token has been revoked.",
+        )
+
+    # 3. Reuse detection: if rotated_at is already set, this token was previously rotated!
+    if session.get("rotated_at") is not None:
+        family_id = session.get("family_id")
+        if family_id:
+            await sessions.revoke_family(family_id, reason="TOKEN_REUSE_DETECTED")
+        await writer.log(
+            audit,
+            actor=session.get("user_id", "unknown"),
+            action="REFRESH_TOKEN_REUSE_DETECTED",
+            subject=session.get("user_id", "unknown"),
+            details=f"Replay of rotated refresh token detected for jti '{session.get('jti')}'. Revoked token family '{family_id}'.",
+            category="SECURITY",
+            ip_address=client_ip(request),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token reuse detected. Session has been revoked.",
+        )
+
+    # 4. User account status validation
+    user = await users.by_user_id(session.get("user_id") or "")
     if user is None or not user.get("is_active", True):
+        if session.get("family_id"):
+            await sessions.revoke_family(session["family_id"], reason="USER_INACTIVE")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="The account is not active."
+        )
+
+    # 5. Atomic token rotation
+    new_jti = secrets.token_urlsafe(32)
+    new_refresh_token = create_refresh_token(
+        subject=user["user_id"],
+        jti=new_jti,
+        family_id=session.get("family_id"),
+    )
+    new_token_hash = hash_refresh_token(new_refresh_token)
+    new_expires_at = now + timedelta(days=settings.refresh_token_expire_days)
+
+    rotated_ok, _ = await sessions.rotate_session(
+        old_jti=session["jti"],
+        new_jti=new_jti,
+        new_token_hash=new_token_hash,
+        new_expires_at=new_expires_at,
+        ip_address=client_ip(request),
+        user_agent=client_user_agent(request),
+    )
+    if not rotated_ok:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token rotation conflict or concurrent refresh detected.",
         )
 
     extra = {"apaar_id": user["apaar_id"]} if user.get("apaar_id") else None
@@ -129,13 +285,74 @@ async def refresh(
             institution_id=user.get("institution_id"),
             extra_claims=extra,
         ),
-        refresh_token=create_refresh_token(user["user_id"]),
+        refresh_token=new_refresh_token,
         expires_in=settings.access_token_expire_minutes * 60,
         role=user["role"],
         user_id=user["user_id"],
         display_name=user.get("full_name") or user.get("email", ""),
         institution_id=user.get("institution_id"),
         apaar_id=user.get("apaar_id"),
+    )
+
+
+@router.post("/logout", response_model=LogoutResponse, summary="Revoke active authentication session")
+async def logout(
+    request: Request,
+    payload: Optional[LogoutRequest] = None,
+    principal: Principal = Depends(get_principal),
+    sessions: SessionRepository = Depends(get_session_repo),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> LogoutResponse:
+    """Revoke the current session or all active sessions for the authenticated user.
+
+    Repeated calls are safe and idempotent. Never logs token values.
+    """
+    revoked_count = 0
+    if payload and payload.refresh_token:
+        try:
+            claims = decode_token(payload.refresh_token, expected_type="refresh")
+            token_sub = claims.get("sub")
+            if token_sub and token_sub != principal.subject:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You cannot revoke another user's session.",
+                )
+            token_hash = hash_refresh_token(payload.refresh_token)
+            session = await sessions.by_token_hash(token_hash)
+            if session:
+                if session.get("user_id") != principal.subject:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="You cannot revoke another user's session.",
+                    )
+                revoked_count = await sessions.revoke_session(session["session_id"], reason="LOGOUT")
+            else:
+                revoked_count = 0
+        except jwt.PyJWTError:
+            # Token was already expired or malformed; repeated logout remains safe
+            revoked_count = 0
+    elif payload and payload.all_sessions:
+        revoked_count = await sessions.revoke_all_user_sessions(principal.subject, reason="ALL_SESSIONS_LOGOUT")
+    else:
+        # Default: revoke user's sessions / current device session
+        revoked_count = await sessions.revoke_all_user_sessions(principal.subject, reason="LOGOUT")
+
+    audit = AuditRepository(db["audit_events"])
+    await writer.log(
+        audit,
+        actor=principal.subject,
+        actor_role=principal.role,
+        action="LOGOUT",
+        subject=principal.subject,
+        details=f"User {principal.subject} signed out.",
+        category="SECURITY",
+        ip_address=client_ip(request),
+    )
+
+    return LogoutResponse(
+        status="success",
+        message="Logged out successfully.",
+        revoked_sessions_count=revoked_count,
     )
 
 
@@ -197,6 +414,7 @@ async def demo_login(
     payload: DemoLoginRequest,
     request: Request,
     db: AsyncIOMotorDatabase = Depends(get_db),
+    sessions: SessionRepository = Depends(get_session_repo),
 ) -> TokenPair:
     """Create a temporary restricted demo session for the selected persona.
 
@@ -284,6 +502,9 @@ async def demo_login(
         "is_demo": True,
         "apaar_id": user.get("apaar_id"),
     }
+    refresh_token = await _issue_and_persist_refresh_token(
+        sessions, user["user_id"], request=request
+    )
     return TokenPair(
         access_token=create_access_token(
             subject=user["user_id"],
@@ -291,7 +512,7 @@ async def demo_login(
             institution_id=user.get("institution_id"),
             extra_claims=extra,
         ),
-        refresh_token=create_refresh_token(user["user_id"]),
+        refresh_token=refresh_token,
         expires_in=runtime_settings.access_token_expire_minutes * 60,
         role=user["role"],
         user_id=user["user_id"],
@@ -436,7 +657,10 @@ async def google_callback(
         role=account.get("role", "pending"),
         institution_id=account.get("institution_id"),
     )
-    refresh = create_refresh_token(account["user_id"])
+    sessions = SessionRepository(db["refresh_sessions"])
+    refresh = await _issue_and_persist_refresh_token(
+        sessions, account["user_id"], request=request
+    )
 
     fragment = urlencode(
         {"access_token": access, "refresh_token": refresh, "role": account.get("role", "")}
