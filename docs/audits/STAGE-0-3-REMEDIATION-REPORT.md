@@ -185,3 +185,4 @@ A dedicated test suite comprising 15 automated security regression tests was aut
 1. **Stateful Refresh Tokens:** Refresh tokens currently remain signed JWTs without active database tracking or `jti` revocation lists. This is scheduled as a P3 item for Stage 0.4.
 2. **Explicit Logout Endpoint:** While client-side tokens can be cleared, an explicit `POST /api/auth/logout` endpoint remains a P3 documentation alignment item.
 3. **Readiness Gate:** All P0, P1, and P2 security vulnerabilities and CI blockers are fully resolved and verified. The codebase is secure and ready for branch commit.
+

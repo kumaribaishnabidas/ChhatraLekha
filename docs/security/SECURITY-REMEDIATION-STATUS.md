@@ -63,3 +63,4 @@ When introducing new endpoints or database queries in ChhatraLekha:
 3. **Verify IDOR on Parameterized Endpoints:** Whenever an endpoint accepts a resource ID (e.g., `student_id`, `notification_id`, `session_id`), verify that the authenticated caller owns the resource or has institutional authorization before executing the query.
 4. **Adhere to the Zero Em/En Dash Design Rule:** User-facing strings and test assertions must use standard hyphens `-` instead of Unicode em dashes `—` or en dashes `–`.
 5. **Run Pre-Commit Verification:** Run `ruff check app tests` and `pytest chhatralekha/tests` before submitting code.
+
