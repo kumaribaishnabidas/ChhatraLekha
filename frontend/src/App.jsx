@@ -37,6 +37,9 @@ const AcademicSetupPage = lazy(() => import('./pages/AcademicSetupPage'))
 const AnnouncementsPage = lazy(() => import('./pages/AnnouncementsPage'))
 const AssessmentsPage = lazy(() => import('./pages/AssessmentsPage'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
+const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
+const WorkspacePlaceholderPage = lazy(() => import('./pages/WorkspacePlaceholderPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage'))
 const EarlyAccessPage = lazy(() => import('./pages/EarlyAccessPage'))
 const HelpPage = lazy(() => import('./pages/HelpPage'))
@@ -303,6 +306,68 @@ export default function App() {
             <Guarded permission={PERMISSIONS.VIEW_RESULTS}>
               <AssessmentsPage />
             </Guarded>
+          }
+        />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
+        <Route
+          path="/me/academics"
+          element={
+            <WorkspacePlaceholderPage
+              title="Academic Curriculum"
+              moduleName="Academics & Syllabus"
+              features={['Semester Course Matrix', 'Credit Point Distribution', 'Syllabus & Learning Outcomes', 'Prerequisite Tracking']}
+            />
+          }
+        />
+        <Route
+          path="/me/attendance"
+          element={
+            <WorkspacePlaceholderPage
+              title="Attendance Register"
+              moduleName="Daily & Period Attendance"
+              features={['Daily Check-in Records', 'Subject-wise Percentage', 'Leave Applications', 'Parent Alerts']}
+            />
+          }
+        />
+        <Route
+          path="/me/timetable"
+          element={
+            <WorkspacePlaceholderPage
+              title="Timetable & Class Schedule"
+              moduleName="Timetable & Scheduling"
+              features={['Weekly Period Grid', 'Classroom & Lab Room Allocations', 'Faculty Substitutions', 'Exam Slot Schedules']}
+            />
+          }
+        />
+        <Route
+          path="/me/assignments"
+          element={
+            <WorkspacePlaceholderPage
+              title="Coursework & Assignments"
+              moduleName="Learning & Assignments"
+              features={['Active Problem Sets', 'File Submissions', 'Teacher Feedback & Rubrics', 'Deadlines Calendar']}
+            />
+          }
+        />
+        <Route
+          path="/library"
+          element={
+            <WorkspacePlaceholderPage
+              title="Campus Library (OPAC)"
+              moduleName="Digital & Physical Library"
+              features={['Online Book Catalogue (OPAC)', 'ISBN & Author Search', 'Book Reservations', 'Due Date Notifications']}
+            />
+          }
+        />
+        <Route
+          path="/opportunities"
+          element={
+            <WorkspacePlaceholderPage
+              title="Career & Opportunities"
+              moduleName="Internships & Placements"
+              features={['Campus Placement Drives', 'National Scholarship Directory', 'Verified Student Resume Export', 'Interview Schedules']}
+            />
           }
         />
         <Route path="*" element={<RoleRedirect />} />
