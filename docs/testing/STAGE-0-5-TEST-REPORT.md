@@ -127,3 +127,4 @@ The automated design linter (`frontend/src/test/DesignLint.test.jsx`) scanned al
 4. **0 heavy drop shadows:** Zero occurrences of `shadow-lg`, `shadow-xl`, `shadow-2xl` (using `shadow-xs`, `shadow-sm`, `shadow`).
 5. **0 emojis in source code or locale files:** All icons rendered via standard inline SVG.
 6. **0 em dashes (U+2014) or en dashes (U+2013):** All punctuation normalized to standard hyphens.
+

@@ -104,3 +104,4 @@ Every critical event in the onboarding and institutional membership lifecycle em
 | `SUBMIT_MEMBERSHIP_JOIN_REQUEST` | Actor ID, Request ID, Target Institution ID, Role, Client IP | `ONBOARDING` |
 | `REVIEW_MEMBERSHIP_REQUEST` | Admin Subject, Applicant User ID, Decision, Notes, Client IP | `MEMBERSHIP` |
 | `COMPLETE_ONBOARDING` | Actor ID, Selected Role, Target Dashboard, Client IP | `ONBOARDING` |
+

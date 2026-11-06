@@ -134,3 +134,4 @@ Upon completing the onboarding flow (`POST /api/onboarding/complete`), the backe
 | `school_admin` | `/institution` | Manage school rosters, attendance, and administrative certifications. |
 | `university_admin` | `/dashboard` | Provisioned via administrator invitation only; access aggregate metrics. |
 | `national_admin` | `/dashboard` | Provisioned via platform operator only; national registry oversight. |
+
