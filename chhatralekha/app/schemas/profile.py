@@ -88,3 +88,4 @@ class CompleteProfileOut(BaseModel):
     teacher_details: dict[str, Any] | None = None
     admin_details: dict[str, Any] | None = None
     parent_details: dict[str, Any] | None = None
+

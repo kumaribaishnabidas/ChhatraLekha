@@ -24,6 +24,8 @@ from app.api import (
     transparency,
     verify,
 )
+from app.modules.notifications import router as notifications_router
+from app.modules.profiles import router as profiles_router
 
 ALL_ROUTERS = [
     auth.router,
@@ -36,8 +38,10 @@ ALL_ROUTERS = [
     attendance.router,
     assessments.router,
     announcements.router,
+    notifications_router,
     parent.router,
     profile.router,
+    profiles_router,
     teacher.router,
     schools.router,
     transparency.router,

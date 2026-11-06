@@ -195,3 +195,4 @@ async def test_get_active_sessions(async_client: AsyncClient, student_auth_heade
     sessions = resp.json()
     assert len(sessions) >= 1
     assert any(s["is_current"] for s in sessions)
+

@@ -253,3 +253,4 @@ for (const [lang, map] of Object.entries(NAV_TRANSLATIONS)) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + '\n', 'utf-8')
   console.log(`Updated ${lang}/common.json with ${Object.keys(map).length} nav keys`)
 }
+
