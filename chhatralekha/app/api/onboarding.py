@@ -426,35 +426,36 @@ async def complete_onboarding(
     principal: Principal = Depends(get_principal),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> dict[str, Any]:
-    """Complete onboarding, record role choice, and return dashboard routing."""
-    chosen_role = payload.selected_role.strip().lower()
-    if chosen_role in RESTRICTED_ROLES:
+    """Mark onboarding finished without granting a role or a tenant.
+
+    ``selected_role`` and ``institution_id`` are recorded in the audit trail
+    only. Authorization continues to come from the user document, which is
+    changed when an administrator approves an institution membership, not
+    when the applicant finishes the wizard.
+    """
+    requested_role = payload.selected_role.strip().lower()
+    if requested_role in RESTRICTED_ROLES:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Privileged roles cannot be set via self-service onboarding.",
         )
 
+    user_doc = await db["users"].find_one({"user_id": principal.subject})
+    if user_doc is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="The account is not active.",
+        )
+
+    authorized_role = (user_doc.get("role") or principal.role or "").strip().lower()
     now = utcnow()
-    update_doc: dict[str, Any] = {
-        "onboarding_completed": True,
-        "onboarded_at": now,
-        "updated_at": now,
-    }
-
-    # If demo or explicit institution provided, set active institution
-    if payload.institution_id:
-        update_doc["institution_id"] = payload.institution_id
-        update_doc["active_institution_id"] = payload.institution_id
-
-    # If user has no active memberships yet, record selected role
-    user_doc = await db["users"].find_one({"user_id": principal.subject}) or {}
-    if not user_doc.get("role") or user_doc.get("role") == "verifier":
-        update_doc["role"] = chosen_role
-
     await db["users"].update_one(
         {"user_id": principal.subject},
-        {"$set": update_doc},
-        upsert=True,
+        {"$set": {
+            "onboarding_completed": True,
+            "onboarded_at": now,
+            "updated_at": now,
+        }},
     )
 
     await writer.log(
@@ -463,15 +464,23 @@ async def complete_onboarding(
         actor_role=principal.role,
         action="COMPLETE_ONBOARDING",
         subject=principal.subject,
-        details=f"User completed onboarding for role '{chosen_role}'.",
+        details=(
+            f"Onboarding completed. Requested role '{requested_role}' was not "
+            "applied. Authorization remains "
+            f"'{authorized_role or 'unset'}' at institution "
+            f"'{user_doc.get('institution_id') or ''}'."
+        ),
         category="ONBOARDING",
         ip_address=client_ip(request),
     )
 
-    target_dashboard = ROLE_DASHBOARD_MAP.get(chosen_role, "/dashboard")
+    target_dashboard = ROLE_DASHBOARD_MAP.get(authorized_role, "/dashboard")
     return {
         "status": "completed",
-        "message": "Onboarding completed successfully.",
+        "message": (
+            "Onboarding completed. Institution access is granted only after "
+            "an approved membership."
+        ),
         "target_dashboard": target_dashboard,
-        "selected_role": chosen_role,
+        "selected_role": authorized_role,
     }

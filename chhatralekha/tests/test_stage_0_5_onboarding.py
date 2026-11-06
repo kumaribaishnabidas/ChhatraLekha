@@ -371,7 +371,12 @@ async def test_onboarding_completion_routing_and_privilege_prevention(client: As
     )
     assert escalate_resp.status_code == 403
 
-    # 2. Legitimate completion routes to student workspace
+    # A rejected escalation must not have written role or tenant.
+    untouched = await db["users"].find_one({"user_id": "FINISHER-01"})
+    assert untouched["role"] == "verifier"
+    assert untouched.get("institution_id") is None
+
+    # 2. Completion records the journey and keeps the caller's authorization.
     complete_resp = await client.post(
         "/api/onboarding/complete",
         json={"selected_role": "student", "institution_id": inst_id},
@@ -380,7 +385,76 @@ async def test_onboarding_completion_routing_and_privilege_prevention(client: As
     assert complete_resp.status_code == 200
     data = complete_resp.json()
     assert data["status"] == "completed"
-    assert data["target_dashboard"] == "/me"
+    assert data["selected_role"] == "verifier"
+    assert data["target_dashboard"] == "/dashboard"
 
     user = await db["users"].find_one({"user_id": "FINISHER-01"})
     assert user["onboarding_completed"] is True
+    assert user["role"] == "verifier"
+    assert user.get("institution_id") is None
+
+
+@pytest.mark.asyncio
+async def test_complete_onboarding_cannot_grant_institution_admin(client: AsyncClient):
+    db = mongo.db()
+    inst_id, _ = await seed_institution_and_student(db)
+    token = await create_user_helper(db, "VERIFIER-ESCALATE-01", role="verifier")
+
+    response = await client.post(
+        "/api/onboarding/complete",
+        json={"selected_role": "institution_admin", "institution_id": inst_id},
+        headers=auth_header(token),
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["selected_role"] == "verifier"
+    assert body["target_dashboard"] == "/dashboard"
+
+    user = await db["users"].find_one({"user_id": "VERIFIER-ESCALATE-01"})
+    assert user["role"] == "verifier"
+    assert user.get("institution_id") is None
+    assert user.get("active_institution_id") is None
+
+
+@pytest.mark.asyncio
+async def test_complete_onboarding_cannot_move_teacher_to_another_institution(
+    client: AsyncClient,
+):
+    db = mongo.db()
+    home_id, _ = await seed_institution_and_student(db)
+    other_id = "INST-TEST-002"
+    await db["institutions"].replace_one(
+        {"institution_id": other_id},
+        {
+            "institution_id": other_id,
+            "name": "Other College",
+            "category": "COLLEGE",
+            "institution_type": "ENGINEERING",
+            "city": "Mumbai",
+            "state": "Maharashtra",
+            "verification_status": "APPROVED",
+            "is_active": True,
+        },
+        upsert=True,
+    )
+    token = await create_user_helper(
+        db,
+        "TEACHER-TENANT-01",
+        role="teacher",
+        institution_id=home_id,
+    )
+
+    response = await client.post(
+        "/api/onboarding/complete",
+        json={"selected_role": "institution_admin", "institution_id": other_id},
+        headers=auth_header(token),
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["selected_role"] == "teacher"
+    assert body["target_dashboard"] == "/teacher"
+
+    user = await db["users"].find_one({"user_id": "TEACHER-TENANT-01"})
+    assert user["role"] == "teacher"
+    assert user["institution_id"] == home_id
+    assert user.get("active_institution_id") in (None, home_id)
