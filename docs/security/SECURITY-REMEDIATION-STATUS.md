@@ -1,9 +1,9 @@
 # Security Remediation Status & Governance Matrix
 
 **Project:** ChhatraLekha  
-**Last Updated:** 2026-11-06 (Post-Stage 0.3 Remediation)  
+**Last Updated:** 2026-11-06 (Post-Stage 0.4 Tenant Isolation Remediation)  
 **Governance Level:** Production-Ready Baseline  
-**Active Working Branch:** `security/stage-0-3-remediation`
+**Active Working Branch:** `security/stage-0-4-tenant-isolation`
 
 ---
 
@@ -19,9 +19,9 @@
 | **SEC-NOTIF-01** | **High** | Access Control | `app/modules/notifications/service.py` | IDOR on notification mark read and deletion | **RESOLVED** | Stage 0.3 |
 | **SEC-EMAIL-01** | **Medium** | Authentication | `app/modules/profiles/service.py` | Plaintext verification code disclosure and universal bypass | **RESOLVED** | Stage 0.3 |
 | **CI-LINT-01** | **Informational** | CI / Quality | `app/modules/` | 13 Ruff lint diagnostics breaking backend CI matrix | **RESOLVED** | Stage 0.3 |
-| **SEC-TENANT-01** | **Medium** | Tenant Isolation | `app/api/academic.py`, `announcements.py`, `reports.py` | Fail-open query filters on null `institution_id` | Scheduled (P3) | Stage 0.4 |
-| **SEC-AUTH-02** | **Low** | Authentication | `app/api/auth.py` | Documented `POST /api/auth/logout` endpoint not implemented | Scheduled (P3) | Stage 0.4 |
-| **SEC-AUTH-03** | **Low** | Authentication | `app/core/security.py` | Stateless refresh tokens without database persistence or rotation | Scheduled (P3) | Stage 0.4 |
+| **SEC-TENANT-01** | **High** | Tenant Isolation | `app/api/academic.py`, `announcements.py`, `reports.py`, `attendance.py`, `teacher.py`, `transfers.py` | Fail-open queries on null/missing tenant context and unsafe default fallbacks | **RESOLVED** | Stage 0.4 |
+| **SEC-AUTH-02** | **Low** | Authentication | `app/api/auth.py` | Documented `POST /api/auth/logout` endpoint not implemented | Scheduled (P3) | Stage 0.5 |
+| **SEC-AUTH-03** | **Low** | Authentication | `app/core/security.py` | Stateless refresh tokens without database persistence or rotation | Scheduled (P3) | Stage 0.5 |
 
 ---
 
@@ -51,6 +51,14 @@
 - **Brute-Force Rate Limiting:** Codes enforce a strict 5-attempt limit. Exceeding 5 attempts permanently invalidates the pending verification.
 - **Single-Use Consumption:** Successful verification immediately consumes and deletes the pending code, preventing replay attacks.
 - **Production Suppression:** Plaintext verification codes (`demo_code`) are never returned in production API responses.
+
+### 2.5 Multi-Tenant Isolation and Fail-Closed Access Control (Stage 0.4)
+- **Fail-Closed Missing Context:** All institutional operations require verified `institution_id` on the authenticated principal. Missing tenant context strictly fails closed with HTTP 400 Bad Request.
+- **No Unsafe Fallbacks:** Eliminated all occurrences of hardcoded fallback identifiers (`"INST-0421"`, `"INST-DEFAULT"`).
+- **Cross-Institution Parameter Probing Blocked:** Institutional users specifying a mismatched `institution_id` query parameter are immediately rejected with HTTP 403 Forbidden.
+- **Notice Acknowledgement Ownership Enforced:** The announcement acknowledgement endpoint (`POST /api/announcements/{id}/acknowledge`) enforces `principal.require_scope(doc.get("institution_id"))`, preventing cross-tenant acknowledgements.
+- **Strictly Scoped Exports & Mutations:** Attendance sessions, corrections, review tasks, student registers, and academic setups enforce object-level ownership checks preventing cross-tenant reads or writes.
+- **Directorate Governance Preserved:** Regulators and platform administrators (`national_admin`, `aicte_admin`, `platform_operator`) retain explicitly authorized multi-tenant and cross-institution oversight capabilities.
 
 ---
 

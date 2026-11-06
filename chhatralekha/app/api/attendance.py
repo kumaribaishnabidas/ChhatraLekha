@@ -114,7 +114,7 @@ async def record_attendance_session(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> AttendanceSessionOut:
     """Record an attendance session (daily or period-wise) with student marks and duplicate prevention."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
+    inst_id = principal.require_tenant_context()
     now = datetime.now(timezone.utc)
 
     # 1. Enforce teacher assignment authorization
@@ -298,9 +298,10 @@ async def list_attendance_sessions(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> List[AttendanceSessionOut]:
     """List historical attendance sessions with tenant isolation and search filtering."""
+    target_inst = principal.get_scoped_institution_id()
     query: dict[str, Any] = {}
-    if principal.role not in {"aicte_admin", "platform_operator"} and principal.institution_id:
-        query["institution_id"] = principal.institution_id
+    if target_inst:
+        query["institution_id"] = target_inst
     if target_id:
         query["target_id"] = target_id
     if session_date:
@@ -341,14 +342,10 @@ async def get_attendance_session_detail(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> dict[str, Any]:
     """Retrieve detailed attendance session and per-student records."""
-    inst_id = principal.institution_id
-    query: dict[str, Any] = {"session_id": session_id}
-    if principal.role not in {"aicte_admin", "platform_operator"} and inst_id:
-        query["institution_id"] = inst_id
-
-    session_doc = await db["attendance_sessions"].find_one(query)
+    session_doc = await db["attendance_sessions"].find_one({"session_id": session_id})
     if not session_doc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attendance session not found.")
+    principal.require_scope(session_doc.get("institution_id", ""))
 
     records = await db["attendance_records"].find({"session_id": session_id}).to_list(200)
     return {
@@ -391,7 +388,7 @@ async def get_class_roster(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> List[AttendanceRosterItem]:
     """Retrieve enrolled student roster for roll-call attendance marking."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
+    inst_id = principal.require_tenant_context()
 
     # Enforce teacher assignment check
     if principal.role == "teacher":
@@ -458,7 +455,7 @@ async def get_attendance_policy(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> AttendancePolicyOut:
     """Retrieve the active attendance policy and rules for the institution."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
+    inst_id = principal.require_tenant_context()
     policy_doc = await db["attendance_policies"].find_one({"institution_id": inst_id})
     if not policy_doc:
         return AttendancePolicyOut(
@@ -502,7 +499,7 @@ async def update_attendance_policy(
             detail="Updating attendance policy requires administrative privileges.",
         )
 
-    inst_id = principal.institution_id or "INST-DEFAULT"
+    inst_id = principal.require_tenant_context()
     now_str = datetime.now(timezone.utc).isoformat()
 
     doc = {
@@ -552,7 +549,7 @@ async def request_attendance_correction(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> AttendanceCorrectionOut:
     """Submit an auditable correction request. Original attendance records are never silently modified."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
+    inst_id = principal.require_tenant_context()
 
     # Verify existing record
     rec = await db["attendance_records"].find_one({
@@ -615,12 +612,15 @@ async def request_attendance_correction(
 async def list_attendance_corrections(
     status_filter: Optional[str] = Query(None, alias="status"),
     session_id: Optional[str] = None,
+    institution_id: Optional[str] = None,
     principal: Principal = Depends(require_permission(rbac.Permission.VIEW_ATTENDANCE)),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> List[AttendanceCorrectionOut]:
     """List attendance correction requests with audit metadata."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
-    query: dict[str, Any] = {"institution_id": inst_id}
+    target_inst = principal.get_scoped_institution_id(institution_id)
+    query: dict[str, Any] = {}
+    if target_inst:
+        query["institution_id"] = target_inst
     if status_filter:
         query["status"] = status_filter.upper()
     if session_id:
@@ -670,13 +670,12 @@ async def review_attendance_correction(
             detail="Reviewing attendance corrections requires administrative authorization.",
         )
 
-    inst_id = principal.institution_id or "INST-DEFAULT"
-    corr = await db["attendance_corrections"].find_one({
-        "_id": correction_id,
-        "institution_id": inst_id,
-    })
+    corr = await db["attendance_corrections"].find_one({"_id": correction_id})
     if not corr:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Correction request not found.")
+
+    principal.require_scope(corr.get("institution_id", ""))
+    inst_id = corr.get("institution_id")
 
     if corr.get("status") != "PENDING":
         raise HTTPException(
@@ -701,7 +700,7 @@ async def review_attendance_correction(
             "new_status": corr["requested_status"],
             "changed_by": principal.subject,
             "changed_by_name": getattr(principal, "name", principal.subject),
-            "reason": corr["reason"],
+            "reason": corr.get("reason", ""),
             "review_notes": payload.review_notes,
             "timestamp": now_str,
         }
@@ -814,12 +813,15 @@ async def get_attendance_report_summary(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     target_id: Optional[str] = None,
+    institution_id: Optional[str] = None,
     principal: Principal = Depends(require_permission(rbac.Permission.VIEW_ATTENDANCE)),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> AttendanceReportSummaryOut:
     """Aggregated attendance summary across classes and departments."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
-    query: dict[str, Any] = {"institution_id": inst_id}
+    target_inst = principal.get_scoped_institution_id(institution_id)
+    if not target_inst:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Institution context required.")
+    query: dict[str, Any] = {"institution_id": target_inst}
     if start_date and end_date:
         query["session_date"] = {"$gte": start_date, "$lte": end_date}
     elif start_date:
@@ -858,7 +860,7 @@ async def get_attendance_report_summary(
         class_summaries.append(c)
 
     return AttendanceReportSummaryOut(
-        institution_id=inst_id,
+        institution_id=target_inst,
         period_start=start_date or "2025-06-01",
         period_end=end_date or "2026-05-31",
         total_sessions=total_sessions,
@@ -877,12 +879,15 @@ async def export_attendance_csv(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     target_id: Optional[str] = None,
+    institution_id: Optional[str] = None,
     principal: Principal = Depends(require_permission(rbac.Permission.EXPORT_REPORTS)),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> Response:
     """Secure CSV report export protected by backend authorization and institution boundary."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
-    query: dict[str, Any] = {"institution_id": inst_id}
+    target_inst = principal.get_scoped_institution_id(institution_id)
+    if not target_inst:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Institution context required.")
+    query: dict[str, Any] = {"institution_id": target_inst}
     if start_date and end_date:
         query["session_date"] = {"$gte": start_date, "$lte": end_date}
     if target_id:
@@ -916,7 +921,7 @@ async def export_attendance_csv(
         ])
 
     csv_data = output.getvalue()
-    filename = f"attendance_report_{inst_id}_{datetime.now(timezone.utc).strftime('%Y%m%d')}.csv"
+    filename = f"attendance_report_{target_inst}_{datetime.now(timezone.utc).strftime('%Y%m%d')}.csv"
 
     return Response(
         content=csv_data,
@@ -1053,7 +1058,7 @@ async def get_teacher_classes(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> List[dict[str, Any]]:
     """Get assigned cohorts and check whether attendance has been taken for the selected date."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
+    inst_id = principal.require_tenant_context()
     today_str = date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     # Fetch teacher assignments

@@ -33,12 +33,11 @@ async def get_teacher_classes(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> List[TeacherAssignmentOut]:
     """Retrieve the classes and subjects allocated to the teacher."""
+    inst_id = principal.require_tenant_context()
     teacher_id = principal.subject
     rows = await db["teacher_assignments"].find({
-        "$or": [
-            {"teacher_id": teacher_id},
-            {"institution_id": principal.institution_id},
-        ]
+        "institution_id": inst_id,
+        "teacher_id": teacher_id,
     }).to_list(100)
 
     return [
@@ -63,8 +62,10 @@ async def get_teacher_timetable(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> List[dict[str, Any]]:
     """Retrieve weekly schedule and assigned periods."""
+    inst_id = principal.require_tenant_context()
     assignments = await db["teacher_assignments"].find({
-        "teacher_id": principal.subject
+        "institution_id": inst_id,
+        "teacher_id": principal.subject,
     }).to_list(50)
 
     # Basic timetable entries derived from assignments
@@ -90,7 +91,9 @@ async def get_teacher_assignments(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> List[dict[str, Any]]:
     """Retrieve coursework assignments posted by the faculty member."""
+    inst_id = principal.require_tenant_context()
     cursor = db["course_assignments"].find({
+        "institution_id": inst_id,
         "teacher_id": principal.subject,
     }).sort("created_at", -1)
     results = []
@@ -149,12 +152,13 @@ async def create_teacher_assignment(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> dict[str, Any]:
     """Publish a new assignment for assigned classes."""
+    inst_id = principal.require_tenant_context()
     assignment_id = f"ASN-{secrets.token_hex(4).upper()}"
     doc = {
         "_id": assignment_id,
         "assignment_id": assignment_id,
         "teacher_id": principal.subject,
-        "institution_id": principal.institution_id or "INST-DEFAULT",
+        "institution_id": inst_id,
         "target_id": payload.target_id,
         "target_label": payload.target_label,
         "subject_name": payload.subject_name,
@@ -176,21 +180,16 @@ async def get_teacher_dashboard_summary(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> dict[str, Any]:
     """Retrieve assigned classes, schedule, assignments, and pending grading tasks."""
+    inst_id = principal.require_tenant_context()
     classes = await db["teacher_assignments"].find({
-        "$or": [
-            {"teacher_id": principal.subject},
-            {"institution_id": principal.institution_id},
-        ]
+        "institution_id": inst_id,
+        "teacher_id": principal.subject,
     }).to_list(20)
 
-    # Announcements
+    # Announcements scoped to institution and teacher/all roles
     notices_cursor = db["announcements"].find({
-        "$or": [
-            {"institution_id": principal.institution_id},
-            {"target_role": "TEACHER"},
-            {"target_role": "FACULTY"},
-            {"target_role": "ALL"},
-        ]
+        "institution_id": inst_id,
+        "target_role": {"$in": ["TEACHER", "FACULTY", "ALL"]},
     }).sort("published_at", -1).limit(4)
     announcements = []
     async for n in notices_cursor:
@@ -205,7 +204,7 @@ async def get_teacher_dashboard_summary(
 
     return {
         "teacher_id": principal.subject,
-        "institution_id": principal.institution_id,
+        "institution_id": inst_id,
         "total_assigned_classes": len(classes) if classes else 2,
         "today_lectures_count": min(len(classes) * 2, 4),
         "active_assignments_count": 2,

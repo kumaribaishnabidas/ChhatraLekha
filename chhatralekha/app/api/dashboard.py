@@ -8,7 +8,8 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.api.deps import Principal, get_db, get_principal
+from app.api.deps import Principal, get_db, get_principal, require_permission
+from app.core import rbac
 from app.models.enums import AdmissionQuota
 from app.schemas.dashboard import (
     ComplianceRow,
@@ -25,7 +26,7 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 @router.get("/national", response_model=NationalKpis, summary="Pan-India headline numbers")
 async def national_kpis(
-    principal: Principal = Depends(get_principal),
+    principal: Principal = Depends(require_permission(rbac.Permission.VIEW_NATIONAL_DASHBOARD)),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> NationalKpis:
     """The live headline numbers of the AICTE Directorate dashboard."""
@@ -73,6 +74,7 @@ async def intake_matrix(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> list[IntakeRow]:
     """The live utilisation of every sanctioned programme."""
+    target_inst = principal.get_scoped_institution_id(institution_id)
     snapshot = await build_snapshot(db)
     institutions = {
         row["institution_id"]: row
@@ -82,7 +84,7 @@ async def intake_matrix(
     rows: list[IntakeRow] = []
     for item in engine.build_snapshots(snapshot):
         program = item.program
-        if institution_id and program.get("institution_id") != institution_id:
+        if target_inst and program.get("institution_id") != target_inst:
             continue
         institution = institutions.get(program.get("institution_id"), {})
         rows.append(
@@ -162,7 +164,7 @@ async def quota_distribution(
 
 @router.get("/compliance", response_model=list[ComplianceRow], summary="Institution compliance matrix")
 async def compliance_matrix(
-    principal: Principal = Depends(get_principal),
+    principal: Principal = Depends(require_permission(rbac.Permission.VIEW_COMPLIANCE_MATRIX)),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> list[ComplianceRow]:
     """Every institution scored against its sanctioned intake."""
@@ -214,7 +216,7 @@ async def compliance_matrix(
 
 @router.get("/risk", response_model=list[RiskScoreOut], summary="Institution risk scores")
 async def risk_score_list(
-    principal: Principal = Depends(get_principal),
+    principal: Principal = Depends(require_permission(rbac.Permission.VIEW_COMPLIANCE_MATRIX)),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> list[RiskScoreOut]:
     """The explainable risk score of every institution that carries anomalies."""

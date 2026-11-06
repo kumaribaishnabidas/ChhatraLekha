@@ -84,3 +84,4 @@ When an absence notification is published to the notification stream:
 - The notification title is standardized (`"Daily Attendance Notice: Absence Logged"`).
 - The message preview contains only cohort and session date metadata (`"Student was marked absent in Class 10A on 2026-03-10."`).
 - Sensitive medical remarks or subjective teacher comments are excluded from push previews and email headers to safeguard student privacy.
+

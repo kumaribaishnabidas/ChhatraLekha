@@ -63,12 +63,11 @@ async def list_anomalies(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> list[AnomalyOut]:
     """List the anomaly register, filtered by the caller's scope."""
-    if principal.role != "aicte_admin" and principal.institution_id:
-        institution_id = principal.institution_id
+    target_inst = principal.get_scoped_institution_id(institution_id)
 
     repository = AnomalyRepository(db["anomalies"])
     rows = await repository.all(
-        institution_id=institution_id,
+        institution_id=target_inst,
         severity=severity,
         anomaly_type=anomaly_type,
         apaar_id=apaar_id,
@@ -86,9 +85,8 @@ async def anomaly_summary(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> AnomalySummary:
     """A severity and type roll-up of the anomaly register."""
-    if principal.role != "aicte_admin" and principal.institution_id:
-        institution_id = principal.institution_id
-    summary = await AnomalyRepository(db["anomalies"]).summary(institution_id)
+    target_inst = principal.get_scoped_institution_id(institution_id)
+    summary = await AnomalyRepository(db["anomalies"]).summary(target_inst)
     return AnomalySummary(**summary)
 
 
@@ -118,12 +116,7 @@ async def review_anomaly(
         )
 
     # STRICT OBJECT-LEVEL AUTHORIZATION CHECK BEFORE MUTATING
-    if principal.role != "aicte_admin" and principal.institution_id:
-        if existing.get("institution_id") != principal.institution_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You are not allowed to review another institution's anomalies.",
-            )
+    principal.require_scope(existing.get("institution_id", ""))
 
     row = await repository.set_review_status(
         anomaly_id,
@@ -168,12 +161,7 @@ async def assign_anomaly_reviewer(
     if existing is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No such anomaly.")
 
-    if principal.role != "aicte_admin" and principal.institution_id:
-        if existing.get("institution_id") != principal.institution_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You are not allowed to assign another institution's anomalies.",
-            )
+    principal.require_scope(existing.get("institution_id", ""))
 
     row = await repository.assign_reviewer(
         anomaly_id, payload.assignee_id, payload.assignee_name, principal.subject
@@ -212,12 +200,7 @@ async def append_anomaly_case_note(
     if existing is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No such anomaly.")
 
-    if principal.role != "aicte_admin" and principal.institution_id:
-        if existing.get("institution_id") != principal.institution_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You are not allowed to update another institution's anomalies.",
-            )
+    principal.require_scope(existing.get("institution_id", ""))
 
     row = await repository.append_case_note(
         anomaly_id,

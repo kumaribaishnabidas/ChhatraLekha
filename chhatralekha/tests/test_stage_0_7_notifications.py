@@ -37,7 +37,7 @@ async def second_student_headers(async_client: AsyncClient):
 
 @pytest.fixture
 async def admin_auth_headers(async_client: AsyncClient):
-    resp = await async_client.post("/api/auth/demo-login", json={"role": "school_admin"})
+    resp = await async_client.post("/api/auth/demo-login", json={"role": "college_admin"})
     assert resp.status_code == 200
     token = resp.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}

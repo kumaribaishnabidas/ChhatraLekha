@@ -52,12 +52,7 @@ async def initiate_transfer(
     The receiving institution requests the transfer of an enrolled student.
     Strict tenant validation ensures receiving institutions only request for their own campus.
     """
-    if principal.role != "aicte_admin" and principal.institution_id:
-        if payload.to_institution_id != principal.institution_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You may only request transfers into your own institution.",
-            )
+    principal.require_scope(payload.to_institution_id)
 
     student = await StudentRepository(db["students"]).get(payload.apaar_id)
     if not student:
@@ -143,11 +138,12 @@ async def list_transfers(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> list[TransferOut]:
     """List transfer requests involving the caller's institution."""
+    target_inst = principal.get_scoped_institution_id()
     query: dict[str, Any] = {}
-    if principal.role != "aicte_admin" and principal.institution_id:
+    if target_inst:
         query["$or"] = [
-            {"from_institution_id": principal.institution_id},
-            {"to_institution_id": principal.institution_id},
+            {"from_institution_id": target_inst},
+            {"to_institution_id": target_inst},
         ]
 
     if status_filter:
@@ -180,10 +176,13 @@ async def get_transfer(
             detail="Transfer request not found.",
         )
 
-    if principal.role != "aicte_admin" and principal.institution_id:
+    if not principal.is_directorate:
         if (
-            transfer.get("from_institution_id") != principal.institution_id
-            and transfer.get("to_institution_id") != principal.institution_id
+            not principal.institution_id
+            or (
+                transfer.get("from_institution_id") != principal.institution_id
+                and transfer.get("to_institution_id") != principal.institution_id
+            )
         ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -216,19 +215,19 @@ async def review_transfer(
             detail="Transfer request not found.",
         )
 
+    # Only relieving institution or AICTE admin can approve/reject the release
+    if not principal.is_directorate:
+        if not principal.institution_id or transfer.get("from_institution_id") != principal.institution_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only the source/relieving institution or regulatory admin can review this transfer.",
+            )
+
     if transfer.get("status") not in {TransferStatus.SUBMITTED.value, TransferStatus.IN_REVIEW.value}:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Transfer has already been finalized ({transfer.get('status')}).",
         )
-
-    # Only relieving institution or AICTE admin can approve/reject the release
-    if principal.role != "aicte_admin" and principal.institution_id:
-        if transfer.get("from_institution_id") != principal.institution_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only the source/relieving institution or regulatory admin can review this transfer.",
-            )
 
     now = datetime.now(timezone.utc)
     new_status = TransferStatus.APPROVED.value if payload.decision == "APPROVED" else TransferStatus.REJECTED.value

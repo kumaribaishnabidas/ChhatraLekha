@@ -171,7 +171,10 @@ async def list_linked_children(
                 )
 
         # Recent notices
-        notices = await db["announcements"].find({"institution_id": inst_id}).sort("published_at", -1).limit(5).to_list(5)
+        notices = await db["announcements"].find({
+            "institution_id": inst_id,
+            "target_role": {"$in": ["PARENT", "ALL", None]},
+        }).sort("published_at", -1).limit(5).to_list(5)
         parsed_notices = [
             AnnouncementOut(
                 announcement_id=n.get("announcement_id") or str(n["_id"]),

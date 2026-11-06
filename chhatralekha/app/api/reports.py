@@ -61,9 +61,8 @@ async def students_csv(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> Response:
     """Download the student register as a CSV file."""
-    if principal.role != "aicte_admin":
-        institution_id = principal.institution_id
-    rows = await _students(db, institution_id)
+    target_inst = principal.get_scoped_institution_id(institution_id)
+    rows = await _students(db, target_inst)
     body = csv_export.students(rows)
     await writer.log(
         AuditRepository(db["audit_events"]),
@@ -90,9 +89,8 @@ async def students_pdf(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> Response:
     """Download the student register as a PDF report."""
-    if principal.role != "aicte_admin":
-        institution_id = principal.institution_id
-    rows = await _students(db, institution_id)
+    target_inst = principal.get_scoped_institution_id(institution_id)
+    rows = await _students(db, target_inst)
     body = pdf.build_students_report_pdf(rows, subtitle=f"{len(rows)} record(s)")
     await writer.log(
         AuditRepository(db["audit_events"]),
@@ -121,9 +119,8 @@ async def anomalies_csv(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> Response:
     """Download the anomaly register as a CSV file."""
-    if principal.role != "aicte_admin":
-        institution_id = principal.institution_id
-    rows = await _anomalies(db, institution_id, severity, anomaly_type)
+    target_inst = principal.get_scoped_institution_id(institution_id)
+    rows = await _anomalies(db, target_inst, severity, anomaly_type)
     body = csv_export.anomalies(rows)
     await writer.log(
         AuditRepository(db["audit_events"]),
@@ -152,9 +149,8 @@ async def anomalies_pdf(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> Response:
     """Download the anomaly register as a PDF report."""
-    if principal.role != "aicte_admin":
-        institution_id = principal.institution_id
-    rows = await _anomalies(db, institution_id, severity, anomaly_type)
+    target_inst = principal.get_scoped_institution_id(institution_id)
+    rows = await _anomalies(db, target_inst, severity, anomaly_type)
     body = pdf.build_anomaly_report_pdf(rows)
     await writer.log(
         AuditRepository(db["audit_events"]),
@@ -208,13 +204,14 @@ async def utilisation_csv(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> Response:
     """Download the programme utilisation matrix as a CSV file."""
+    target_inst = principal.get_scoped_institution_id(institution_id)
     snapshot = await build_snapshot(db)
     snapshots = engine.build_snapshots(snapshot)
-    if institution_id:
+    if target_inst:
         snapshots = [
             item
             for item in snapshots
-            if item.program.get("institution_id") == institution_id
+            if item.program.get("institution_id") == target_inst
         ]
     body = csv_export.programme_utilisation(snapshots)
     await writer.log(

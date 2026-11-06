@@ -96,6 +96,18 @@ def get_submission_repo(db: AsyncIOMotorDatabase = Depends(get_db)) -> Submissio
 # ------------------------------------------------------------ authentication
 
 
+DIRECTORATE_ROLES: frozenset[str] = frozenset(
+    {
+        "national_admin",
+        "aicte_admin",
+        "platform_operator",
+        "regulator_admin",
+        "state_admin",
+        "district_admin",
+    }
+)
+
+
 class Principal:
     """The authenticated caller."""
 
@@ -119,6 +131,11 @@ class Principal:
         self.state = user.get("state") if isinstance(user, dict) else None
         self.district = user.get("district") if isinstance(user, dict) else None
 
+    @property
+    def is_directorate(self) -> bool:
+        """Whether the principal holds a platform/directorate administrative role."""
+        return self.role in DIRECTORATE_ROLES
+
     def require(self, permission: rbac.Permission) -> None:
         """Raise ``403`` when the principal lacks the permission."""
         if not rbac.has_permission(self.role, permission):
@@ -132,7 +149,7 @@ class Principal:
 
     def require_scope(self, institution_id: str) -> None:
         """Raise ``403`` when the principal may not touch that institution."""
-        if self.role in {"national_admin", "aicte_admin", "platform_operator", "regulator_admin", "state_admin", "district_admin"}:
+        if self.is_directorate:
             return
         if self.institution_id and self.institution_id == institution_id:
             return
@@ -140,6 +157,36 @@ class Principal:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You are not allowed to access another institution's records.",
         )
+
+    def get_scoped_institution_id(self, requested_institution_id: Optional[str] = None) -> Optional[str]:
+        """Resolve the authorized institution filter for tenant-scoped operations.
+
+        - Directorate roles may inspect any requested institution (or query all if None).
+        - Non-directorate roles must have an institution_id (fails closed with HTTP 400).
+        - Non-directorate roles are strictly locked to their own institution_id (cross-tenant param ignored).
+        """
+        if self.is_directorate:
+            return requested_institution_id
+        if not self.institution_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Principal is not associated with an institution.",
+            )
+        if requested_institution_id and requested_institution_id != self.institution_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not allowed to access another institution's records.",
+            )
+        return self.institution_id
+
+    def require_tenant_context(self) -> str:
+        """Require that the principal is associated with an active institution. Fails closed with HTTP 400."""
+        if not self.institution_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Institution context required.",
+            )
+        return self.institution_id
 
 
 async def ensure_can_access_student(
@@ -186,7 +233,7 @@ async def ensure_can_access_student(
     }:
         return
 
-    if principal.role in {"institution_admin", "academic_admin", "teacher"}:
+    if principal.role in {"institution_admin", "school_admin", "college_admin", "academic_admin", "teacher"}:
         if not principal.institution_id or student.get("institution_id") != principal.institution_id:
             if db is not None:
                 await writer.log(

@@ -88,7 +88,7 @@ class AcademicDocumentOcrService:
             "apaar_id": raw_apaar or "984210357890",
             "roll_number": roll_no,
             "program_code": program_code,
-            "institution_id": meta.get("institution_id", "INST-0421"),
+            "institution_id": meta.get("institution_id", ""),
             "academic_year": academic_year,
             "score": score,
             "confidence": confidence,

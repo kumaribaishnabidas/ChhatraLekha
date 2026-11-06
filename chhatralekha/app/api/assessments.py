@@ -54,7 +54,7 @@ async def create_assessment(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> AssessmentOut:
     """Create a new exam or assessment in DRAFT status."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
+    inst_id = principal.require_tenant_context()
     assessment_id = f"ASM-{secrets.token_hex(6)}"
 
     doc = {
@@ -237,9 +237,10 @@ async def list_assessments(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> List[AssessmentOut]:
     """List assessments for the institution."""
+    target_inst = principal.get_scoped_institution_id()
     query: dict[str, Any] = {}
-    if principal.role not in {"aicte_admin", "platform_operator"} and principal.institution_id:
-        query["institution_id"] = principal.institution_id
+    if target_inst:
+        query["institution_id"] = target_inst
     if target_id:
         query["target_id"] = target_id
     if academic_year:

@@ -461,7 +461,7 @@ async def get_academic_overview(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> AcademicOverviewOut:
     """Return consolidated statistics of the academic hierarchy for the caller's institution."""
-    inst_id = principal.institution_id or "INST-0421"
+    inst_id = principal.require_tenant_context()
     await _ensure_academic_seeds(db, inst_id)
 
     # Fetch current active year
@@ -517,7 +517,7 @@ async def create_academic_year(
             detail="Academic year start_date must precede end_date.",
         )
 
-    inst_id = principal.institution_id or "INST-DEFAULT"
+    inst_id = principal.require_tenant_context()
     year_id = f"AY-{inst_id}-{payload.year_label.replace('/', '-')}"
 
     doc = {
@@ -573,16 +573,18 @@ async def create_academic_year(
 
 @router.get("/years", response_model=List[AcademicYearOut], summary="List academic years")
 async def list_academic_years(
+    institution_id: Optional[str] = None,
     principal: Principal = Depends(get_principal),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> List[AcademicYearOut]:
     """List configured academic years for the caller's institution."""
-    inst_id = principal.institution_id or "INST-0421"
-    await _ensure_academic_seeds(db, inst_id)
+    target_inst_id = principal.get_scoped_institution_id(institution_id)
+    if target_inst_id:
+        await _ensure_academic_seeds(db, target_inst_id)
 
     query: dict[str, Any] = {}
-    if principal.role not in {"aicte_admin", "platform_operator"} and principal.institution_id:
-        query["institution_id"] = principal.institution_id
+    if target_inst_id:
+        query["institution_id"] = target_inst_id
 
     rows = await db["academic_years"].find(query).sort("start_date", -1).to_list(100)
     return [
@@ -610,10 +612,11 @@ async def activate_academic_year(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> AcademicYearOut:
     """Set the specified academic year as the current active year, deactivating others."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
-    doc = await db["academic_years"].find_one({"_id": year_id, "institution_id": inst_id})
+    inst_id = principal.require_tenant_context()
+    doc = await db["academic_years"].find_one({"_id": year_id})
     if not doc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Academic year not found.")
+    principal.require_scope(doc.get("institution_id", ""))
 
     await db["academic_years"].update_many(
         {"institution_id": inst_id},
@@ -658,10 +661,11 @@ async def archive_academic_year(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> AcademicYearOut:
     """Archive an academic year. Historical records and enrolments are strictly preserved."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
-    doc = await db["academic_years"].find_one({"_id": year_id, "institution_id": inst_id})
+    principal.require_tenant_context()
+    doc = await db["academic_years"].find_one({"_id": year_id})
     if not doc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Academic year not found.")
+    principal.require_scope(doc.get("institution_id", ""))
 
     await db["academic_years"].update_one(
         {"_id": year_id},
@@ -712,7 +716,7 @@ async def create_semester_term(
             detail="Term start_date must precede end_date.",
         )
 
-    inst_id = principal.institution_id or "INST-DEFAULT"
+    inst_id = principal.require_tenant_context()
     slug = payload.name.lower().replace(" ", "_")
     term_id = f"TRM-{inst_id}-{payload.academic_year.replace('/', '-')}-{slug}"
 
@@ -756,16 +760,18 @@ async def create_semester_term(
 @router.get("/terms", response_model=List[SemesterTermOut], summary="List semester terms")
 async def list_semester_terms(
     academic_year: Optional[str] = None,
+    institution_id: Optional[str] = None,
     principal: Principal = Depends(get_principal),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> List[SemesterTermOut]:
     """List configured semesters and academic terms."""
-    inst_id = principal.institution_id or "INST-0421"
-    await _ensure_academic_seeds(db, inst_id)
+    target_inst_id = principal.get_scoped_institution_id(institution_id)
+    if target_inst_id:
+        await _ensure_academic_seeds(db, target_inst_id)
 
     query: dict[str, Any] = {}
-    if principal.role not in {"aicte_admin", "platform_operator"} and principal.institution_id:
-        query["institution_id"] = principal.institution_id
+    if target_inst_id:
+        query["institution_id"] = target_inst_id
     if academic_year:
         query["academic_year"] = academic_year
 
@@ -797,7 +803,7 @@ async def create_department(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> DepartmentOut:
     """Create an academic department (higher ed or specialized school departments)."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
+    inst_id = principal.require_tenant_context()
     dept_id = f"DEP-{inst_id}-{payload.department_code.upper()}"
 
     doc = {
@@ -834,16 +840,18 @@ async def create_department(
 
 @router.get("/departments", response_model=List[DepartmentOut], summary="List academic departments")
 async def list_departments(
+    institution_id: Optional[str] = None,
     principal: Principal = Depends(get_principal),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> List[DepartmentOut]:
     """List departments for the caller's institution."""
-    inst_id = principal.institution_id or "INST-0421"
-    await _ensure_academic_seeds(db, inst_id)
+    target_inst_id = principal.get_scoped_institution_id(institution_id)
+    if target_inst_id:
+        await _ensure_academic_seeds(db, target_inst_id)
 
     query: dict[str, Any] = {"status": "ACTIVE"}
-    if principal.role not in {"aicte_admin", "platform_operator"} and principal.institution_id:
-        query["institution_id"] = principal.institution_id
+    if target_inst_id:
+        query["institution_id"] = target_inst_id
 
     rows = await db["departments"].find(query).sort("name", 1).to_list(100)
     return [
@@ -874,10 +882,11 @@ async def update_department(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> DepartmentOut:
     """Update department information and HOD assignments."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
+    principal.require_tenant_context()
     doc = await db["departments"].find_one({"_id": department_id})
-    if not doc or (principal.role not in {"aicte_admin", "platform_operator"} and doc.get("institution_id") != inst_id):
+    if not doc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Department not found.")
+    principal.require_scope(doc.get("institution_id", ""))
 
     updates = {
         "name": payload.name,
@@ -929,7 +938,7 @@ async def create_programme(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> ProgrammeOut:
     """Create an academic programme, degree curriculum, or school grade structure."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
+    inst_id = principal.require_tenant_context()
     prg_id = f"PRG-{inst_id}-{payload.programme_code.upper()}"
 
     doc = {
@@ -974,16 +983,18 @@ async def create_programme(
 async def list_programmes(
     department_id: Optional[str] = None,
     academic_level: Optional[str] = None,
+    institution_id: Optional[str] = None,
     principal: Principal = Depends(get_principal),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> List[ProgrammeOut]:
     """List academic programmes for the institution."""
-    inst_id = principal.institution_id or "INST-0421"
-    await _ensure_academic_seeds(db, inst_id)
+    target_inst_id = principal.get_scoped_institution_id(institution_id)
+    if target_inst_id:
+        await _ensure_academic_seeds(db, target_inst_id)
 
     query: dict[str, Any] = {"status": "ACTIVE"}
-    if principal.role not in {"aicte_admin", "platform_operator"} and principal.institution_id:
-        query["institution_id"] = principal.institution_id
+    if target_inst_id:
+        query["institution_id"] = target_inst_id
     if department_id:
         query["department_id"] = department_id
     if academic_level:
@@ -1021,7 +1032,7 @@ async def create_class_section(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> ClassSectionOut:
     """Create a school class grade and section or college cohort."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
+    inst_id = principal.require_tenant_context()
     clean_grade = payload.grade_level.replace(" ", "_").upper()
     class_id = f"CLS-{inst_id}-{clean_grade}-{payload.section.upper()}-{payload.academic_year.replace('/', '-')}"
 
@@ -1078,16 +1089,18 @@ async def create_class_section(
 async def list_classes(
     academic_year: Optional[str] = None,
     programme_id: Optional[str] = None,
+    institution_id: Optional[str] = None,
     principal: Principal = Depends(get_principal),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> List[ClassSectionOut]:
     """List configured classes and sections."""
-    inst_id = principal.institution_id or "INST-0421"
-    await _ensure_academic_seeds(db, inst_id)
+    target_inst_id = principal.get_scoped_institution_id(institution_id)
+    if target_inst_id:
+        await _ensure_academic_seeds(db, target_inst_id)
 
     query: dict[str, Any] = {"status": "ACTIVE"}
-    if principal.role not in {"aicte_admin", "platform_operator"} and principal.institution_id:
-        query["institution_id"] = principal.institution_id
+    if target_inst_id:
+        query["institution_id"] = target_inst_id
     if academic_year:
         query["academic_year"] = academic_year
     if programme_id:
@@ -1125,7 +1138,7 @@ async def create_subject(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> SubjectOut:
     """Create a subject for a class or course curriculum."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
+    inst_id = principal.require_tenant_context()
     subj_id = f"SUB-{inst_id}-{payload.subject_code.upper()}"
 
     doc = {
@@ -1172,16 +1185,18 @@ async def list_subjects(
     applicable_to: Optional[str] = None,
     department_id: Optional[str] = None,
     programme_id: Optional[str] = None,
+    institution_id: Optional[str] = None,
     principal: Principal = Depends(get_principal),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> List[SubjectOut]:
     """List configured subjects."""
-    inst_id = principal.institution_id or "INST-0421"
-    await _ensure_academic_seeds(db, inst_id)
+    target_inst_id = principal.get_scoped_institution_id(institution_id)
+    if target_inst_id:
+        await _ensure_academic_seeds(db, target_inst_id)
 
     query: dict[str, Any] = {"status": "ACTIVE"}
-    if principal.role not in {"aicte_admin", "platform_operator"} and principal.institution_id:
-        query["institution_id"] = principal.institution_id
+    if target_inst_id:
+        query["institution_id"] = target_inst_id
     if applicable_to:
         query["applicable_to"] = applicable_to
     if department_id:
@@ -1224,7 +1239,7 @@ async def enrol_student(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> StudentEnrolmentOut:
     """Enrol a student. Validates that no active duplicate enrolment exists for the same student in that academic year."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
+    inst_id = principal.require_tenant_context()
 
     # Check for active duplicate enrolment
     existing = await db["student_enrolments"].find_one({
@@ -1289,16 +1304,18 @@ async def list_enrolments(
     programme_id: Optional[str] = None,
     academic_year: Optional[str] = None,
     is_current: Optional[bool] = Query(None),
+    institution_id: Optional[str] = None,
     principal: Principal = Depends(get_principal),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> List[StudentEnrolmentOut]:
     """List student enrolments with filtering. Preserves all historical records."""
-    inst_id = principal.institution_id or "INST-0421"
-    await _ensure_academic_seeds(db, inst_id)
+    target_inst_id = principal.get_scoped_institution_id(institution_id)
+    if target_inst_id:
+        await _ensure_academic_seeds(db, target_inst_id)
 
     query: dict[str, Any] = {}
-    if principal.role not in {"aicte_admin", "platform_operator"} and principal.institution_id:
-        query["institution_id"] = principal.institution_id
+    if target_inst_id:
+        query["institution_id"] = target_inst_id
     if student_id:
         query["student_id"] = student_id
     if class_id:
@@ -1344,10 +1361,11 @@ async def promote_student(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> StudentEnrolmentOut:
     """Promote student. Marks current record as PROMOTED (is_current=False) and creates new active enrolment."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
-    current_enrol = await db["student_enrolments"].find_one({"_id": enrolment_id, "institution_id": inst_id})
+    inst_id = principal.require_tenant_context()
+    current_enrol = await db["student_enrolments"].find_one({"_id": enrolment_id})
     if not current_enrol:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Enrolment record not found.")
+    principal.require_scope(current_enrol.get("institution_id", ""))
 
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
@@ -1403,10 +1421,11 @@ async def transfer_student_section(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> StudentEnrolmentOut:
     """Transfer student to another section while auditing the change and preserving history."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
-    enrol = await db["student_enrolments"].find_one({"_id": enrolment_id, "institution_id": inst_id})
+    principal.require_tenant_context()
+    enrol = await db["student_enrolments"].find_one({"_id": enrolment_id})
     if not enrol:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Enrolment record not found.")
+    principal.require_scope(enrol.get("institution_id", ""))
 
     old_section = enrol.get("section", "")
     await db["student_enrolments"].update_one(
@@ -1466,7 +1485,7 @@ async def create_teacher_assignment(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> TeacherAssignmentOut:
     """Allocate a faculty/teacher to a subject and class/programme."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
+    inst_id = principal.require_tenant_context()
     assign_id = f"ASN-{inst_id}-{secrets.token_hex(5)}"
 
     doc = {
@@ -1506,16 +1525,18 @@ async def list_teacher_assignments(
     teacher_id: Optional[str] = None,
     target_id: Optional[str] = None,
     academic_year: Optional[str] = None,
+    institution_id: Optional[str] = None,
     principal: Principal = Depends(get_principal),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> List[TeacherAssignmentOut]:
     """List allocations of teachers to classes/courses."""
-    inst_id = principal.institution_id or "INST-0421"
-    await _ensure_academic_seeds(db, inst_id)
+    target_inst_id = principal.get_scoped_institution_id(institution_id)
+    if target_inst_id:
+        await _ensure_academic_seeds(db, target_inst_id)
 
     query: dict[str, Any] = {"status": "ACTIVE"}
-    if principal.role not in {"aicte_admin", "platform_operator"} and principal.institution_id:
-        query["institution_id"] = principal.institution_id
+    if target_inst_id:
+        query["institution_id"] = target_inst_id
     if teacher_id:
         query["teacher_id"] = teacher_id
     if target_id:
@@ -1551,10 +1572,13 @@ async def delete_teacher_assignment(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> dict[str, Any]:
     """Remove a teacher assignment."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
-    res = await db["teacher_assignments"].delete_one({"_id": assignment_id, "institution_id": inst_id})
-    if res.deleted_count == 0:
+    principal.require_tenant_context()
+    assignment = await db["teacher_assignments"].find_one({"_id": assignment_id})
+    if not assignment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assignment not found.")
+    principal.require_scope(assignment.get("institution_id", ""))
+
+    await db["teacher_assignments"].delete_one({"_id": assignment_id})
 
     await writer.log(
         AuditRepository(db["audit_events"]),
@@ -1587,7 +1611,7 @@ async def create_calendar_event(
             detail="Event start_date cannot follow end_date.",
         )
 
-    inst_id = principal.institution_id or "INST-DEFAULT"
+    inst_id = principal.require_tenant_context()
     event_id = f"EVT-{inst_id}-{secrets.token_hex(5)}"
 
     doc = {
@@ -1625,16 +1649,18 @@ async def create_calendar_event(
 async def list_calendar_events(
     academic_year: Optional[str] = None,
     event_type: Optional[str] = None,
+    institution_id: Optional[str] = None,
     principal: Principal = Depends(get_principal),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> List[AcademicCalendarEventOut]:
     """List academic calendar events for the caller's institution."""
-    inst_id = principal.institution_id or "INST-0421"
-    await _ensure_academic_seeds(db, inst_id)
+    target_inst_id = principal.get_scoped_institution_id(institution_id)
+    if target_inst_id:
+        await _ensure_academic_seeds(db, target_inst_id)
 
     query: dict[str, Any] = {}
-    if principal.role not in {"aicte_admin", "platform_operator"} and principal.institution_id:
-        query["institution_id"] = principal.institution_id
+    if target_inst_id:
+        query["institution_id"] = target_inst_id
     if academic_year:
         query["academic_year"] = academic_year
     if event_type:
@@ -1667,10 +1693,13 @@ async def delete_calendar_event(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> dict[str, Any]:
     """Delete a calendar event."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
-    res = await db["academic_calendar_events"].delete_one({"_id": event_id, "institution_id": inst_id})
-    if res.deleted_count == 0:
+    principal.require_tenant_context()
+    event_doc = await db["academic_calendar_events"].find_one({"_id": event_id})
+    if not event_doc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found.")
+    principal.require_scope(event_doc.get("institution_id", ""))
+
+    await db["academic_calendar_events"].delete_one({"_id": event_id})
 
     await writer.log(
         AuditRepository(db["audit_events"]),

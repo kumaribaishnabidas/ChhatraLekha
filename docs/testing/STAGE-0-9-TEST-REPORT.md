@@ -67,3 +67,4 @@ Executed `npm.cmd --prefix frontend run build`:
 - Transformed 831 modules cleanly.
 - Produced optimized production bundle: `dist/assets/AttendancePage-DCheig4O.js` (33.11 kB raw, 6.87 kB gzip).
 - Zero warnings, zero syntax errors, zero missing imports.
+

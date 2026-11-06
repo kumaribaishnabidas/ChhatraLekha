@@ -31,7 +31,7 @@ async def create_announcement(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> AnnouncementOut:
     """Create and broadcast an institution notice with scheduling and audience targeting."""
-    inst_id = principal.institution_id or "INST-DEFAULT"
+    inst_id = principal.require_tenant_context()
     ann_id = f"ANN-{secrets.token_hex(6)}"
     now = datetime.now(timezone.utc)
 
@@ -224,9 +224,10 @@ async def list_announcements(
 ) -> List[AnnouncementOut]:
     """List announcements targeted to the caller's institution, class, or role."""
     query: dict[str, Any] = {}
-    if principal.role not in {"aicte_admin", "platform_operator"} and principal.institution_id:
+    target_inst_id = principal.get_scoped_institution_id()
+    if target_inst_id:
         query["$or"] = [
-            {"institution_id": principal.institution_id},
+            {"institution_id": target_inst_id},
             {"institution_id": "INST-ALL"},
         ]
     if priority:
@@ -292,9 +293,7 @@ async def get_announcement_delivery_summary(
     if not doc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Announcement not found.")
 
-    if principal.role not in {"aicte_admin", "platform_operator"}:
-        if doc.get("institution_id") != principal.institution_id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied.")
+    principal.require_scope(doc.get("institution_id", ""))
 
     acks = doc.get("acknowledgements", [])
     ack_count = len(acks)
@@ -322,10 +321,16 @@ async def acknowledge_announcement(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> dict[str, Any]:
     """Record receipt / read acknowledgement for an announcement."""
-    res = await db["announcements"].update_one(
+    doc = await db["announcements"].find_one({"_id": announcement_id})
+    if not doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Announcement not found.")
+
+    inst_scope = doc.get("institution_id")
+    if inst_scope and inst_scope != "INST-ALL":
+        principal.require_scope(inst_scope)
+
+    await db["announcements"].update_one(
         {"_id": announcement_id},
         {"$addToSet": {"acknowledgements": principal.subject}},
     )
-    if res.matched_count == 0:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Announcement not found.")
     return {"message": "Acknowledged successfully.", "announcement_id": announcement_id}

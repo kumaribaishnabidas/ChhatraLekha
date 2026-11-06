@@ -94,3 +94,4 @@ sequenceDiagram
    - Students whose cumulative rate falls below 75.0% receive proactive status warnings.
    - Administrators can review the "Statutory Defaulters" roster in the Attendance Overview tab.
    - Absence triggers consecutive alerts if a student is absent for 3 consecutive working days.
+

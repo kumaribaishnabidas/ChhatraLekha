@@ -184,16 +184,7 @@ async def list_students(
         )
 
     students = StudentRepository(db["students"])
-
-    if principal.role not in {
-        "national_admin",
-        "aicte_admin",
-        "platform_operator",
-        "regulator_admin",
-        "state_admin",
-        "district_admin",
-    }:
-        institution_id = principal.institution_id
+    target_inst = principal.get_scoped_institution_id(institution_id)
 
     # The working register shows the active records; a withdrawn enrolment
     # stays in the registry and is reachable through the explicit filter.
@@ -201,7 +192,7 @@ async def list_students(
         record_status = record_status.upper()
 
     rows = await students.all(
-        institution_id=institution_id,
+        institution_id=target_inst,
         program_id=program_id,
         quota=quota,
         record_status=None if record_status == "ALL" else (record_status or "ACTIVE"),
@@ -331,7 +322,7 @@ async def upload_document(
         content,
         meta={
             "document_type": document_type,
-            "institution_id": principal.institution_id or "INST-0421",
+            "institution_id": principal.institution_id or "",
             "student_name": principal.display_name,
         },
     )
@@ -1046,12 +1037,7 @@ async def update_student_lifecycle_status(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No such APAAR ID."
         )
-    if principal.role != "aicte_admin" and principal.institution_id:
-        if student.get("institution_id") != principal.institution_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You are not allowed to update another institution's student.",
-            )
+    principal.require_scope(student.get("institution_id", ""))
 
     now = datetime.now(timezone.utc)
     old_status = student.get("record_status", "ACTIVE")

@@ -943,7 +943,10 @@ async def get_student_dashboard_summary(
     rate = round((present_sessions / total_sessions * 100), 1) if total_sessions > 0 else 94.2
 
     notices_cursor = db["announcements"].find({
-        "$or": [{"institution_id": inst_id}, {"target_role": "STUDENT"}, {"target_role": "ALL"}]
+        "$or": [
+            {"institution_id": inst_id, "target_role": {"$in": ["STUDENT", "ALL"]}},
+            {"is_national": True, "target_role": {"$in": ["STUDENT", "ALL"]}},
+        ]
     }).sort("published_at", -1).limit(4)
     announcements = []
     async for n in notices_cursor:

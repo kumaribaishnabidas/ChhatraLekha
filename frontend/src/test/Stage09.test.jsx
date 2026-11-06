@@ -309,3 +309,4 @@ describe('Stage 0.9: Attendance Management System Frontend', () => {
     })
   })
 })
+

@@ -253,14 +253,13 @@ async def list_review_tasks(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> list[ReviewTaskOut]:
     """The review tasks, filtered by status, severity, institution or assessment."""
-    if principal.role != "aicte_admin" and principal.institution_id:
-        institution_id = principal.institution_id
+    target_inst = principal.get_scoped_institution_id(institution_id)
     rows = await ReviewTaskRepository(db["review_tasks"]).page(
         offset=offset,
         limit=limit,
         status=status_filter,
         severity=severity,
-        institution_id=institution_id,
+        institution_id=target_inst,
         assessment_id=assessment_id,
     )
     return [_task_out(row) for row in rows]
@@ -292,12 +291,7 @@ async def update_review_task(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No such review task."
         )
-    if principal.role != "aicte_admin" and principal.institution_id:
-        if task.get("institution_id") != principal.institution_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You are not allowed to review another institution's task.",
-            )
+    principal.require_scope(task.get("institution_id", ""))
 
     new_status = str(payload.get("status", "")).strip().lower()
     if new_status not in {"open", "in_progress", "resolved", "dismissed"}:
