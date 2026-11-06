@@ -131,6 +131,12 @@ export default function InstitutionDashboardPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link to="/school" className="btn btn-outline no-underline text-xs">
+            School Dashboard
+          </Link>
+          <Link to="/college" className="btn btn-outline no-underline text-xs">
+            College Dashboard
+          </Link>
           <Link to="/upload" className="btn btn-navy no-underline text-xs">
             {t('nav.upload')}
           </Link>

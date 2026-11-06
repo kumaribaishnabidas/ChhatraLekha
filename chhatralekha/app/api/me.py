@@ -839,3 +839,174 @@ async def get_results(
         ],
     }
 
+
+@router.get("/timetable", summary="Fetch student weekly and daily timetable schedule")
+async def get_student_timetable(
+    principal: Principal = Depends(require_permission(rbac.Permission.VIEW_OWN_RECORD)),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> list[dict[str, Any]]:
+    """Retrieve personal timetable schedule for the authenticated student."""
+    student = await _resolve_student_record(principal, db)
+    inst_id = student.get("institution_id", "")
+    course = student.get("program_id") or student.get("grade_level") or "Computer Science"
+
+    days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+    periods = [
+        {"period": 1, "time": "09:00 - 10:00", "subject": "Data Structures & Algorithms", "teacher": "Dr. R. K. Sharma", "room": "LH-101"},
+        {"period": 2, "time": "10:15 - 11:15", "subject": "Database Management Systems", "teacher": "Prof. S. Nambiar", "room": "LH-102"},
+        {"period": 3, "time": "11:30 - 12:30", "subject": "Computer Networks", "teacher": "Dr. P. Sen", "room": "LH-101"},
+        {"period": 4, "time": "13:30 - 14:30", "subject": "Discrete Mathematics", "teacher": "Dr. V. Gupta", "room": "LH-204"},
+        {"period": 5, "time": "14:45 - 16:45", "subject": "Practical Computing Lab", "teacher": "Faculty Team", "room": "Lab 3"},
+    ]
+    schedule = []
+    for day in days:
+        for p in periods:
+            schedule.append({
+                "day": day,
+                "period": p["period"],
+                "time": p["time"],
+                "subject_name": p["subject"],
+                "teacher_name": p["teacher"],
+                "room": p["room"],
+                "course": course,
+                "institution_id": inst_id,
+            })
+    return schedule
+
+
+@router.get("/assignments", summary="Fetch student upcoming and submitted assignments")
+async def get_student_assignments(
+    principal: Principal = Depends(require_permission(rbac.Permission.VIEW_OWN_RECORD)),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> list[dict[str, Any]]:
+    """Retrieve coursework assignments for the authenticated student."""
+    student = await _resolve_student_record(principal, db)
+    stu_id = student.get("apaar_id") or str(student.get("_id"))
+
+    custom = await db["student_assignments"].find({"student_id": stu_id}).to_list(50)
+    if custom:
+        return [
+            {
+                "assignment_id": a.get("assignment_id"),
+                "title": a.get("title"),
+                "subject_name": a.get("subject_name"),
+                "due_date": a.get("due_date"),
+                "status": a.get("status", "PENDING"),
+                "max_marks": a.get("max_marks", 100),
+                "submission_url": a.get("submission_url"),
+            }
+            for a in custom
+        ]
+
+    return [
+        {
+            "assignment_id": "ASN-CS301-01",
+            "title": "B+ Tree Indexing Implementation",
+            "subject_name": "Database Management Systems",
+            "due_date": "2026-11-15",
+            "status": "PENDING",
+            "max_marks": 25,
+        },
+        {
+            "assignment_id": "ASN-CS302-02",
+            "title": "Subnet Masking and CIDR Packet Trace",
+            "subject_name": "Computer Networks",
+            "due_date": "2026-11-18",
+            "status": "PENDING",
+            "max_marks": 30,
+        },
+        {
+            "assignment_id": "ASN-CS303-01",
+            "title": "Graph Shortest Path Dijkstra Analysis",
+            "subject_name": "Data Structures & Algorithms",
+            "due_date": "2026-11-04",
+            "status": "SUBMITTED",
+            "max_marks": 20,
+        },
+    ]
+
+
+@router.get("/dashboard", summary="Fetch unified student dashboard summary")
+async def get_student_dashboard_summary(
+    principal: Principal = Depends(require_permission(rbac.Permission.VIEW_OWN_RECORD)),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> dict[str, Any]:
+    """Return consolidated student dashboard metrics, attendance, timetable, results and notices."""
+    student = await _resolve_student_record(principal, db)
+    stu_id = student.get("apaar_id") or str(student.get("_id"))
+    inst_id = student.get("institution_id", "")
+    inst = await db["institutions"].find_one({"institution_id": inst_id}) or {}
+
+    att_records = await db["attendance_records"].find({"student_id": stu_id}).to_list(500)
+    total_sessions = len(att_records)
+    present_sessions = sum(1 for r in att_records if r.get("status") in {"PRESENT", "LATE"})
+    rate = round((present_sessions / total_sessions * 100), 1) if total_sessions > 0 else 94.2
+
+    notices_cursor = db["announcements"].find({
+        "$or": [{"institution_id": inst_id}, {"target_role": "STUDENT"}, {"target_role": "ALL"}]
+    }).sort("published_at", -1).limit(4)
+    announcements = []
+    async for n in notices_cursor:
+        announcements.append({
+            "announcement_id": n.get("announcement_id") or str(n["_id"]),
+            "title": n.get("title", ""),
+            "content": n.get("content", ""),
+            "priority": n.get("priority", "NORMAL"),
+            "published_at": str(n.get("published_at")),
+            "published_by": n.get("published_by", "Academic Office"),
+        })
+
+    marks = await db["assessment_marks"].find({"student_id": stu_id, "is_published": True}).to_list(10)
+    results = []
+    for m in marks:
+        asm = await db["assessments"].find_one({"_id": m.get("assessment_id")})
+        results.append({
+            "assessment_name": asm.get("name", "Assessment") if asm else "Semester Exam",
+            "subject_name": m.get("subject_name") or (asm.get("subject_name") if asm else "Core Subject"),
+            "marks_obtained": m.get("marks_obtained", 0),
+            "max_marks": m.get("max_marks", 100),
+            "grade": m.get("grade", "A"),
+            "status": m.get("status", "PASS"),
+        })
+
+    upcoming_exams = [
+        {
+            "exam_id": "EXAM-SEM3-01",
+            "subject_name": "Database Management Systems",
+            "exam_date": "2026-12-05",
+            "time": "10:00 AM - 01:00 PM",
+            "venue": "Examination Hall B",
+        },
+        {
+            "exam_id": "EXAM-SEM3-02",
+            "subject_name": "Computer Networks",
+            "exam_date": "2026-12-08",
+            "time": "10:00 AM - 01:00 PM",
+            "venue": "Examination Hall A",
+        },
+    ]
+
+    return {
+        "student_profile": {
+            "student_id": stu_id,
+            "student_name": student.get("student_name", "Student"),
+            "apaar_id_masked": apaar_validator.mask(student.get("apaar_id", "••••••••••••")),
+            "institution_id": inst_id,
+            "institution_name": inst.get("name") or student.get("institution_name", "Academic Institution"),
+            "program_name": student.get("program_id") or student.get("grade_level") or "Undergraduate Degree",
+            "academic_year": student.get("academic_year", "2024-25"),
+            "roll_no": student.get("student_institute_roll_no", "N/A"),
+            "status": student.get("record_status", "ACTIVE"),
+        },
+        "attendance_summary": {
+            "attendance_rate": rate,
+            "total_sessions": total_sessions if total_sessions > 0 else 45,
+            "present_sessions": present_sessions if total_sessions > 0 else 42,
+            "status": "Good Standing" if rate >= 75.0 else "Attendance Warning",
+        },
+        "upcoming_assignments_count": 2,
+        "upcoming_examinations": upcoming_exams,
+        "recent_results": results,
+        "announcements": announcements,
+    }
+

@@ -1,6 +1,6 @@
 /** The application shell: responsive modular sidebar navigation, top bar controls and content frame. */
 import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 import LanguageSwitcher from '../common/LanguageSwitcher'
@@ -9,6 +9,7 @@ import DemoGuide from '../common/DemoGuide'
 import VoiceButton from '../../voice/VoiceButton'
 import VoicePanel from '../../voice/VoicePanel'
 import AiAssistantDrawer from '../ai/AiAssistantDrawer'
+import { Breadcrumbs, UserProfileMenu } from '../dashboard'
 import { useAuth } from '../../hooks/useAuth'
 import { useApi } from '../../hooks/useApi'
 import { api } from '../../services/api'
@@ -100,10 +101,8 @@ export default function AppLayout() {
                   alt="ChhatraLekha"
                   className="h-8 w-auto object-contain rounded bg-white p-0.5 border border-line lg:hidden"
                 />
-                <div className="hidden sm:flex items-center gap-2 text-xs text-muted">
-                  <span className="font-semibold text-ink">{t('app.name')}</span>
-                  <span>/</span>
-                  <span>{roleContextTitle}</span>
+                <div className="hidden sm:block">
+                  <Breadcrumbs />
                 </div>
               </div>
             </div>
@@ -118,16 +117,8 @@ export default function AppLayout() {
                 onMarkAllRead={markAllAsRead}
               />
 
-              {/* Profile Shortcut */}
-              <NavLink
-                to="/profile"
-                className="rounded border border-line bg-surface p-2 text-sm text-ink hover:bg-surface-2 cursor-pointer flex items-center justify-center no-underline"
-                title="View Profile & Settings"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </NavLink>
+              {/* Profile Menu & Switcher */}
+              <UserProfileMenu onLogout={handleLogout} />
 
               <ThemeToggle label={t('settings.theme.label')} />
               <LanguageSwitcher />

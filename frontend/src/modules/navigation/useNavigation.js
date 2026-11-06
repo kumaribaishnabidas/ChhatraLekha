@@ -64,6 +64,9 @@ export function useNavigation() {
     if (normalizedRole === 'student') return 'Student Identity Hub'
     if (normalizedRole === 'parent') return 'Parent Portal'
     if (normalizedRole === 'teacher') return 'Teacher Workspace'
+    if (normalizedRole === 'school_admin') return 'School Administration'
+    if (normalizedRole === 'college_admin') return 'College Administration'
+    if (normalizedRole === 'university_admin' || normalizedRole.includes('univ')) return 'University Oversight'
     if (normalizedRole.includes('admin') || normalizedRole === 'platform_operator') {
       return 'Institutional Administration'
     }
@@ -74,8 +77,10 @@ export function useNavigation() {
     if (normalizedRole === 'student') return '/me'
     if (normalizedRole === 'parent') return '/parent'
     if (normalizedRole === 'teacher') return '/teacher'
-    if (normalizedRole.includes('univ') || normalizedRole === 'national_admin') {
-      return '/dashboard'
+    if (normalizedRole === 'school_admin') return '/school'
+    if (normalizedRole === 'college_admin') return '/college'
+    if (normalizedRole === 'university_admin' || normalizedRole.includes('univ') || normalizedRole === 'national_admin') {
+      return '/university'
     }
     return '/institution'
   }, [normalizedRole])

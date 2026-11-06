@@ -23,6 +23,9 @@ const UploadPage = lazy(() => import('./pages/UploadPage'))
 const VerificationPage = lazy(() => import('./pages/VerificationPage'))
 const StudentWalletPage = lazy(() => import('./pages/StudentWalletPage'))
 const InstitutionDashboardPage = lazy(() => import('./pages/InstitutionDashboardPage'))
+const SchoolDashboardPage = lazy(() => import('./pages/SchoolDashboardPage'))
+const CollegeDashboardPage = lazy(() => import('./pages/CollegeDashboardPage'))
+const UniversityDashboardPage = lazy(() => import('./pages/UniversityDashboardPage'))
 const StudentHomePage = lazy(() => import('./pages/student/StudentHomePage'))
 const StudentIdCardPage = lazy(() => import('./pages/student/StudentIdCardPage'))
 const StudentSharePage = lazy(() => import('./pages/student/StudentSharePage'))
@@ -82,7 +85,11 @@ function Guarded({ permission, children }) {
 
 /** Redirects to the appropriate default page for the user's role. */
 function RoleRedirect() {
-  const { can } = useAuth()
+  const { role, can } = useAuth()
+  const r = (role || '').toLowerCase()
+  if (r === 'school_admin') return <Navigate to="/school" replace />
+  if (r === 'college_admin') return <Navigate to="/college" replace />
+  if (r === 'university_admin') return <Navigate to="/university" replace />
   if (can(PERMISSIONS.VIEW_NATIONAL_DASHBOARD)) {
     return <Navigate to="/dashboard" replace />
   }
@@ -278,6 +285,30 @@ export default function App() {
           element={
             <Guarded permission={PERMISSIONS.VIEW_INSTITUTION_DASHBOARD}>
               <InstitutionDashboardPage />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/school"
+          element={
+            <Guarded permission={PERMISSIONS.VIEW_INSTITUTION_DASHBOARD}>
+              <SchoolDashboardPage />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/college"
+          element={
+            <Guarded permission={PERMISSIONS.VIEW_INSTITUTION_DASHBOARD}>
+              <CollegeDashboardPage />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/university"
+          element={
+            <Guarded permission={PERMISSIONS.VIEW_NATIONAL_DASHBOARD}>
+              <UniversityDashboardPage />
             </Guarded>
           }
         />
