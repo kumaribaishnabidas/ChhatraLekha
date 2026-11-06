@@ -182,6 +182,8 @@ class AttendanceStatus(str, Enum):
     ABSENT = "ABSENT"
     LATE = "LATE"
     EXCUSED = "EXCUSED"
+    ON_LEAVE = "ON_LEAVE"
+    HALF_DAY = "HALF_DAY"
 
 
 class AssessmentStatus(str, Enum):

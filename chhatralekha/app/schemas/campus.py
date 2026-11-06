@@ -334,6 +334,9 @@ class AttendanceBatchSubmitIn(BaseModel):
     target_type: str = Field("CLASS", description="CLASS or COURSE")
     target_id: str = Field(..., description="class_id or programme_id")
     target_label: str = Field(...)
+    subject_id: Optional[str] = None
+    subject_name: Optional[str] = None
+    academic_year_id: Optional[str] = None
     records: List[AttendanceRecordItem]
 
 
@@ -346,11 +349,98 @@ class AttendanceSessionOut(BaseModel):
     target_type: str
     target_id: str
     target_label: str
+    subject_id: Optional[str] = None
+    subject_name: Optional[str] = None
+    academic_year_id: Optional[str] = None
     recorded_by: str
     total_students: int
     present_count: int
     absent_count: int
     late_count: int
+    excused_count: int = 0
+    created_at: Optional[str] = None
+
+
+class AttendancePolicyIn(BaseModel):
+    mode: AttendanceMode = Field(AttendanceMode.DAILY)
+    working_days: List[str] = Field(
+        default=["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    )
+    periods_per_day: int = Field(7, ge=1, le=14)
+    minimum_attendance_percentage: float = Field(75.0, ge=0.0, le=100.0)
+    late_arrival_threshold_minutes: int = Field(15, ge=0, le=120)
+    early_departure_threshold_minutes: int = Field(15, ge=0, le=120)
+    consecutive_absent_alert_threshold: int = Field(3, ge=1, le=30)
+    allowed_statuses: List[str] = Field(
+        default=["PRESENT", "ABSENT", "LATE", "EXCUSED", "ON_LEAVE", "HALF_DAY"]
+    )
+
+
+class AttendancePolicyOut(BaseModel):
+    institution_id: str
+    mode: str
+    working_days: List[str]
+    periods_per_day: int
+    minimum_attendance_percentage: float
+    late_arrival_threshold_minutes: int
+    early_departure_threshold_minutes: int
+    consecutive_absent_alert_threshold: int
+    allowed_statuses: List[str]
+    updated_at: Optional[str] = None
+
+
+class AttendanceRosterItem(BaseModel):
+    student_id: str
+    student_name: str
+    enrolment_number: Optional[str] = None
+    roll_number: Optional[str] = None
+    class_id: Optional[str] = None
+    section: Optional[str] = None
+    recent_attendance_rate: Optional[float] = None
+
+
+class AttendanceCorrectionRequestIn(BaseModel):
+    session_id: str = Field(..., description="ID of the attendance session")
+    student_id: str = Field(..., description="Student APAAR or ID")
+    requested_status: AttendanceStatus = Field(...)
+    reason: str = Field(..., min_length=3, max_length=500)
+    supporting_document_url: Optional[str] = None
+
+
+class AttendanceCorrectionOut(BaseModel):
+    id: str
+    institution_id: str
+    session_id: str
+    student_id: str
+    student_name: str
+    target_id: str
+    session_date: str
+    previous_status: str
+    requested_status: str
+    reason: str
+    requested_by: str
+    requested_by_name: Optional[str] = None
+    requested_at: str
+    status: str
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[str] = None
+    review_notes: Optional[str] = None
+
+
+class AttendanceCorrectionReviewIn(BaseModel):
+    decision: str = Field(..., description="APPROVE or REJECT")
+    review_notes: Optional[str] = None
+
+
+class AttendanceReportSummaryOut(BaseModel):
+    institution_id: str
+    period_start: str
+    period_end: str
+    total_sessions: int
+    average_attendance_percentage: float
+    class_summaries: List[dict]
+    defaulters_count: int
+    daily_trends: List[dict]
 
 
 # ------------------------------------------------------------- 4. Assessments & Marks

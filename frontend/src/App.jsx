@@ -37,6 +37,7 @@ const TransparencyPage = lazy(() => import('./pages/TransparencyPage'))
 const TeacherWorkspacePage = lazy(() => import('./pages/TeacherWorkspacePage'))
 const ParentPortalPage = lazy(() => import('./pages/ParentPortalPage'))
 const AcademicSetupPage = lazy(() => import('./pages/AcademicSetupPage'))
+const AttendancePage = lazy(() => import('./pages/AttendancePage'))
 const AnnouncementsPage = lazy(() => import('./pages/AnnouncementsPage'))
 const AssessmentsPage = lazy(() => import('./pages/AssessmentsPage'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
@@ -317,6 +318,22 @@ export default function App() {
           element={
             <Guarded permission={PERMISSIONS.MANAGE_ACADEMIC_SETUP}>
               <AcademicSetupPage />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/attendance"
+          element={
+            <Guarded permission={PERMISSIONS.VIEW_ATTENDANCE}>
+              <AttendancePage />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/me/attendance"
+          element={
+            <Guarded permission={PERMISSIONS.VIEW_ATTENDANCE}>
+              <AttendancePage />
             </Guarded>
           }
         />
