@@ -27,21 +27,29 @@ export default function InstitutionDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [reviewTasks, setReviewTasks] = useState([])
+  const [joinRequests, setJoinRequests] = useState([])
   const [stats, setStats] = useState({
     enrolled: 0,
     sanctioned: 0,
     anomalies: 0,
   })
   const [actingTaskId, setActingTaskId] = useState(null)
+  const [actingRequestId, setActingRequestId] = useState(null)
 
   const fetchData = async () => {
     try {
       setLoading(true)
       setError(null)
 
+      const instId = user?.institution_id || 'INST-0421'
+
       // Fetch review tasks
       const tasksRes = await api.get('/corrections/review-tasks?limit=20').catch(() => ({ data: [] }))
       setReviewTasks(tasksRes.data || [])
+
+      // Fetch join requests
+      const joinRes = await api.get(`/institutions/${instId}/join-requests`).catch(() => ({ data: [] }))
+      setJoinRequests(joinRes.data || [])
 
       // Fetch student count and institution details
       const studentsRes = await api.get('/students?limit=50').catch(() => ({ data: [] }))
@@ -62,6 +70,22 @@ export default function InstitutionDashboardPage() {
   useEffect(() => {
     fetchData()
   }, [])
+
+  const handleReviewJoinRequest = async (requestId, decision) => {
+    const instId = user?.institution_id || 'INST-0421'
+    try {
+      setActingRequestId(requestId)
+      await api.post(`/institutions/${instId}/join-requests/${requestId}/review`, {
+        decision: decision.toUpperCase(),
+        notes: decision === 'APPROVED' ? 'Approved by campus administrator' : 'Institutional eligibility criteria not met',
+      })
+      await fetchData()
+    } catch (err) {
+      alert(err?.response?.data?.detail || 'Could not update join request.')
+    } finally {
+      setActingRequestId(null)
+    }
+  }
 
   const handleResolveTask = async (taskId, outcome) => {
     try {
@@ -197,6 +221,79 @@ export default function InstitutionDashboardPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </Card>
+
+      {/* Institutional Membership Requests (Stage 0.5) */}
+      <Card
+        title="Membership Join Requests"
+        subtitle="Review and approve students, parents, faculty, and administrative applicants requesting to join your institution."
+      >
+        {joinRequests.length === 0 ? (
+          <div className="text-center py-10 bg-surface-2 rounded-lg border border-dashed border-line">
+            <p className="font-semibold text-ink m-0">No Pending Membership Requests</p>
+            <p className="text-xs text-muted mt-1 m-0">All applicant join requests have been processed.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {joinRequests.map((req) => {
+              const isSelf = req.user_id === user?.user_id
+              const isPending = req.status === 'PENDING'
+              return (
+                <div
+                  key={req.request_id}
+                  className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-lg border border-line bg-surface-2"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-ink">{req.user_name || req.user_id}</span>
+                      <Badge className="bg-brand/10 text-brand uppercase text-[11px]">
+                        {req.requested_role?.replace('_', ' ')}
+                      </Badge>
+                      <StatusChip status={req.status}>{req.status}</StatusChip>
+                    </div>
+                    <p className="text-xs text-muted m-0">
+                      {req.user_email} • Request ID: <span className="font-mono">{req.request_id}</span>
+                    </p>
+                    {req.role_details && (
+                      <p className="text-xs text-body m-0">
+                        {req.role_details.course_name && `Course: ${req.role_details.course_name}`}
+                        {req.role_details.department && `Dept: ${req.role_details.department}`}
+                        {req.role_details.student_identifier && ` • Identifier: ${req.role_details.student_identifier}`}
+                        {req.role_details.designation && `Designation: ${req.role_details.designation}`}
+                      </p>
+                    )}
+                    {isSelf && (
+                      <p className="text-[11px] text-danger font-medium m-0">
+                        Self-approval prohibited: Another administrator must review your application.
+                      </p>
+                    )}
+                  </div>
+
+                  {isPending && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="primary"
+                        disabled={actingRequestId === req.request_id || isSelf}
+                        onClick={() => handleReviewJoinRequest(req.request_id, 'APPROVED')}
+                        className="text-xs px-3 py-1.5"
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        disabled={actingRequestId === req.request_id || isSelf}
+                        onClick={() => handleReviewJoinRequest(req.request_id, 'REJECTED')}
+                        className="text-xs px-3 py-1.5"
+                      >
+                        Reject
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
       </Card>

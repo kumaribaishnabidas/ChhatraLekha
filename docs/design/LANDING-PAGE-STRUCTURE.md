@@ -121,3 +121,4 @@ The landing page implements the following exact section hierarchy in sequence:
 - **Location:** `frontend/src/components/layout/PublicLayout.jsx`
 - **Links:** About, Early Access, Help Center, FAQ, Contact, Transparency Charter, Accessibility Statement, Privacy Policy, Terms of Service.
 - **Statement:** DPDP compliance, zero-tracking cookie policy, copyright notice.
+

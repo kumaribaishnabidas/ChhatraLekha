@@ -15,11 +15,25 @@ class InstitutionRepository:
 
     # ---------------------------------------------------------------- reads
 
-    async def all(self, state: Optional[str] = None) -> list[Doc]:
-        """Every institution, ordered by name."""
+    async def all(
+        self,
+        state: Optional[str] = None,
+        q: Optional[str] = None,
+        category: Optional[str] = None,
+    ) -> list[Doc]:
+        """Every institution, ordered by name with optional search and filters."""
         query: dict[str, Any] = {}
         if state:
             query["state"] = state
+        if category:
+            query["category"] = category.upper()
+        if q and q.strip():
+            clean_q = q.strip()
+            query["$or"] = [
+                {"name": {"$regex": clean_q, "$options": "i"}},
+                {"institution_id": {"$regex": clean_q, "$options": "i"}},
+                {"city": {"$regex": clean_q, "$options": "i"}},
+            ]
         rows = await self._collection.find(query).sort("name", 1).to_list(length=None)
         return docs(rows)
 

@@ -84,3 +84,4 @@ To maintain enterprise-grade design integrity and accessibility, all code must p
   - Split-panel two-column authentication layouts (`grid lg:grid-cols-2`). Left panel showcases brand identity and security guarantees; right panel renders clean card-based interaction forms.
   - 3-column feature grids and structured product previews.
   - Sticky navigation header with full horizontal menu, theme toggle, language switcher, and action buttons.
+

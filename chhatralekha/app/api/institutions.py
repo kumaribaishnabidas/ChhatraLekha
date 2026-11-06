@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Optional
+import secrets
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -17,7 +18,7 @@ from app.api.deps import (
 from app.audit import writer
 from app.core import rbac
 from app.core.security import hash_password
-from app.models.documents import Doc
+from app.models.documents import Doc, utcnow
 from app.models.enums import InstitutionCategory, InstitutionVerificationStatus
 from app.repositories.audit import AuditRepository
 from app.repositories.institutions import InstitutionRepository
@@ -42,6 +43,11 @@ def _institution_out(row: Doc) -> InstitutionOut:
         email=row.get("email"),
         phone=row.get("phone"),
         is_active=row.get("is_active", True),
+        category=row.get("category"),
+        kind=row.get("kind"),
+        district=row.get("district"),
+        management_type=row.get("management_type"),
+        affiliation=row.get("affiliation"),
     )
 
 
@@ -66,12 +72,14 @@ def _programme_out(row: Doc) -> ProgrammeIntakeOut:
 @router.get("", response_model=list[InstitutionOut], summary="List institutions")
 async def list_institutions(
     state: Optional[str] = None,
+    q: Optional[str] = None,
+    category: Optional[str] = None,
     principal: Principal = Depends(get_principal),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> list[InstitutionOut]:
-    """List the AICTE-approved institutions."""
+    """List the AICTE-approved institutions with optional search and filters."""
     repository = InstitutionRepository(db["institutions"])
-    rows = await repository.all(state=state)
+    rows = await repository.all(state=state, q=q, category=category)
     return [_institution_out(row) for row in rows]
 
 
@@ -302,4 +310,192 @@ async def review_institution_onboarding(
         "verification_status": payload.decision.value,
         "is_active": is_active,
         "notes": payload.notes,
+    }
+
+
+@router.get(
+    "/{institution_id}/join-requests",
+    summary="List pending and past membership join requests for an institution",
+)
+async def list_institution_join_requests(
+    institution_id: str,
+    status_filter: Optional[str] = None,
+    principal: Principal = Depends(get_principal),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> list[dict]:
+    """Authorized institution administrators view applicants requesting to join."""
+    principal.require_scope(institution_id)
+    query: dict[str, Any] = {"institution_id": institution_id}
+    if status_filter:
+        query["status"] = status_filter.upper()
+
+    cursor = db["membership_requests"].find(query).sort("created_at", -1)
+    results = []
+    async for doc in cursor:
+        results.append({
+            "request_id": doc.get("request_id"),
+            "user_id": doc.get("user_id"),
+            "user_name": doc.get("user_name"),
+            "user_email": doc.get("user_email"),
+            "institution_id": doc.get("institution_id"),
+            "institution_name": doc.get("institution_name"),
+            "requested_role": doc.get("requested_role"),
+            "role_details": doc.get("role_details", {}),
+            "status": doc.get("status", "PENDING"),
+            "created_at": str(doc.get("created_at")),
+            "reviewed_by": doc.get("reviewed_by"),
+            "reviewed_at": str(doc.get("reviewed_at")) if doc.get("reviewed_at") else None,
+            "review_notes": doc.get("review_notes"),
+        })
+    return results
+
+
+@router.post(
+    "/{institution_id}/join-requests/{request_id}/review",
+    summary="Approve or reject a user membership join request",
+)
+async def review_institution_join_request(
+    institution_id: str,
+    request_id: str,
+    payload: dict,
+    request: Request,
+    principal: Principal = Depends(get_principal),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> dict:
+    """Administrator approves or rejects a membership request with self-approval protection."""
+    principal.require_scope(institution_id)
+
+    # 1. Locate the join request
+    join_req = await db["membership_requests"].find_one({
+        "request_id": request_id,
+        "institution_id": institution_id,
+    })
+    if not join_req:
+        raise HTTPException(status_code=404, detail="Membership join request not found.")
+
+    if join_req.get("status") != "PENDING":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"This join request has already been reviewed ({join_req.get('status')}).",
+        )
+
+    # 2. Strict Security Protection: Prevent self-approval
+    if join_req.get("user_id") == principal.subject:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Security violation: Administrators cannot approve their own join requests.",
+        )
+
+    decision = str(payload.get("decision", "")).upper()
+    if decision not in ("APPROVED", "REJECTED"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Decision must be either APPROVED or REJECTED.",
+        )
+
+    notes = payload.get("notes") or ""
+    now = utcnow()
+    inst = await db["institutions"].find_one({"institution_id": institution_id})
+    inst_name = inst.get("name", "Academic Institution") if inst else "Academic Institution"
+
+    if decision == "APPROVED":
+        # 3. Create or update institutional membership
+        membership_id = f"MEM-{secrets.token_hex(6).upper()}"
+        requested_role = join_req.get("requested_role", "student")
+        role_details = join_req.get("role_details", {})
+
+        membership_doc = {
+            "_id": membership_id,
+            "membership_id": membership_id,
+            "user_id": join_req["user_id"],
+            "institution_id": institution_id,
+            "institution_name": inst_name,
+            "role": requested_role,
+            "role_label": requested_role.replace("_", " ").title(),
+            "department": role_details.get("department") or role_details.get("course_name"),
+            "academic_year": role_details.get("academic_year", "2024-25"),
+            "is_primary": True,
+            "member_status": "ACTIVE",
+            "created_at": now,
+        }
+        await db["institution_memberships"].replace_one(
+            {"user_id": join_req["user_id"], "institution_id": institution_id},
+            membership_doc,
+            upsert=True,
+        )
+
+        # Update the user's primary active institution
+        await db["users"].update_one(
+            {"user_id": join_req["user_id"]},
+            {"$set": {
+                "institution_id": institution_id,
+                "active_institution_id": institution_id,
+                "role": requested_role,
+                "updated_at": now,
+            }},
+        )
+
+        # Deliver notification to the applicant
+        notif_id = f"ntf-{secrets.token_hex(6)}"
+        notif_doc = {
+            "_id": notif_id,
+            "notification_id": notif_id,
+            "user_id": join_req["user_id"],
+            "institution_id": institution_id,
+            "category": "MEMBERSHIP",
+            "priority": "HIGH",
+            "title": f"Membership Approved: {inst_name}",
+            "message": f"Your request to join as {requested_role.replace('_', ' ').title()} has been approved. You may now access institutional workspaces.",
+            "deep_link": "/dashboard",
+            "is_read": False,
+            "created_at": now,
+        }
+        await db["notifications"].insert_one(notif_doc)
+
+    else:
+        # Deliver rejection notification
+        notif_id = f"ntf-{secrets.token_hex(6)}"
+        notif_doc = {
+            "_id": notif_id,
+            "notification_id": notif_id,
+            "user_id": join_req["user_id"],
+            "institution_id": institution_id,
+            "category": "MEMBERSHIP",
+            "priority": "HIGH",
+            "title": f"Membership Request Update: {inst_name}",
+            "message": f"Your request to join as {join_req.get('requested_role', '').replace('_', ' ').title()} was not approved. Notes: {notes or 'Institutional requirements not met.'}",
+            "deep_link": "/onboarding",
+            "is_read": False,
+            "created_at": now,
+        }
+        await db["notifications"].insert_one(notif_doc)
+
+    # Update join request record
+    await db["membership_requests"].update_one(
+        {"request_id": request_id},
+        {"$set": {
+            "status": decision,
+            "reviewed_by": principal.subject,
+            "reviewed_at": now,
+            "review_notes": notes,
+        }},
+    )
+
+    # Audit logging
+    await writer.log(
+        AuditRepository(db["audit_events"]),
+        actor=principal.subject,
+        actor_role=principal.role,
+        action="REVIEW_MEMBERSHIP_REQUEST",
+        subject=join_req["user_id"],
+        details=f"Decision {decision} for request {request_id} (Role: {join_req.get('requested_role')}) at {institution_id}. Notes: {notes}",
+        category="MEMBERSHIP",
+        ip_address=client_ip(request),
+    )
+
+    return {
+        "request_id": request_id,
+        "status": decision,
+        "reviewed_by": principal.subject,
+        "notes": notes,
     }
