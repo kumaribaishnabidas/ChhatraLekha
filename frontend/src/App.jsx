@@ -37,6 +37,8 @@ const AcademicSetupPage = lazy(() => import('./pages/AcademicSetupPage'))
 const AnnouncementsPage = lazy(() => import('./pages/AnnouncementsPage'))
 const AssessmentsPage = lazy(() => import('./pages/AssessmentsPage'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
+const SignupPage = lazy(() => import('./pages/SignupPage'))
+const AccessibilityPage = lazy(() => import('./pages/AccessibilityPage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const WorkspacePlaceholderPage = lazy(() => import('./pages/WorkspacePlaceholderPage'))
@@ -116,9 +118,11 @@ export default function App() {
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/transparency" element={<TransparencyPage />} />
+        <Route path="/accessibility" element={<AccessibilityPage />} />
       </Route>
 
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
       {/* Where the Google sign-in returns to. The tokens arrive in the URL
           fragment, which is never sent to a server. */}
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
