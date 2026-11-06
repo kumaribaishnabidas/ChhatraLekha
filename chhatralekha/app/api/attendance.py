@@ -6,7 +6,7 @@ import secrets
 from datetime import datetime, timezone
 from typing import Any, List, Optional
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.api.deps import (
@@ -156,8 +156,55 @@ async def get_my_attendance_summary(
     principal: Principal = Depends(require_permission(rbac.Permission.VIEW_ATTENDANCE)),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> dict[str, Any]:
-    """Retrieve attendance tally and percentage for a student."""
+    """Retrieve attendance tally and percentage for an authorized student."""
     resolved_id = student_id or principal.apaar_id or principal.subject
+
+    # Enforce role boundaries and ownership
+    if principal.role == "student":
+        own_id = principal.apaar_id or (principal.user or {}).get("apaar_id") or principal.subject
+        if student_id and student_id != own_id and student_id != principal.subject:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You may only access your own attendance record.",
+            )
+        resolved_id = own_id
+    elif principal.role == "parent":
+        ward_apaar = (principal.user or {}).get("ward_apaar_id") or (principal.user or {}).get("apaar_id")
+        linked = ward_apaar and (resolved_id == ward_apaar)
+        if not linked:
+            rel = await db["guardian_relationships"].find_one({
+                "parent_user_id": principal.subject,
+                "student_id": resolved_id,
+                "status": "VERIFIED",
+            })
+            if not rel:
+                stu_doc = await db["students"].find_one({"$or": [{"apaar_id": resolved_id}, {"_id": resolved_id}]})
+                if stu_doc:
+                    rel = await db["guardian_relationships"].find_one({
+                        "parent_user_id": principal.subject,
+                        "student_id": stu_doc.get("apaar_id"),
+                        "status": "VERIFIED",
+                    })
+            if not rel:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You may only access attendance records for verified linked children.",
+                )
+    elif principal.role in {"teacher", "institution_admin", "academic_admin"}:
+        if not principal.institution_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not associated with any institution.",
+            )
+        stu_doc = await db["students"].find_one({
+            "$or": [{"apaar_id": resolved_id}, {"student_id": resolved_id}, {"_id": resolved_id}]
+        })
+        if stu_doc and stu_doc.get("institution_id") and stu_doc.get("institution_id") != principal.institution_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not allowed to access another institution's records.",
+            )
+
     records = await db["attendance_records"].find({"student_id": resolved_id}).to_list(500)
     total = len(records)
     present = sum(1 for r in records if r.get("status") in {"PRESENT", "LATE"})

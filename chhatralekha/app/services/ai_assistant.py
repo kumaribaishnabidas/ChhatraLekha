@@ -181,32 +181,33 @@ KNOWLEDGE_BASE = [
 
 ROLE_QUICK_PROMPTS = {
     "student": [
-        "How do I check my timetable?",
+        "What is my attendance?",
+        "Show my latest results",
+        "What notices are there for me?",
         "Where can I find my digital APAAR ID card?",
-        "How do I view my semester results?",
         "How do I create a verified share link?",
-        "How can I change the platform language?",
     ],
     "parent": [
-        "How do I check my child's attendance?",
-        "Where are the latest class announcements?",
+        "Show my child's attendance",
+        "What are the latest class announcements?",
+        "Where can I see my child's published results?",
         "How do I verify academic mark sheets?",
-        "How can I listen to notices with voice output?",
     ],
     "teacher": [
+        "Summarise the attendance in my classes",
+        "Show my teaching assignments",
         "How do I mark daily class attendance?",
-        "How do I upload student assessment marks?",
         "How do I post a notice to my class?",
-        "Where can I review student roll numbers?",
     ],
     "institution_admin": [
+        "How many students are enrolled?",
+        "How many anomalies are flagged?",
         "How do I upload student rosters via CSV?",
-        "How does the Anomaly Detection engine work?",
         "How do I preview the impact of a record correction?",
-        "Where do I configure academic years and classes?",
     ],
     "aicte_admin": [
         "What are the national enrollment metrics?",
+        "How many critical anomalies are there?",
         "How do I inspect cross-institution duplicate APAAR IDs?",
         "How do I export regulatory compliance reports?",
     ],
@@ -214,6 +215,20 @@ ROLE_QUICK_PROMPTS = {
         "How do I verify a student credential using a token?",
         "Are student personal details exposed during verification?",
     ],
+}
+
+#: Older or more specific role names map onto the portal that owns them.
+ROLE_PROMPT_ALIASES = {
+    "school_admin": "institution_admin",
+    "college_admin": "institution_admin",
+    "academic_admin": "institution_admin",
+    "university_admin": "aicte_admin",
+    "national_admin": "aicte_admin",
+    "platform_operator": "aicte_admin",
+    "regulator_admin": "aicte_admin",
+    "state_admin": "aicte_admin",
+    "district_admin": "aicte_admin",
+    "pending": "student",
 }
 
 
@@ -225,7 +240,7 @@ def find_grounded_answer(
 ) -> Dict[str, Any]:
     """Retrieve grounded answer matching the user's intent and active language."""
     clean_q = query.lower().strip()
-    lang = language.lower()
+    lang = language.lower().split("-")[0]
     if lang not in ["en", "hi", "or"]:
         # Fall back to English for languages without dedicated neural phrasing
         lang = "en"
@@ -292,4 +307,5 @@ def find_grounded_answer(
 
 def get_quick_prompts_for_role(role: str) -> List[str]:
     """Return tailored quick question prompts for the user's role."""
-    return ROLE_QUICK_PROMPTS.get(role, ROLE_QUICK_PROMPTS["student"])
+    canonical = ROLE_PROMPT_ALIASES.get(role, role)
+    return ROLE_QUICK_PROMPTS.get(canonical, ROLE_QUICK_PROMPTS["student"])

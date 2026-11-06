@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import base64
+import hashlib
+import hmac
 import secrets
-from datetime import datetime, timezone
-from typing import Any, List, Optional
+from datetime import datetime, timedelta, timezone
+from typing import Any, List
+
 from fastapi import HTTPException, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
@@ -26,7 +29,6 @@ from app.modules.profiles.schemas import (
     UserPreferenceOut,
     UserProfileOut,
     UserProfileUpdateRequest,
-    UserSessionOut,
 )
 from app.repositories.audit import AuditRepository
 from app.repositories.users import UserRepository
@@ -262,7 +264,7 @@ class ProfileService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Malformed base64 image encoding.",
-            )
+            ) from e
 
         data_uri = payload.image_base64 if payload.image_base64.startswith("data:") else f"data:image/png;base64,{raw_b64}"
         field_name = f"profile_pictures.{payload.platform.value}_url"
@@ -356,14 +358,25 @@ class ProfileService:
 
         code = f"{secrets.randbelow(900000) + 100000:06d}"
         now = utcnow()
+        expires_at = now + timedelta(minutes=15)
+        code_hash = hashlib.sha256(f"{code}:{principal.subject}".encode("utf-8")).hexdigest()
 
-        update_data = {
-            f"pending_verifications.{email_clean}": {
-                "code": code,
-                "email_type": payload.email_type.value,
-                "institution_id": payload.institution_id,
-                "created_at": now,
-            },
+        user = await self.db["users"].find_one({"user_id": principal.subject})
+        pending_map = dict((user.get("pending_verifications") or {}) if user else {})
+        pending_map[email_clean] = {
+            "code": code,
+            "code_hash": code_hash,
+            "email_type": payload.email_type.value,
+            "institution_id": payload.institution_id,
+            "created_at": now,
+            "expires_at": expires_at,
+            "attempts": 0,
+            "max_attempts": 5,
+            "consumed": False,
+        }
+
+        update_data: dict[str, Any] = {
+            "pending_verifications": pending_map,
             "updated_at": now,
         }
 
@@ -391,13 +404,17 @@ class ProfileService:
             ip_address=client_ip_addr,
         )
 
-        return {
+        runtime_settings = get_settings()
+        response_payload = {
             "status": "PENDING_VERIFICATION",
             "message": "Verification code generated. Please enter the 6-digit code to complete verification.",
             "email": email_clean,
             "email_type": payload.email_type.value,
-            "demo_code": code,  # In prototype mode, return for easy testing
         }
+        if not runtime_settings.is_production and runtime_settings.environment.lower() != "production":
+            response_payload["demo_code"] = code
+
+        return response_payload
 
     async def verify_email_code(
         self,
@@ -407,23 +424,98 @@ class ProfileService:
     ) -> dict[str, Any]:
         """Confirm 6-digit code and mark email as verified."""
         user = await self.db["users"].find_one({"user_id": principal.subject})
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User account not found.",
+            )
+
         email_clean = payload.email.strip().lower()
+        pending_map = dict(user.get("pending_verifications") or {})
+        pending = pending_map.get(email_clean)
 
-        pending = (user.get("pending_verifications") or {}).get(email_clean)
-        # Allow demo verification code fallback '123456' in prototype
-        is_valid_code = pending and pending.get("code") == payload.code
-        if not is_valid_code and payload.code == "123456":
-            is_valid_code = True
+        # Fallback navigation if stored as nested subdocument by MongoDB dot notation
+        if not pending and "." in email_clean:
+            parts = email_clean.split(".")
+            curr = pending_map
+            for part in parts:
+                if isinstance(curr, dict) and part in curr:
+                    curr = curr[part]
+                else:
+                    curr = None
+                    break
+            if isinstance(curr, dict) and "code" in curr:
+                pending = curr
 
-        if not is_valid_code:
+        if not pending or pending.get("consumed", False):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid or expired verification code.",
             )
 
+        # Check expiration (15-minute validity window)
+        now = utcnow()
+        expires_at = pending.get("expires_at")
+        if expires_at:
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+            if now > expires_at:
+                pending["consumed"] = True
+                pending_map[email_clean] = pending
+                await self.db["users"].update_one(
+                    {"user_id": principal.subject},
+                    {"$set": {"pending_verifications": pending_map}},
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Verification code has expired. Please request a new code.",
+                )
+
+        # Check attempt limits (maximum 5 attempts per code)
+        attempts = pending.get("attempts", 0)
+        max_attempts = pending.get("max_attempts", 5)
+        if attempts >= max_attempts:
+            pending["consumed"] = True
+            pending_map[email_clean] = pending
+            await self.db["users"].update_one(
+                {"user_id": principal.subject},
+                {"$set": {"pending_verifications": pending_map}},
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Maximum verification attempts exceeded. Please request a new code.",
+            )
+
+        # Increment attempts counter
+        pending["attempts"] = attempts + 1
+        pending_map[email_clean] = pending
+        await self.db["users"].update_one(
+            {"user_id": principal.subject},
+            {"$set": {"pending_verifications": pending_map}},
+        )
+
+        # Validate code securely using constant-time comparison
+        submitted_code = payload.code.strip()
+        stored_code = pending.get("code") or ""
+        stored_hash = pending.get("code_hash") or ""
+        input_hash = hashlib.sha256(f"{submitted_code}:{principal.subject}".encode("utf-8")).hexdigest()
+
+        is_valid = False
+        if stored_code and hmac.compare_digest(submitted_code, stored_code):
+            is_valid = True
+        elif stored_hash and hmac.compare_digest(input_hash, stored_hash):
+            is_valid = True
+
+        if not is_valid:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid verification code.",
+            )
+
         email_type = pending.get("email_type") if pending else EmailType.PERSONAL.value
+        pending_map.pop(email_clean, None)
         set_updates: dict[str, Any] = {
-            f"pending_verifications.{email_clean}": None,
+            "pending_verifications": pending_map,
             "updated_at": utcnow(),
         }
 

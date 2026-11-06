@@ -114,48 +114,44 @@ async def get_my_profile(
     parent_details = None
 
     if role == "student":
-        # Resolve student record
+        # Resolve student record strictly through verified relationship with principal
+        apaar_id = user.get("apaar_id") or principal.apaar_id
         student_rec = None
-        if user.get("apaar_id") or principal.apaar_id:
-            student_rec = await db["students"].find_one({"apaar_id": user.get("apaar_id") or principal.apaar_id})
-        if not student_rec and (user.get("full_name") or principal.display_name):
-            student_rec = await db["students"].find_one({"student_name": user.get("full_name") or principal.display_name})
-        if not student_rec:
-            student_rec = await db["students"].find_one()
+        if apaar_id:
+            student_rec = await db["students"].find_one({"apaar_id": apaar_id})
 
-        prog_name = "B.Tech Computer Science & Engineering"
-        if student_rec and student_rec.get("program_id"):
-            prog_doc = await db["programmes"].find_one({"program_id": student_rec.get("program_id")})
-            if prog_doc:
-                prog_name = prog_doc.get("program_name", student_rec.get("program_id"))
+        if student_rec:
+            prog_name = "B.Tech Computer Science & Engineering"
+            if student_rec.get("program_id"):
+                prog_doc = await db["programmes"].find_one({"program_id": student_rec.get("program_id")})
+                if prog_doc:
+                    prog_name = prog_doc.get("program_name", student_rec.get("program_id"))
 
-        student_name = (student_rec or {}).get("student_name") or user.get("full_name") or principal.display_name or "Aarav Sharma"
-        rec_id = str((student_rec or {}).get("_id", "042189AB"))[:8].upper()
-        student_details = {
-            "student_id": f"CL-STU-{rec_id}",
-            "student_name": student_name,
-            "apaar_id_masked": apaar_validator.mask((student_rec or {}).get("apaar_id", user.get("apaar_id") or "992100000001")),
-            "institute_roll_no": (student_rec or {}).get("student_institute_roll_no", "D-2024-001"),
-            "institution_id": (student_rec or {}).get("institution_id") or institution_id or "INST-0421",
-            "institution_name": institution_name,
-            "programme_name": prog_name,
-            "department": "Department of Computer Science & Engineering",
-            "class_section": "Class 3rd Year - Section A",
-            "academic_year": (student_rec or {}).get("academic_year", "2024-25"),
-            "current_semester": "Semester 5",
-            "admission_quota": (student_rec or {}).get("admission_quota", "MERIT"),
-            "attendance_percentage": 92.4,
-            "cumulative_cgpa": 8.75,
-            "guardian_name": "Sunita Sharma",
-            "guardian_relationship": "Mother / Legal Guardian",
-            "guardian_phone_masked": "+91 98**** **12",
-            "verified_credentials_count": 3,
-            "achievements": [
-                "First Class with Distinction (Semesters 1-4)",
-                "Dean's Honour Roll - Academic Year 2023-24",
-                "Winner, State Inter-College Hackathon 2024",
-            ],
-        }
+            student_name = student_rec.get("student_name") or user.get("full_name") or principal.display_name or "Student"
+            rec_id = str(student_rec.get("_id", "042189AB"))[:8].upper()
+            student_details = {
+                "student_id": f"CL-STU-{rec_id}",
+                "student_name": student_name,
+                "apaar_id_masked": apaar_validator.mask(student_rec.get("apaar_id", apaar_id)),
+                "institute_roll_no": student_rec.get("student_institute_roll_no", "N/A"),
+                "institution_id": student_rec.get("institution_id") or institution_id or "N/A",
+                "institution_name": institution_name,
+                "programme_name": prog_name,
+                "department": student_rec.get("department", "Department of Computer Science & Engineering"),
+                "class_section": student_rec.get("class_section", "N/A"),
+                "academic_year": student_rec.get("academic_year", "2024-25"),
+                "current_semester": student_rec.get("current_semester", "Semester 1"),
+                "admission_quota": student_rec.get("admission_quota", "MERIT"),
+                "attendance_percentage": student_rec.get("attendance_percentage", 0.0),
+                "cumulative_cgpa": student_rec.get("cumulative_cgpa", 0.0),
+                "guardian_name": student_rec.get("guardian_name", "N/A"),
+                "guardian_relationship": student_rec.get("guardian_relationship", "Legal Guardian"),
+                "guardian_phone_masked": student_rec.get("guardian_phone_masked", "N/A"),
+                "verified_credentials_count": student_rec.get("verified_credentials_count", 0),
+                "achievements": student_rec.get("achievements", []),
+            }
+        else:
+            student_details = None
 
     elif role == "teacher":
         teacher_details = {

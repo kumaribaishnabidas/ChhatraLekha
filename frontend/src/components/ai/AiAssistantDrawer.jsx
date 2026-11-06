@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useAuth } from '../../hooks/useAuth'
 import { api } from '../../services/api'
+import GroundedDataCard from './GroundedDataCard'
 
 export default function AiAssistantDrawer({ isOpen, onClose }) {
-  const { t, i18n } = useTranslation()
-  const { user } = useAuth()
+  const { i18n } = useTranslation()
   const navigate = useNavigate()
 
   const [messages, setMessages] = useState([])
@@ -19,13 +18,15 @@ export default function AiAssistantDrawer({ isOpen, onClose }) {
   const messagesEndRef = useRef(null)
   const recognitionRef = useRef(null)
 
-  const userRole = user?.role || 'student'
-  const currentLang = i18n.language || 'en'
+  const currentLang = String(i18n.language || 'en').toLowerCase().split('-')[0]
+  const speechLocale = currentLang === 'hi' ? 'hi-IN' : currentLang === 'or' ? 'or-IN' : 'en-IN'
 
-  // Load tailored quick prompts for current user role
+  // The server reads the role from the authenticated session. Sending a role
+  // from the browser would let a caller ask for prompts they are not entitled
+  // to, so the request deliberately carries no role at all.
   useEffect(() => {
     let active = true
-    api.get(`/ai/prompts?role=${encodeURIComponent(userRole)}`)
+    api.get('/ai/prompts')
       .then((res) => {
         if (active && res.data?.prompts) {
           setQuickPrompts(res.data.prompts)
@@ -44,7 +45,7 @@ export default function AiAssistantDrawer({ isOpen, onClose }) {
     return () => {
       active = false
     }
-  }, [userRole])
+  }, [])
 
   // Initial welcome message
   useEffect(() => {
@@ -94,14 +95,11 @@ export default function AiAssistantDrawer({ isOpen, onClose }) {
     setLoading(true)
 
     try {
+      // Identity, role and scope are resolved from the bearer token on the
+      // server. Only the question and its answer language are sent here.
       const res = await api.post('/ai/chat', {
         message: text,
-        role: userRole,
         language: currentLang,
-        user_context: {
-          name: user?.display_name || user?.name,
-          student_id: user?.apaar_id || user?.user_id,
-        },
       })
 
       const replyData = res.data || {}
@@ -110,6 +108,12 @@ export default function AiAssistantDrawer({ isOpen, onClose }) {
         text: replyData.reply || replyData.answer || 'I am ready to help. Please select from the prompts or ask a question.',
         source: replyData.source || 'ChhatraLekha Platform Guide',
         actions: replyData.actions || [],
+        grounded: Boolean(replyData.grounded),
+        intent: replyData.intent || 'help',
+        confidence: typeof replyData.confidence === 'number' ? replyData.confidence : null,
+        data: replyData.data || null,
+        citations: Array.isArray(replyData.citations) ? replyData.citations : [],
+        followups: Array.isArray(replyData.followups) ? replyData.followups : [],
       }
       setMessages((prev) => [...prev, assistantMessage])
     } catch {
@@ -144,7 +148,7 @@ export default function AiAssistantDrawer({ isOpen, onClose }) {
     }
 
     const recognition = new SpeechRecognition()
-    recognition.lang = currentLang === 'hi' ? 'hi-IN' : currentLang === 'or' ? 'or-IN' : 'en-IN'
+    recognition.lang = speechLocale
     recognition.continuous = false
     recognition.interimResults = false
 
@@ -185,7 +189,7 @@ export default function AiAssistantDrawer({ isOpen, onClose }) {
 
     window.speechSynthesis.cancel()
     const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = currentLang === 'hi' ? 'hi-IN' : currentLang === 'or' ? 'or-IN' : 'en-IN'
+    utterance.lang = speechLocale
 
     utterance.onend = () => {
       setSpeakingIndex(null)
@@ -267,7 +271,50 @@ export default function AiAssistantDrawer({ isOpen, onClose }) {
                       : 'bg-surface text-ink border border-line shadow-xs'
                   }`}
                 >
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
+                        m.grounded
+                          ? 'bg-success/10 text-success'
+                          : m.data
+                          ? 'bg-surface-2 text-muted'
+                          : 'bg-brand/10 text-brand'
+                      }`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          m.grounded ? 'bg-success' : m.data ? 'bg-muted' : 'bg-brand'
+                        }`}
+                      />
+                      {m.grounded ? 'Verified from records' : m.data ? 'No matching record' : 'Platform guidance'}
+                    </span>
+                    {m.confidence !== null && (
+                      <span className="text-[9px] text-muted">
+                        {Math.round(m.confidence * 100)}% confidence
+                      </span>
+                    )}
+                  </div>
+
                   <p className="m-0 whitespace-pre-wrap">{m.text}</p>
+
+                  {!isUser && <GroundedDataCard data={m.data} />}
+
+                  {!isUser && m.citations && m.citations.length > 0 && (
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-[10px] font-semibold text-muted hover:text-brand">
+                        Sources ({m.citations.length})
+                      </summary>
+                      <ul className="mt-1 mb-0 pl-3 space-y-0.5">
+                        {m.citations.map((citation, citationIdx) => (
+                          <li key={citationIdx} className="text-[10px] text-muted">
+                            {citation.label}
+                            {citation.collection ? ` · ${citation.collection}` : ''}
+                            {citation.scope ? ` · ${citation.scope}` : ''}
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
 
                   {!isUser && (
                     <div className="mt-2 pt-2 border-t border-line/60 flex items-center justify-between gap-2">
@@ -304,6 +351,24 @@ export default function AiAssistantDrawer({ isOpen, onClose }) {
                         className="rounded-full bg-surface border border-line px-2.5 py-1 text-[11px] font-semibold text-brand hover:border-brand cursor-pointer shadow-xs"
                       >
                         {act.label} &rarr;
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Follow-up questions suggested by the same grounded answer */}
+                {!isUser && m.followups && m.followups.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-muted">Ask next</span>
+                    {m.followups.slice(0, 3).map((followup, followupIdx) => (
+                      <button
+                        key={followupIdx}
+                        type="button"
+                        disabled={loading}
+                        onClick={() => sendMessage(followup)}
+                        className="rounded-full bg-surface-2 border border-dashed border-line px-2 py-0.5 text-[10px] text-ink hover:border-brand cursor-pointer disabled:opacity-50"
+                      >
+                        {followup}
                       </button>
                     ))}
                   </div>

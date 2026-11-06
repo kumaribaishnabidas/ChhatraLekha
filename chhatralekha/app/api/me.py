@@ -62,11 +62,15 @@ class ConsentUpdateRequest(BaseModel):
 
 
 async def _resolve_student_record(principal: Principal, db: AsyncIOMotorDatabase) -> dict[str, Any]:
-    """Retrieve the student record for the authenticated student principal."""
+    """Retrieve the student record for the authenticated student principal.
+
+    Resolves student profiles strictly through a verified relationship with the
+    authenticated principal. Fails closed with 404 if no verified linkage exists.
+    """
     principal.require(rbac.Permission.VIEW_OWN_RECORD)
     students_repo = StudentRepository(db["students"])
 
-    # 1. Primary: user.apaar_id
+    # 1. Primary: principal.apaar_id
     if principal.apaar_id:
         record = await students_repo.get(principal.apaar_id)
         if record:
@@ -78,21 +82,6 @@ async def _resolve_student_record(principal: Principal, db: AsyncIOMotorDatabase
         record = await students_repo.get(user_doc["apaar_id"])
         if record:
             return record
-
-    # 3. Fallback: match by display_name or email prefix
-    if principal.display_name:
-        record = await db["students"].find_one({"student_name": principal.display_name})
-        if record:
-            return record
-    if principal.email:
-        prefix = principal.email.split("@")[0]
-        record = await db["students"].find_one({"student_name": {"$regex": f"^{prefix}", "$options": "i"}})
-        if record:
-            return record
-
-    # 4. If demo environment, pick the first student record
-    async for doc in db["students"].find().limit(1):
-        return doc
 
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,

@@ -5,6 +5,8 @@ from __future__ import annotations
 import secrets
 from datetime import datetime, timezone
 from typing import Any, List, Optional
+
+from fastapi import HTTPException, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.api.deps import Principal
@@ -17,7 +19,6 @@ from app.modules.notifications.schemas import (
     NotificationOut,
     NotificationPreferenceOut,
     NotificationPreferenceUpdate,
-    NotificationPriority,
     UnreadCountOut,
 )
 from app.repositories.audit import AuditRepository
@@ -172,12 +173,24 @@ class NotificationService:
         notification_id: str,
         client_ip_addr: str,
     ) -> dict[str, Any]:
-        """Mark single notification as read."""
+        """Mark single notification as read, enforcing user ownership."""
         now = utcnow()
-        await self.db["notifications"].update_one(
-            {"notification_id": notification_id},
+        filter_query = {
+            "notification_id": notification_id,
+            "$or": [
+                {"user_id": principal.subject},
+                {"user_id": None, "institution_id": {"$in": [principal.institution_id, "INST-ALL", None]}},
+            ],
+        }
+        res = await self.db["notifications"].update_one(
+            filter_query,
             {"$set": {"is_read": True, "read_at": now}},
         )
+        if res.matched_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Notification not found or access denied.",
+            )
         return {"status": "SUCCESS", "notification_id": notification_id, "read_at": now.isoformat()}
 
     async def mark_all_as_read(
@@ -204,8 +217,20 @@ class NotificationService:
         principal: Principal,
         notification_id: str,
     ) -> dict[str, Any]:
-        """Dismiss or delete notification from user's view."""
-        await self.db["notifications"].delete_one({"notification_id": notification_id})
+        """Dismiss or delete notification from user's view, enforcing user ownership."""
+        filter_query = {
+            "notification_id": notification_id,
+            "$or": [
+                {"user_id": principal.subject},
+                {"user_id": None, "institution_id": {"$in": [principal.institution_id, "INST-ALL", None]}},
+            ],
+        }
+        res = await self.db["notifications"].delete_one(filter_query)
+        if res.deleted_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Notification not found or access denied.",
+            )
         return {"status": "DELETED", "notification_id": notification_id}
 
     async def get_preferences(self, principal: Principal) -> NotificationPreferenceOut:

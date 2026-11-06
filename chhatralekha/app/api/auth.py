@@ -183,18 +183,46 @@ DEMO_PERSONA_CATALOG = {
 }
 
 
+DISALLOWED_DEMO_ROLES = {
+    "national_admin",
+    "platform_operator",
+    "state_admin",
+    "district_admin",
+    "regulator_admin",
+}
+
+
 @router.post("/demo-login", response_model=TokenPair, summary="One-click demo persona session")
 async def demo_login(
     payload: DemoLoginRequest,
     request: Request,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> TokenPair:
-    """Create a temporary restricted demo session for the selected persona."""
+    """Create a temporary restricted demo session for the selected persona.
+
+    Disabled in production environments to fail closed and prevent unauthorized
+    administrative access.
+    """
+    runtime_settings = get_settings()
+    if runtime_settings.is_production:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Demo login is disabled in production environments.",
+        )
+
     key = payload.role.strip().lower()
+    if key in DISALLOWED_DEMO_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Role escalation to administrative role '{key}' is forbidden.",
+        )
+
     persona = DEMO_PERSONA_CATALOG.get(key)
     if not persona:
-        # Fallback to student persona if unknown
-        persona = DEMO_PERSONA_CATALOG["student"]
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid demo role '{payload.role}'. Allowed demo personas: {', '.join(sorted(DEMO_PERSONA_CATALOG.keys()))}.",
+        )
 
     users = UserRepository(db["users"], db["api_keys"], db["revoked_credentials"])
     audit = AuditRepository(db["audit_events"])
@@ -215,6 +243,31 @@ async def demo_login(
         }
         await db["users"].replace_one({"user_id": demo_user_id}, user_doc, upsert=True)
         user = user_doc
+
+    # Ensure demo student has their own linked record in students collection
+    if persona.get("apaar_id") and persona.get("role") == "student":
+        existing_student = await db["students"].find_one({"apaar_id": persona["apaar_id"]})
+        if not existing_student:
+            await db["students"].insert_one({
+                "apaar_id": persona["apaar_id"],
+                "student_name": persona["full_name"],
+                "institution_id": persona.get("institution_id", "INST-0421"),
+                "student_institute_roll_no": "D-2024-001",
+                "academic_year": "2024-25",
+                "current_semester": "Semester 5",
+                "attendance_percentage": 92.4,
+                "cumulative_cgpa": 8.75,
+                "guardian_name": "Sunita Sharma",
+                "guardian_relationship": "Mother / Legal Guardian",
+                "guardian_phone_masked": "+91 98**** **12",
+                "verified_credentials_count": 3,
+                "achievements": [
+                    "First Class with Distinction (Semesters 1-4)",
+                    "Dean's Honour Roll - Academic Year 2023-24",
+                    "Winner, State Inter-College Hackathon 2024",
+                ],
+                "is_demo": True,
+            })
 
     await writer.log(
         audit,
@@ -239,7 +292,7 @@ async def demo_login(
             extra_claims=extra,
         ),
         refresh_token=create_refresh_token(user["user_id"]),
-        expires_in=settings.access_token_expire_minutes * 60,
+        expires_in=runtime_settings.access_token_expire_minutes * 60,
         role=user["role"],
         user_id=user["user_id"],
         display_name=user.get("full_name") or persona["full_name"],

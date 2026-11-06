@@ -315,6 +315,26 @@ async def get_principal(
     return principal
 
 
+async def get_optional_principal(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> Optional[Principal]:
+    """Resolve the caller when credentials are present, without requiring them.
+
+    This exists for endpoints such as the assistant: anonymous visitors get the
+    public product guide, while a signed-in caller gets their own authorised
+    records. An invalid or expired token is treated as anonymous rather than a
+    hard failure, so a stale tab still renders guidance.
+    """
+    if credentials is None and not request.headers.get("X-API-Key"):
+        return None
+    try:
+        return await get_principal(request, credentials, db)
+    except HTTPException:
+        return None
+
+
 def require_permission(permission: rbac.Permission):
     """A dependency that enforces a single permission."""
 

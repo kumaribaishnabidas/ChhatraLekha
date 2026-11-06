@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from typing import Any, List
-from fastapi import APIRouter, Depends, Query, Request, status
+
+from fastapi import APIRouter, Depends, Query, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.api.deps import Principal, client_ip, get_db, get_principal
