@@ -228,6 +228,27 @@ class AnnouncementIn(BaseModel):
     target_id: Optional[str] = None
     target_label: Optional[str] = None
     target_role: Optional[str] = None
+    target_departments: Optional[List[str]] = None
+    target_classes: Optional[List[str]] = None
+    scheduled_for: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+    delivery_channels: Optional[List[str]] = Field(default_factory=lambda: ["IN_APP", "EMAIL"])
+    attachment_title: Optional[str] = None
+    attachment_url: Optional[str] = None
+
+
+class AnnouncementUpdateIn(BaseModel):
+    title: Optional[str] = Field(None, min_length=3, max_length=150)
+    content: Optional[str] = Field(None, min_length=5, max_length=2000)
+    priority: Optional[AnnouncementPriority] = None
+    target_scope: Optional[TargetAudienceScope] = None
+    target_id: Optional[str] = None
+    target_label: Optional[str] = None
+    target_role: Optional[str] = None
+    target_departments: Optional[List[str]] = None
+    target_classes: Optional[List[str]] = None
+    scheduled_for: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
     attachment_title: Optional[str] = None
     attachment_url: Optional[str] = None
 
@@ -242,6 +263,13 @@ class AnnouncementOut(BaseModel):
     target_id: Optional[str] = None
     target_label: Optional[str] = None
     target_role: Optional[str] = None
+    target_departments: Optional[List[str]] = None
+    target_classes: Optional[List[str]] = None
+    scheduled_for: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+    delivery_channels: Optional[List[str]] = None
+    delivery_summary: Optional[dict[str, int]] = None
+    status: Optional[str] = "PUBLISHED"
     published_by: str
     published_at: datetime
     attachment_title: Optional[str] = None

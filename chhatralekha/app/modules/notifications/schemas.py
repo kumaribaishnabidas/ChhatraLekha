@@ -13,7 +13,11 @@ class NotificationCategory(str, Enum):
     ATTENDANCE = "ATTENDANCE"
     ASSIGNMENTS = "ASSIGNMENTS"
     EXAMINATIONS = "EXAMINATIONS"
+    RESULTS = "RESULTS"
+    TIMETABLE = "TIMETABLE"
     ANNOUNCEMENTS = "ANNOUNCEMENTS"
+    ADMISSIONS = "ADMISSIONS"
+    ADMINISTRATIVE = "ADMINISTRATIVE"
     SECURITY = "SECURITY"
 
 
@@ -30,6 +34,11 @@ class DeliveryChannel(str, Enum):
     PUSH = "PUSH"
 
 
+class DevicePlatform(str, Enum):
+    ANDROID = "ANDROID"
+    IOS = "IOS"
+
+
 class NotificationOut(BaseModel):
     notification_id: str
     institution_id: str
@@ -38,6 +47,7 @@ class NotificationOut(BaseModel):
     title: str
     message: str
     deep_link: Optional[str] = None
+    channels: Optional[List[str]] = Field(default_factory=lambda: ["IN_APP"])
     is_read: bool = False
     read_at: Optional[str] = None
     created_at: str
@@ -51,15 +61,9 @@ class NotificationPreferenceOut(BaseModel):
     quiet_hours_enabled: bool = False
     quiet_hours_start: str = "22:00"
     quiet_hours_end: str = "07:00"
+    language_preference: str = "en"
     subscribed_categories: List[str] = Field(
-        default_factory=lambda: [
-            "ACADEMIC",
-            "ATTENDANCE",
-            "ASSIGNMENTS",
-            "EXAMINATIONS",
-            "ANNOUNCEMENTS",
-            "SECURITY",
-        ]
+        default_factory=lambda: [c.value for c in NotificationCategory]
     )
 
 
@@ -70,6 +74,7 @@ class NotificationPreferenceUpdate(BaseModel):
     quiet_hours_enabled: Optional[bool] = None
     quiet_hours_start: Optional[str] = None
     quiet_hours_end: Optional[str] = None
+    language_preference: Optional[str] = None
     subscribed_categories: Optional[List[str]] = None
 
 
@@ -81,6 +86,9 @@ class BroadcastNotificationRequest(BaseModel):
     target_role: Optional[str] = None
     target_class: Optional[str] = None
     deep_link: Optional[str] = None
+    channels: Optional[List[DeliveryChannel]] = Field(
+        default_factory=lambda: [DeliveryChannel.IN_APP]
+    )
     institution_id: Optional[str] = None
 
 
@@ -88,3 +96,42 @@ class UnreadCountOut(BaseModel):
     unread_count: int
     urgent_count: int
 
+
+class DeviceTokenRegisterIn(BaseModel):
+    token: str = Field(..., min_length=10, max_length=512)
+    platform: DevicePlatform
+    device_name: Optional[str] = Field(None, max_length=100)
+    device_model: Optional[str] = Field(None, max_length=100)
+    app_version: Optional[str] = Field(None, max_length=50)
+
+
+class DeviceTokenOut(BaseModel):
+    device_id: str
+    user_id: str
+    token: str
+    platform: str
+    device_name: Optional[str] = None
+    device_model: Optional[str] = None
+    app_version: Optional[str] = None
+    registered_at: str
+    last_active_at: str
+
+
+class NotificationDeliveryRecordOut(BaseModel):
+    delivery_id: str
+    notification_id: str
+    channel: str
+    recipient: str
+    status: str
+    attempt_count: int = 1
+    sent_at: Optional[str] = None
+    error_message: Optional[str] = None
+
+
+class NotificationPageOut(BaseModel):
+    items: List[NotificationOut]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+    unread_count: int
