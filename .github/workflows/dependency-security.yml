@@ -40,17 +40,25 @@ jobs:
       - name: Run npm audit
         shell: bash
         run: |
-          audit_status=0
-          npm audit --json > npm-audit.json || audit_status=$?
-          echo "npm audit exit code: ${audit_status}" >> "$GITHUB_STEP_SUMMARY"
-          node -e '
-            const fs = require("fs");
-            const report = JSON.parse(fs.readFileSync("npm-audit.json", "utf8"));
-            const counts = report.metadata?.vulnerabilities || {};
-            const line = `npm audit vulnerabilities — info: ${counts.info || 0}, low: ${counts.low || 0}, moderate: ${counts.moderate || 0}, high: ${counts.high || 0}, critical: ${counts.critical || 0}`;
-            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n### npm audit\n\n${line}\n`);
-          '
-          exit 0
+          if npm audit --json > npm-audit.json; then
+            audit_status=0
+          else
+            audit_status=$?
+          fi
+          NPM_AUDIT_STATUS="$audit_status" node - <<'NODE'
+          const fs = require("fs");
+          const status = Number(process.env.NPM_AUDIT_STATUS);
+          const report = JSON.parse(fs.readFileSync("npm-audit.json", "utf8"));
+          const counts = report.metadata?.vulnerabilities || {};
+          const severities = ["info", "low", "moderate", "high", "critical"];
+          const total = severities.reduce((sum, level) => sum + Number(counts[level] || 0), 0);
+          const line = `npm audit findings: ${total} — info: ${counts.info || 0}, low: ${counts.low || 0}, moderate: ${counts.moderate || 0}, high: ${counts.high || 0}, critical: ${counts.critical || 0}; scanner exit code: ${status}`;
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n### npm audit\n\n${line}\n`);
+          if (status !== 0 || total > 0) {
+            console.error(`npm audit failed: ${total} vulnerability finding(s), scanner exit code ${status}`);
+            process.exit(1);
+          }
+          NODE
 
       - name: Upload npm audit report
         if: always()
@@ -83,12 +91,15 @@ jobs:
       - name: Run pip-audit
         shell: bash
         run: |
-          audit_status=0
-          pip-audit -r requirements.txt -f json -o pip-audit.json || audit_status=$?
-          echo "pip-audit exit code: ${audit_status}" >> "$GITHUB_STEP_SUMMARY"
-          python - <<'PY'
+          if pip-audit -r requirements.txt -f json -o pip-audit.json; then
+            audit_status=0
+          else
+            audit_status=$?
+          fi
+          python - "$audit_status" <<'PY'
           import json
           import os
+          import sys
           from pathlib import Path
           report = json.loads(Path("pip-audit.json").read_text())
           dependencies = report.get("dependencies", []) if isinstance(report, dict) else report
@@ -98,9 +109,11 @@ jobs:
               if isinstance(item, dict)
           )
           with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as summary:
-              summary.write(f"\n### pip-audit\n\nPackages with reported vulnerabilities: {vulnerabilities}\n")
+              summary.write(f"\n### pip-audit\n\nVulnerability finding records: {vulnerabilities}; scanner exit code: {sys.argv[1]}\n")
+          if int(sys.argv[1]) != 0 or vulnerabilities > 0:
+              print(f"pip-audit failed: {vulnerabilities} vulnerability finding(s), scanner exit code {sys.argv[1]}", file=sys.stderr)
+              sys.exit(1)
           PY
-          exit 0
 
       - name: Upload pip audit report
         if: always()
