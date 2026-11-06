@@ -94,3 +94,4 @@ export function useNavigation() {
     currentPath: location.pathname,
   }
 }
+

@@ -139,3 +139,4 @@ async def list_user_sessions(
             is_current=True,
         )
     ]
+

@@ -101,3 +101,4 @@ async def broadcast_notification(
 ) -> NotificationOut:
     service = NotificationService(db)
     return await service.broadcast_notification(principal, payload, client_ip(request))
+

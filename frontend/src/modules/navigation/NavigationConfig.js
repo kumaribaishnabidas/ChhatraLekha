@@ -261,3 +261,4 @@ export const ROLE_DEFAULT_NAVIGATIONS = {
     { to: '/profile', label: 'nav.settings', icon: 'profile' },
   ],
 }
+

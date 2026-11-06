@@ -44,3 +44,4 @@ export function MobileBottomBar({ navItems = [], unreadCount = 0 }) {
     </nav>
   )
 }
+

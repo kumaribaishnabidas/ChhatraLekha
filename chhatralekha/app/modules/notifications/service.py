@@ -304,3 +304,4 @@ class NotificationService:
             is_read=False,
             created_at=now.isoformat(),
         )
+

@@ -118,3 +118,4 @@ class UserProfileOut(BaseModel):
 
 class ActiveInstitutionSwitchRequest(BaseModel):
     institution_id: str
+

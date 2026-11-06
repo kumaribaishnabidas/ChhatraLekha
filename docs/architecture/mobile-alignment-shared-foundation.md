@@ -335,3 +335,4 @@ Both mobile platforms replicate the permission-aware navigation tree:
 1. **Avatar Upload**: When the user captures or uploads a platform avatar offline, it is saved in encrypted local cache (`app_specific_storage`). A mutation task is queued with a local URI. Upon network recovery, the background sync worker uploads the file to `/api/profiles/avatar/{platform}` using multipart form data.
 2. **Notification Reads**: Marking an item as read offline updates the local Room / GRDB store immediately. The mutation is added to the outbox table (`pending_mutations`), and synced to `PUT /api/notifications/{id}/read` upon network availability.
 3. **Multi-Institution Context**: Active institution selection is persisted in local device preferences (`EncryptedSharedPreferences` on Android / `UserDefaults` with Keychain-backed token on iOS) and included in the `X-Institution-ID` header on all outbound API requests.
+
