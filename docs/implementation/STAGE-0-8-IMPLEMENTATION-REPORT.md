@@ -68,20 +68,28 @@ Before initiating new features, the Implementation Gate verification confirmed:
 - Seven sub-navigation tabs: Overview & KPIs, Academic Years & Terms, Departments & Programmes, Classes & Sections, Curriculum & Subjects, Student Enrolments & Progression, Faculty Allocations, and Academic Calendar.
 - Includes confirmation dialogs, modal wizards, real-time KPI metrics, search filtering, and zero-violation compliance with strict design tokens (0 emojis, 0 em/en dashes, 0 harsh gradients, 0 blur, rounded-lg/md, shadow-xs/sm/md).
 
+### 3.8 Stabilization & Production-Readiness Remediation
+- **Idempotent Read Endpoints**: Removed all automatic seeding side effects (`_ensure_academic_seeds`) from all 10 `GET` endpoints in `app/api/academic.py`. Read endpoints now perform zero database writes.
+- **Standalone Development Seeding**: Added explicit CLI command `python -m app.scripts.seed_academic_data --institution-id <ID>` with idempotent upsert semantics that preserve genuine institutional data.
+- **Frontend Contract Alignment**: Updated `AcademicSetupPage.jsx` action handlers to match Pydantic schemas in `campus.py`. Eliminated 266 lines of synthetic in-memory fallback arrays, preserved form state on submit failures, and rendered error alerts inside all 11 modal dialogs.
+- **Hierarchy Validation**: Enforced pre-flight existence checks for `department_id` and `programme_id` on programme and subject creation, failing closed with HTTP 400 Bad Request.
+- **Cross-Tenant Protection**: Added target class tenant isolation verification on section transfers, preventing cross-tenant transfer tampering.
+
 ---
 
 ## 4. Test Verification Summary
 
-- **Backend Pytest**: 399/399 tests passing (`chhatralekha/tests`), including 11 comprehensive end-to-end tests in `test_stage_0_8_academic_core.py`.
+- **Backend Pytest**: 442/442 tests passing (`chhatralekha/tests`), including 13 comprehensive end-to-end and idempotency tests in `test_stage_0_8_academic_core.py`.
 - **Backend Lint**: `ruff check chhatralekha/` passed with 0 errors.
-- **Frontend Vitest**: 118/118 tests passing (`frontend/src/test`), including 8 end-to-end tests in `Stage08.test.jsx`.
-- **Frontend Design Linter**: `DesignLint.test.jsx` passed with 0 violations.
-- **Frontend Production Build**: Vite production build succeeded cleanly with 0 errors (`built in 13.77s`).
+- **Frontend Vitest**: 135/135 tests passing across 19 files (`frontend/src/test`), including 10 end-to-end tests in `Stage08.test.jsx`.
+- **Frontend Design Linter**: `DesignLint.test.jsx` passed with 0 violations (0 emojis, 0 em/en dashes, 0 harsh gradients, 0 blur).
+- **Frontend Translation Parity**: `i18n:check` passed across 13 locales with 441 keys each.
+- **Frontend Production Build**: Vite production build succeeded cleanly with 0 errors (`built in 20.77s`).
 
 ---
 
 ## 5. Branch & Version Control
 
 All code, schemas, endpoints, tests, and documentation are committed to:
-- **Branch:** `feature/stage-0-8-academic-core`
+- **Stabilization Branch:** `stabilization/stage-0-8-academic-core`
 - **Protected Branch Constraint:** Main branch remains clean and untouched pending Pull Request review.

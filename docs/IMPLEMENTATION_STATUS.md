@@ -15,10 +15,10 @@ Every command below has been executed on the local workspace and confirmed passi
 
 | Component | Test / Build Command | Result | Duration / Scope |
 | :--- | :--- | :--- | :--- |
-| **API Backend** | `pytest --tb=no` (in `chhatralekha/`) | **320 passed**, 0 failures, 1 warning | ~11s across 34 test suites |
-| **Frontend Unit Tests** | `npm.cmd test -- --run` (in `frontend/`) | **68 passed**, 0 failures | 9 test files |
+| **API Backend** | `pytest --tb=no` (in `chhatralekha/`) | **442 passed**, 0 failures, 1 warning | ~24s across 35 test suites |
+| **Frontend Unit Tests** | `npm.cmd test -- --run` (in `frontend/`) | **135 passed**, 0 failures | 19 test files |
 | **Frontend Route Links** | `npm.cmd run check:links` (in `frontend/`) | **Passed** | 34 configured application routes, 25 verified internal routes |
-| **Frontend Translations** | `npm.cmd run i18n:check` (in `frontend/`) | **Passed** | 13 languages, 423 translation keys each |
+| **Frontend Translations** | `npm.cmd run i18n:check` (in `frontend/`) | **Passed** | 13 languages, 441 translation keys each |
 | **Frontend Production Build** | `npm.cmd run build` (in `frontend/`) | **Passed** | `dist/` bundle created with code splitting |
 | **Android Core Unit Tests** | `.\gradlew.bat :core:test` (in `android/`) | **204 passed**, 0 failures | 15 test XML suites in 29s |
 | **Android Debug APK Build** | `.\gradlew.bat assembleDebug` (in `android/`) | **Passed** | `app-debug.apk` built (22.5 MB) |
@@ -45,7 +45,7 @@ Every command below has been executed on the local workspace and confirmed passi
 | **12** | **Student Lifecycle State Management** | **IMPLEMENTED** | State machine in `chhatralekha/app/models/enums.py` (`ADMITTED`, `ACTIVE`, `ON_LEAVE`, `TRANSFERRED`, `GRADUATED`, `WITHDRAWN`) and `POST /api/students/{apaar_id}/status`. Tracks reason, effective date, and audit trail. |
 | **13** | **Anomaly Case Review & Key Rotation** | **IMPLEMENTED** | Case assignment (`/api/anomalies/{id}/assign`), internal case notes (`/api/anomalies/{id}/notes`), and structured dismissal reasons with pre-mutation institution checks. Key rotation lifecycle via `KeyRegistry` in `seal.py`, supporting active, rotated, and revoked keys, with versioned `/api/verify/jwks` endpoint. |
 | **14** | **Shared Canonical Rule Fixtures** | **IMPLEMENTED** | Canonical rule specification and vectors in `chhatralekha/app/resources/rule_test_fixtures.json` and `android/core/src/test/resources/rule_test_fixtures.json` preventing backend and mobile validator drift. |
-| **15** | **Connected Campus Multi-Tenant Core (Schools & Colleges)** | **IMPLEMENTED** | Unified configurable model supporting both schools and higher education colleges. Self-registration with operator review (`/api/institutions/register`, `/api/institutions/{id}/review`). Academic structure management (`/api/academic/*`), teacher workspace and timetables (`/api/teacher/*`), daily/period-wise attendance (`/api/attendance/*`), draft marks entry with moderation and publication privacy guards (`/api/assessments/*`), targeted notice board (`/api/announcements/*`), verified parent-child linkage (`/api/parent/*`), and public sustainability transparency charter (`/api/transparency` and `/transparency`). |
+| **15** | **Connected Campus Multi-Tenant Core (Schools & Colleges)** | **STABILIZED & VERIFIED** | Unified configurable model supporting both schools and higher education colleges. Self-registration with operator review (`/api/institutions/register`, `/api/institutions/{id}/review`). Stage 0.8 Academic Management Core stabilized: all 10 `GET` endpoints in `/api/academic/*` are strictly idempotent with 0 write side effects; automatic seeding removed from read paths; explicit standalone seeding script `python -m app.scripts.seed_academic_data`; frontend contracts in `AcademicSetupPage.jsx` fully aligned with Pydantic schemas; zero optimistic synthetic records; inline modal error alerts with preserved form state; teacher workspace and timetables (`/api/teacher/*`), daily/period-wise attendance (`/api/attendance/*`), draft marks entry with moderation (`/api/assessments/*`), targeted notice board (`/api/announcements/*`), verified parent-child linkage (`/api/parent/*`), and public sustainability transparency charter (`/api/transparency`). |
 | **16** | **iOS Native Client Architecture & Roadmap** | **DOCUMENTED** | Complete architectural blueprint in `docs/IOS_ARCHITECTURE_AND_ROADMAP.md` detailing Swift 6, SwiftUI, GRDB.swift offline outbox synchronization, Keychain security, CryptoKit verification, and Apple Privacy Manifest compliance. |
 
 ---
@@ -71,11 +71,11 @@ Every command below has been executed on the local workspace and confirmed passi
 
 ### 3.3 Test Totals Alignment
 - **Discrepancy**: Prior notes in various drafts claimed conflicting test numbers (ranging from 160 to 250).
-- **Verified Ground Truth**:
-  - Backend pytest: **305 tests passed** (0 failures).
-  - Frontend vitest: **68 tests passed** (0 failures).
+- **Verified Ground Truth (Post Stage 0.8 Stabilization)**:
+  - Backend pytest: **442 tests passed** (0 failures).
+  - Frontend vitest: **135 tests passed** across 19 test files (0 failures).
   - Android core unit tests: **204 tests passed** across 15 XML test suites (0 failures).
-  - Total automated unit/integration tests across the entire repository: **577 tests passed**.
+  - Total automated unit/integration tests across the entire repository: **781 tests passed**.
 
 ### 3.4 CI Pipeline Status
 - **Prior State**: `.github/workflows/chhatralekha.yml` tested only backend and frontend, omitting the Android app entirely and missing `android/**` in triggers.

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import AcademicSetupPage from '../pages/AcademicSetupPage'
+import { api } from '../services/api'
 
 // Mock api
 vi.mock('../services/api', () => {
@@ -408,5 +409,78 @@ describe('Stage 0.8: Academic Management Core Frontend', () => {
 
     expect(screen.getByText('Independence Day Holiday')).toBeInTheDocument()
     expect(screen.queryByText('Mid-Term Examinations')).not.toBeInTheDocument()
+  })
+
+  it('handles form submission failure: preserves input, displays alert banner, leaves modal open, does not inject fake records', async () => {
+    render(
+      <BrowserRouter>
+        <AcademicSetupPage />
+      </BrowserRouter>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('2025-26')).toBeInTheDocument()
+    })
+
+    api.post.mockRejectedValueOnce({
+      response: {
+        data: {
+          detail: 'Overlapping academic year dates detected',
+        },
+      },
+    })
+
+    const newYearBtn = screen.getByRole('button', { name: /New Academic Year/i })
+    fireEvent.click(newYearBtn)
+
+    expect(screen.getByRole('heading', { name: 'Create Academic Year' })).toBeInTheDocument()
+
+    const input = screen.getByPlaceholderText('e.g. 2026-27')
+    fireEvent.change(input, { target: { value: '2029-30' } })
+    expect(input.value).toBe('2029-30')
+
+    const form = screen.getByRole('heading', { name: 'Create Academic Year' }).closest('div').querySelector('form')
+    fireEvent.submit(form)
+
+    await waitFor(() => {
+      const alerts = screen.getAllByRole('alert')
+      expect(alerts.length).toBeGreaterThanOrEqual(1)
+      expect(alerts[0]).toHaveTextContent('Overlapping academic year dates detected')
+      expect(input.value).toBe('2029-30')
+      expect(screen.getByRole('heading', { name: 'Create Academic Year' })).toBeInTheDocument()
+    })
+
+    const cancelBtn = screen.getByRole('button', { name: 'Cancel' })
+    fireEvent.click(cancelBtn)
+
+    await waitFor(() => {
+      expect(screen.queryByRole('heading', { name: 'Create Academic Year' })).not.toBeInTheDocument()
+    })
+  })
+
+  it('handles form submission success: updates state only on 2xx confirmation and closes modal', async () => {
+    render(
+      <BrowserRouter>
+        <AcademicSetupPage />
+      </BrowserRouter>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('2025-26')).toBeInTheDocument()
+    })
+
+    const newYearBtn = screen.getByRole('button', { name: /New Academic Year/i })
+    fireEvent.click(newYearBtn)
+
+    const input = screen.getByPlaceholderText('e.g. 2026-27')
+    fireEvent.change(input, { target: { value: '2029-30' } })
+
+    const form = screen.getByRole('heading', { name: 'Create Academic Year' }).closest('div').querySelector('form')
+    fireEvent.submit(form)
+
+    await waitFor(() => {
+      expect(screen.queryByRole('heading', { name: 'Create Academic Year' })).not.toBeInTheDocument()
+      expect(screen.getByText('2029-30')).toBeInTheDocument()
+    })
   })
 })

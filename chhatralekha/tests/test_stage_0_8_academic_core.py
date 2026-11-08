@@ -41,16 +41,32 @@ async def student_auth_headers(async_client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_academic_overview_and_seeding(async_client: AsyncClient, admin_auth_headers):
-    """Verify that academic overview returns consolidated metrics and auto-seeds initial data."""
+async def test_academic_overview_and_explicit_seeding(async_client: AsyncClient, admin_auth_headers):
+    """Verify that academic overview is read-only by default, and returns metrics after explicit seeding."""
+    from app.api.academic import seed_academic_data
+    from app.core.database import mongo
+
+    # 1. Unseeded overview returns 0 counts and has zero write side effects
     res = await async_client.get("/api/academic/overview", headers=admin_auth_headers)
     assert res.status_code == 200
     data = res.json()
     assert "institution_id" in data
-    assert "current_academic_year" in data
-    assert data["total_classes"] >= 1
-    assert data["total_subjects"] >= 1
-    assert data["total_enrolled_students"] >= 1
+    inst_id = data["institution_id"]
+    assert data["total_classes"] == 0
+    assert data["total_subjects"] == 0
+    assert data["total_enrolled_students"] == 0
+
+    # 2. Explicitly seed academic data via the administrative function
+    db = mongo.db()
+    await seed_academic_data(db, inst_id)
+
+    # 3. Subsequent overview reflects seeded records
+    res_after = await async_client.get("/api/academic/overview", headers=admin_auth_headers)
+    assert res_after.status_code == 200
+    data_after = res_after.json()
+    assert data_after["total_classes"] >= 1
+    assert data_after["total_subjects"] >= 1
+    assert data_after["total_enrolled_students"] >= 1
 
 
 @pytest.mark.asyncio
@@ -356,3 +372,111 @@ async def test_unauthorized_access_prevented(async_client: AsyncClient, student_
     }
     res = await async_client.post("/api/academic/years", json=payload, headers=student_auth_headers)
     assert res.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_get_requests_have_no_write_side_effects(async_client: AsyncClient, admin_auth_headers):
+    """Verify all 10 GET academic endpoints are strictly read-only and have zero write side effects."""
+    from app.core.database import mongo
+    from app.core.security import create_access_token
+    db = mongo.db()
+
+    fresh_inst_id = "INST-READONLY-TEST"
+    fresh_user_id = "USR-READONLY-TEST"
+    await db["users"].insert_one({
+        "user_id": fresh_user_id,
+        "email": "readonly.admin@institution.test",
+        "full_name": "Readonly Test Admin",
+        "role": "school_admin",
+        "institution_id": fresh_inst_id,
+        "is_active": True,
+    })
+    token = create_access_token(
+        subject=fresh_user_id,
+        role="school_admin",
+        institution_id=fresh_inst_id,
+        extra_claims={"is_demo": True},
+    )
+    readonly_headers = {"Authorization": f"Bearer {token}"}
+
+    # Cross-tenant IDOR check: admin from another institution cannot query fresh_inst_id
+    res_cross = await async_client.get(f"/api/academic/years?institution_id={fresh_inst_id}", headers=admin_auth_headers)
+    assert res_cross.status_code == 403
+
+    collections = [
+        "academic_years",
+        "semester_terms",
+        "departments",
+        "programmes",
+        "classes",
+        "subjects",
+        "student_enrolments",
+        "teacher_assignments",
+        "academic_calendar_events",
+    ]
+
+    for c in collections:
+        count = await db[c].count_documents({"institution_id": fresh_inst_id})
+        assert count == 0
+
+    endpoints = [
+        "/api/academic/overview",
+        "/api/academic/years",
+        "/api/academic/terms",
+        "/api/academic/departments",
+        "/api/academic/programmes",
+        "/api/academic/classes",
+        "/api/academic/subjects",
+        "/api/academic/enrolments",
+        "/api/academic/teacher-assignments",
+        "/api/academic/calendar/events",
+    ]
+
+    for ep in endpoints:
+        res = await async_client.get(ep, headers=readonly_headers)
+        assert res.status_code == 200, f"Endpoint {ep} failed with {res.status_code}"
+
+    for c in collections:
+        count = await db[c].count_documents({"institution_id": fresh_inst_id})
+        assert count == 0, f"Collection {c} had write side effects from GET queries!"
+
+
+@pytest.mark.asyncio
+async def test_hierarchy_validation_and_cross_tenant_isolation(async_client: AsyncClient, college_admin_headers):
+    """Verify that referencing non-existent parent entities fails with HTTP 400."""
+    # 1. Referencing non-existent department when creating programme fails
+    bad_prg = {
+        "programme_code": "MTECH-AI",
+        "name": "M.Tech in Artificial Intelligence",
+        "department_id": "DEP-NONEXISTENT-999",
+        "academic_level": "POSTGRADUATE",
+        "duration_years": 2,
+        "total_semesters": 4,
+        "degree_awarded": "M.Tech",
+        "approved_intake": 30,
+    }
+    res_prg = await async_client.post("/api/academic/programmes", json=bad_prg, headers=college_admin_headers)
+    assert res_prg.status_code == 400
+    assert "not found in institution" in res_prg.json()["detail"]
+
+    # 2. Referencing non-existent programme when creating class section fails
+    bad_cls = {
+        "grade_level": "Semester 1",
+        "section": "A",
+        "academic_year": "2025-26",
+        "programme_id": "PRG-NONEXISTENT-888",
+    }
+    res_cls = await async_client.post("/api/academic/classes", json=bad_cls, headers=college_admin_headers)
+    assert res_cls.status_code == 400
+    assert "not found in institution" in res_cls.json()["detail"]
+
+    # 3. Referencing non-existent department when creating subject fails
+    bad_sub = {
+        "subject_code": "CS-999",
+        "subject_name": "Advanced Neural Networks",
+        "applicable_to": "M.Tech",
+        "department_id": "DEP-NONEXISTENT-999",
+    }
+    res_sub = await async_client.post("/api/academic/subjects", json=bad_sub, headers=college_admin_headers)
+    assert res_sub.status_code == 400
+    assert "not found in institution" in res_sub.json()["detail"]

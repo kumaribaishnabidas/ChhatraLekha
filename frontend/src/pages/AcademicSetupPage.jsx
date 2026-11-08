@@ -14,15 +14,19 @@ export default function AcademicSetupPage() {
 
   // Data collections
   const [overview, setOverview] = useState({
-    active_academic_year: '2025-26',
-    total_departments: 4,
-    total_programmes: 6,
-    total_classes: 8,
-    total_subjects: 14,
-    total_students_enrolled: 320,
-    total_faculty_assignments: 18,
+    active_academic_year: '',
+    current_academic_year: '',
+    total_departments: 0,
+    total_programmes: 0,
+    total_classes: 0,
+    total_subjects: 0,
+    total_enrolled_students: 0,
+    total_students_enrolled: 0,
+    total_faculty_assigned: 0,
+    total_faculty_assignments: 0,
     recent_events: [],
   })
+  const [modalError, setModalError] = useState('')
   const [years, setYears] = useState([])
   const [terms, setTerms] = useState([])
   const [departments, setDepartments] = useState([])
@@ -61,28 +65,40 @@ export default function AcademicSetupPage() {
     end_date: '',
     admission_start: '',
     admission_end: '',
+    admission_start_date: '',
+    admission_end_date: '',
   })
   const [newTerm, setNewTerm] = useState({
+    name: '',
     term_name: '',
     term_type: 'semester',
     term_number: 1,
     start_date: '',
     end_date: '',
+    academic_year: '2025-26',
     academic_year_id: 'AY-2025-26',
   })
   const [newDept, setNewDept] = useState({
+    department_code: '',
     dept_code: '',
     name: '',
+    head_of_department_name: '',
     head_of_department: '',
+    contact_email: '',
     email: '',
+    description: '',
   })
   const [newProg, setNewProg] = useState({
     programme_code: '',
     name: '',
     degree_type: 'Bachelor',
+    degree_awarded: 'Bachelor',
+    academic_level: 'UNDERGRADUATE',
     department_id: '',
     total_semesters: 8,
+    duration_years: 4,
     total_credits: 160,
+    approved_intake: 60,
   })
   const [newClass, setNewClass] = useState({
     grade_level: '',
@@ -96,27 +112,38 @@ export default function AcademicSetupPage() {
     subject_code: '',
     subject_name: '',
     multilingual_name: '',
+    subject_name_hi: '',
     credits: 4,
     is_practical: false,
     department_id: '',
     grade_level: 'Class 10',
+    applicable_to: 'Class 10',
   })
   const [newEnrolment, setNewEnrolment] = useState({
     student_name: '',
     student_id: '',
     enrolment_number: '',
+    roll_number: '',
     academic_year_id: 'AY-2025-26',
+    academic_year: '2025-26',
     class_id: '',
   })
   const [promotionData, setPromotionData] = useState({
     next_academic_year_id: 'AY-2026-27',
+    target_academic_year: '2026-27',
     next_grade_level: 'Class 11',
+    target_grade_or_semester: 'Class 11',
     next_section: 'A',
+    target_section: 'A',
     notes: 'Annual progression',
+    remarks: 'Annual progression',
   })
   const [transferData, setTransferData] = useState({
+    target_class_id: '',
     new_section: 'B',
-    reason: 'Parent request',
+    target_section: 'B',
+    reason: 'Administrative transfer',
+    transfer_reason: 'Administrative transfer',
   })
   const [newAssignment, setNewAssignment] = useState({
     teacher_name: '',
@@ -137,6 +164,23 @@ export default function AcademicSetupPage() {
   const notify = (text, type = 'success') => {
     setMsg({ text, type })
     setTimeout(() => setMsg({ text: '', type: 'success' }), 4500)
+  }
+
+  const errorMessage = (err) => {
+    const detail = err?.response?.data?.detail
+    if (typeof detail === 'string') return detail
+    if (Array.isArray(detail)) {
+      return detail.map((d) => d.msg || JSON.stringify(d)).join(', ')
+    }
+    return err?.message || 'Operation failed. Please check inputs and retry.'
+  }
+
+  const openModal = (setter, target = null) => {
+    setModalError('')
+    if (target) {
+      setSelectedEnrolment(target)
+    }
+    setter(true)
   }
 
   // Initial load
@@ -171,274 +215,24 @@ export default function AcademicSetupPage() {
         if (ovRes.status === 'fulfilled' && ovRes.value?.data) {
           setOverview(ovRes.value.data)
         }
-        if (yrRes.status === 'fulfilled' && Array.isArray(yrRes.value?.data)) {
-          setYears(yrRes.value.data)
-        } else {
-          setYears([
-            {
-              id: 'AY-2025-26',
-              year_label: '2025-26',
-              start_date: '2025-06-01',
-              end_date: '2026-05-31',
-              admission_start: '2025-04-01',
-              admission_end: '2025-06-15',
-              is_current: true,
-              is_archived: false,
-            },
-            {
-              id: 'AY-2026-27',
-              year_label: '2026-27',
-              start_date: '2026-06-01',
-              end_date: '2027-05-31',
-              admission_start: '2026-04-01',
-              admission_end: '2026-06-15',
-              is_current: false,
-              is_archived: false,
-            },
-          ])
-        }
+        setYears(yrRes.status === 'fulfilled' && Array.isArray(yrRes.value?.data) ? yrRes.value.data : [])
+        setTerms(tmRes.status === 'fulfilled' && Array.isArray(tmRes.value?.data) ? tmRes.value.data : [])
+        setDepartments(dpRes.status === 'fulfilled' && Array.isArray(dpRes.value?.data) ? dpRes.value.data : [])
+        setProgrammes(prRes.status === 'fulfilled' && Array.isArray(prRes.value?.data) ? prRes.value.data : [])
+        setClasses(clRes.status === 'fulfilled' && Array.isArray(clRes.value?.data) ? clRes.value.data : [])
+        setSubjects(sbRes.status === 'fulfilled' && Array.isArray(sbRes.value?.data) ? sbRes.value.data : [])
+        setEnrolments(enRes.status === 'fulfilled' && Array.isArray(enRes.value?.data) ? enRes.value.data : [])
+        setAssignments(taRes.status === 'fulfilled' && Array.isArray(taRes.value?.data) ? taRes.value.data : [])
+        setCalendarEvents(evRes.status === 'fulfilled' && Array.isArray(evRes.value?.data) ? evRes.value.data : [])
 
-        if (tmRes.status === 'fulfilled' && Array.isArray(tmRes.value?.data)) {
-          setTerms(tmRes.value.data)
-        } else {
-          setTerms([
-            {
-              id: 'TERM-2025-S1',
-              term_name: 'Semester 1 (Autumn)',
-              term_type: 'semester',
-              term_number: 1,
-              start_date: '2025-07-01',
-              end_date: '2025-11-30',
-              academic_year_id: 'AY-2025-26',
-              is_active: true,
-            },
-            {
-              id: 'TERM-2025-S2',
-              term_name: 'Semester 2 (Spring)',
-              term_type: 'semester',
-              term_number: 2,
-              start_date: '2025-12-15',
-              end_date: '2026-05-15',
-              academic_year_id: 'AY-2025-26',
-              is_active: false,
-            },
-          ])
-        }
-
-        if (dpRes.status === 'fulfilled' && Array.isArray(dpRes.value?.data)) {
-          setDepartments(dpRes.value.data)
-        } else {
-          setDepartments([
-            {
-              id: 'DEPT-CS',
-              dept_code: 'CSE',
-              name: 'Computer Science and Engineering',
-              head_of_department: 'Dr. Anita Roy',
-              email: 'hod.cse@institution.ac.in',
-              is_active: true,
-            },
-            {
-              id: 'DEPT-MATH',
-              dept_code: 'MATH',
-              name: 'Department of Mathematics',
-              head_of_department: 'Prof. Ramesh Gupta',
-              email: 'hod.math@institution.ac.in',
-              is_active: true,
-            },
-          ])
-        }
-
-        if (prRes.status === 'fulfilled' && Array.isArray(prRes.value?.data)) {
-          setProgrammes(prRes.value.data)
-        } else {
-          setProgrammes([
-            {
-              id: 'PROG-BTECH-CSE',
-              programme_code: 'BTECH-CS',
-              name: 'Bachelor of Technology in Computer Science',
-              degree_type: 'Bachelor',
-              department_id: 'DEPT-CS',
-              total_semesters: 8,
-              total_credits: 160,
-              is_active: true,
-            },
-            {
-              id: 'PROG-SEC-10',
-              programme_code: 'CBSE-10',
-              name: 'Secondary Education Class 10',
-              degree_type: 'Secondary School',
-              total_semesters: 2,
-              total_credits: 30,
-              is_active: true,
-            },
-          ])
-        }
-
-        if (clRes.status === 'fulfilled' && Array.isArray(clRes.value?.data)) {
-          setClasses(clRes.value.data)
-        } else {
-          setClasses([
-            {
-              id: 'CLS-10A',
-              grade_level: 'Class 10',
-              section: 'A',
-              academic_year: '2025-26',
-              room_number: 'Room 204',
-              capacity: 40,
-              class_teacher_name: 'Priya Sharma',
-            },
-            {
-              id: 'CLS-10B',
-              grade_level: 'Class 10',
-              section: 'B',
-              academic_year: '2025-26',
-              room_number: 'Room 205',
-              capacity: 40,
-              class_teacher_name: 'Sunil Verma',
-            },
-            {
-              id: 'CLS-9A',
-              grade_level: 'Class 9',
-              section: 'A',
-              academic_year: '2025-26',
-              room_number: 'Room 102',
-              capacity: 40,
-              class_teacher_name: 'Kavita Das',
-            },
-          ])
-        }
-
-        if (sbRes.status === 'fulfilled' && Array.isArray(sbRes.value?.data)) {
-          setSubjects(sbRes.value.data)
-        } else {
-          setSubjects([
-            {
-              id: 'SUB-MATH-10',
-              subject_code: 'MATH-10',
-              subject_name: 'Mathematics',
-              multilingual_name: 'Ganita (Mathematics)',
-              credits: 4,
-              is_practical: false,
-              applicable_to: 'Class 10',
-            },
-            {
-              id: 'SUB-SCI-10',
-              subject_code: 'SCI-10',
-              subject_name: 'General Science',
-              multilingual_name: 'Vigyan (Science)',
-              credits: 4,
-              is_practical: true,
-              applicable_to: 'Class 10',
-            },
-            {
-              id: 'SUB-CS-101',
-              subject_code: 'CS-101',
-              subject_name: 'Introduction to Programming',
-              multilingual_name: 'Computer Programming',
-              credits: 4,
-              is_practical: true,
-              applicable_to: 'BTECH-CS',
-            },
-          ])
-        }
-
-        if (enRes.status === 'fulfilled' && Array.isArray(enRes.value?.data)) {
-          setEnrolments(enRes.value.data)
-        } else {
-          setEnrolments([
-            {
-              id: 'ENR-001',
-              student_name: 'Aarav Patel',
-              student_id: 'STU-001',
-              enrolment_number: 'ENR-2025-01',
-              class_id: 'CLS-10A',
-              academic_year_id: 'AY-2025-26',
-              status: 'active',
-              is_current: true,
-              enrolment_date: '2025-06-05',
-            },
-            {
-              id: 'ENR-002',
-              student_name: 'Diya Sen',
-              student_id: 'STU-002',
-              enrolment_number: 'ENR-2025-02',
-              class_id: 'CLS-10A',
-              academic_year_id: 'AY-2025-26',
-              status: 'active',
-              is_current: true,
-              enrolment_date: '2025-06-06',
-            },
-            {
-              id: 'ENR-003',
-              student_name: 'Rohan Mehra',
-              student_id: 'STU-003',
-              enrolment_number: 'ENR-2025-03',
-              class_id: 'CLS-9A',
-              academic_year_id: 'AY-2025-26',
-              status: 'active',
-              is_current: true,
-              enrolment_date: '2025-06-08',
-            },
-          ])
-        }
-
-        if (taRes.status === 'fulfilled' && Array.isArray(taRes.value?.data)) {
-          setAssignments(taRes.value.data)
-        } else {
-          setAssignments([
-            {
-              id: 'ASG-001',
-              teacher_name: 'Priya Sharma',
-              teacher_id: 'TEA-001',
-              subject_id: 'SUB-MATH-10',
-              class_id: 'CLS-10A',
-              role_in_course: 'Primary Teacher',
-              academic_year_id: 'AY-2025-26',
-            },
-            {
-              id: 'ASG-002',
-              teacher_name: 'Sunil Verma',
-              teacher_id: 'TEA-002',
-              subject_id: 'SUB-SCI-10',
-              class_id: 'CLS-10A',
-              role_in_course: 'Primary Teacher',
-              academic_year_id: 'AY-2025-26',
-            },
-          ])
-        }
-
-        if (evRes.status === 'fulfilled' && Array.isArray(evRes.value?.data)) {
-          setCalendarEvents(evRes.value.data)
-        } else {
-          setCalendarEvents([
-            {
-              id: 'EVT-001',
-              title: 'Independence Day Holiday',
-              event_type: 'holiday',
-              start_date: '2025-08-15',
-              end_date: '2025-08-15',
-              description: 'National holiday observed.',
-            },
-            {
-              id: 'EVT-002',
-              title: 'Mid-Term Examinations',
-              event_type: 'exam',
-              start_date: '2025-10-10',
-              end_date: '2025-10-22',
-              description: 'Theory and practical assessments for Term 1.',
-            },
-            {
-              id: 'EVT-003',
-              title: 'New Student Admission Window',
-              event_type: 'admission',
-              start_date: '2026-04-01',
-              end_date: '2026-05-30',
-              description: 'Open application cycle for academic year 2026-27.',
-            },
-          ])
+        const failed = [ovRes, yrRes, tmRes, dpRes, prRes, clRes, sbRes, enRes, taRes, evRes].filter(
+          (r) => r.status === 'rejected',
+        )
+        if (failed.length > 0) {
+          notify('Some academic records could not be loaded from the server.', 'error')
         }
       } catch (err) {
-        notify('Failed to load academic data. Fallback seeds active.', 'error')
+        notify('Failed to load academic data.', 'error')
       } finally {
         setLoading(false)
       }
@@ -450,29 +244,25 @@ export default function AcademicSetupPage() {
   // Action handlers
   const handleActivateYear = async (yearId) => {
     try {
-      await api.post(`/academic/years/${yearId}/activate`)
+      const res = await api.post(`/academic/years/${yearId}/activate`)
       setYears((prev) =>
         prev.map((y) => ({
           ...y,
-          is_current: y.id === yearId,
-          is_archived: y.id === yearId ? false : y.is_archived,
+          is_current: (y.id || y._id) === yearId,
+          status: (y.id || y._id) === yearId ? 'ACTIVE' : y.status,
+          is_archived: (y.id || y._id) === yearId ? false : y.is_archived,
         })),
       )
-      setOverview((prev) => ({
-        ...prev,
-        active_academic_year:
-          years.find((y) => y.id === yearId)?.year_label || yearId,
-      }))
+      if (res.data?.year_label) {
+        setOverview((prev) => ({
+          ...prev,
+          current_academic_year: res.data.year_label,
+          active_academic_year: res.data.year_label,
+        }))
+      }
       notify(`Academic year ${yearId} activated successfully.`)
     } catch (err) {
-      setYears((prev) =>
-        prev.map((y) => ({
-          ...y,
-          is_current: y.id === yearId,
-          is_archived: y.id === yearId ? false : y.is_archived,
-        })),
-      )
-      notify(`Academic year ${yearId} marked active.`)
+      notify(errorMessage(err), 'error')
     }
   }
 
@@ -481,26 +271,31 @@ export default function AcademicSetupPage() {
       await api.post(`/academic/years/${yearId}/archive`)
       setYears((prev) =>
         prev.map((y) =>
-          y.id === yearId ? { ...y, is_archived: true, is_current: false } : y,
+          (y.id || y._id) === yearId ? { ...y, status: 'ARCHIVED', is_archived: true, is_current: false } : y,
         ),
       )
       notify(
         `Academic year ${yearId} archived. Historical records preserved.`,
       )
     } catch (err) {
-      setYears((prev) =>
-        prev.map((y) =>
-          y.id === yearId ? { ...y, is_archived: true, is_current: false } : y,
-        ),
-      )
-      notify(`Academic year ${yearId} archived.`)
+      notify(errorMessage(err), 'error')
     }
   }
 
   const handleAddYear = async (e) => {
     e.preventDefault()
+    setModalError('')
     try {
-      const res = await api.post('/academic/years', newYear)
+      const payload = {
+        year_label: newYear.year_label,
+        start_date: newYear.start_date,
+        end_date: newYear.end_date,
+        admission_start_date: newYear.admission_start_date || newYear.admission_start || null,
+        admission_end_date: newYear.admission_end_date || newYear.admission_end || null,
+        is_current: false,
+        status: 'UPCOMING',
+      }
+      const res = await api.post('/academic/years', payload)
       setYears((prev) => [...prev, res.data])
       setShowYearModal(false)
       notify(`Academic year ${newYear.year_label} created.`)
@@ -510,280 +305,413 @@ export default function AcademicSetupPage() {
         end_date: '',
         admission_start: '',
         admission_end: '',
+        admission_start_date: '',
+        admission_end_date: '',
       })
     } catch (err) {
-      const fallbackItem = {
-        id: `AY-${newYear.year_label}`,
-        ...newYear,
-        is_current: false,
-        is_archived: false,
-      }
-      setYears((prev) => [...prev, fallbackItem])
-      setShowYearModal(false)
-      notify(`Academic year ${newYear.year_label} created.`)
+      const msgText = errorMessage(err)
+      setModalError(msgText)
+      notify(msgText, 'error')
     }
   }
 
   const handleAddTerm = async (e) => {
     e.preventDefault()
+    setModalError('')
     try {
-      const res = await api.post('/academic/terms', newTerm)
+      const payload = {
+        name: newTerm.name || newTerm.term_name,
+        term_type: (newTerm.term_type || 'SEMESTER').toUpperCase(),
+        academic_year: (newTerm.academic_year || newTerm.academic_year_id || overview?.current_academic_year || '2025-26').replace(/^AY-/, ''),
+        start_date: newTerm.start_date,
+        end_date: newTerm.end_date,
+        status: 'ACTIVE',
+      }
+      const res = await api.post('/academic/terms', payload)
       setTerms((prev) => [...prev, res.data])
       setShowTermModal(false)
-      notify(`Term ${newTerm.term_name} added successfully.`)
+      notify(`Term ${payload.name} added successfully.`)
+      setNewTerm({
+        name: '',
+        term_name: '',
+        term_type: 'semester',
+        term_number: 1,
+        start_date: '',
+        end_date: '',
+        academic_year: '2025-26',
+        academic_year_id: 'AY-2025-26',
+      })
     } catch (err) {
-      const fallbackItem = {
-        id: `TERM-${Date.now()}`,
-        ...newTerm,
-        is_active: false,
-      }
-      setTerms((prev) => [...prev, fallbackItem])
-      setShowTermModal(false)
-      notify(`Term ${newTerm.term_name} added.`)
+      const msgText = errorMessage(err)
+      setModalError(msgText)
+      notify(msgText, 'error')
     }
   }
 
   const handleAddDept = async (e) => {
     e.preventDefault()
+    setModalError('')
     try {
-      const res = await api.post('/academic/departments', newDept)
+      const payload = {
+        department_code: (newDept.department_code || newDept.dept_code || '').toUpperCase(),
+        name: newDept.name,
+        head_of_department_name: newDept.head_of_department_name || newDept.head_of_department || null,
+        contact_email: newDept.contact_email || newDept.email || null,
+        description: newDept.description || null,
+      }
+      const res = await api.post('/academic/departments', payload)
       setDepartments((prev) => [...prev, res.data])
       setShowDeptModal(false)
       notify(`Department ${newDept.name} created.`)
+      setNewDept({
+        department_code: '',
+        dept_code: '',
+        name: '',
+        head_of_department_name: '',
+        head_of_department: '',
+        contact_email: '',
+        email: '',
+        description: '',
+      })
     } catch (err) {
-      const fallbackItem = {
-        id: `DEPT-${newDept.dept_code || Date.now()}`,
-        ...newDept,
-        is_active: true,
-      }
-      setDepartments((prev) => [...prev, fallbackItem])
-      setShowDeptModal(false)
-      notify(`Department ${newDept.name} created.`)
+      const msgText = errorMessage(err)
+      setModalError(msgText)
+      notify(msgText, 'error')
     }
   }
 
   const handleAddProgramme = async (e) => {
     e.preventDefault()
+    setModalError('')
     try {
-      const res = await api.post('/academic/programmes', newProg)
+      const levelMap = {
+        'Bachelor': 'UNDERGRADUATE',
+        'Master': 'POSTGRADUATE',
+        'Doctorate': 'DOCTORAL',
+        'Diploma': 'DIPLOMA',
+        'Secondary School': 'SECONDARY',
+      }
+      const totalSem = Number(newProg.total_semesters) || 8
+      const payload = {
+        programme_code: (newProg.programme_code || '').toUpperCase(),
+        name: newProg.name,
+        department_id: newProg.department_id || null,
+        academic_level: newProg.academic_level || levelMap[newProg.degree_type] || 'UNDERGRADUATE',
+        duration_years: Number(newProg.duration_years) || Math.max(1, Math.ceil(totalSem / 2)),
+        total_semesters: totalSem,
+        degree_awarded: newProg.degree_awarded || newProg.degree_type || 'Degree',
+        curriculum_framework: newProg.curriculum_framework || 'NEP 2020 Aligned',
+        approved_intake: Number(newProg.approved_intake) || 60,
+      }
+      const res = await api.post('/academic/programmes', payload)
       setProgrammes((prev) => [...prev, res.data])
       setShowProgModal(false)
       notify(`Programme ${newProg.name} added.`)
+      setNewProg({
+        programme_code: '',
+        name: '',
+        degree_type: 'Bachelor',
+        degree_awarded: 'Bachelor',
+        academic_level: 'UNDERGRADUATE',
+        department_id: '',
+        total_semesters: 8,
+        duration_years: 4,
+        approved_intake: 60,
+      })
     } catch (err) {
-      const fallbackItem = {
-        id: `PROG-${newProg.programme_code || Date.now()}`,
-        ...newProg,
-        is_active: true,
-      }
-      setProgrammes((prev) => [...prev, fallbackItem])
-      setShowProgModal(false)
-      notify(`Programme ${newProg.name} added.`)
+      const msgText = errorMessage(err)
+      setModalError(msgText)
+      notify(msgText, 'error')
     }
   }
 
   const handleAddClass = async (e) => {
     e.preventDefault()
+    setModalError('')
     try {
-      const res = await api.post('/academic/classes', newClass)
+      const payload = {
+        grade_level: newClass.grade_level,
+        section: (newClass.section || 'A').toUpperCase(),
+        academic_year: (newClass.academic_year || overview?.current_academic_year || '2025-26').replace(/^AY-/, ''),
+        programme_id: newClass.programme_id || null,
+        room_number: newClass.room_number || null,
+        capacity: Number(newClass.capacity) || 40,
+        class_teacher_name: newClass.class_teacher_name || null,
+      }
+      const res = await api.post('/academic/classes', payload)
       setClasses((prev) => [...prev, res.data])
       setShowClassModal(false)
       notify(`Class ${newClass.grade_level} Section ${newClass.section} added.`)
+      setNewClass({
+        grade_level: '',
+        section: 'A',
+        academic_year: '2025-26',
+        room_number: '',
+        capacity: 40,
+        class_teacher_name: '',
+      })
     } catch (err) {
-      const fallbackItem = {
-        id: `CLS-${newClass.grade_level.replace(/\s+/g, '')}${newClass.section}`,
-        ...newClass,
-      }
-      setClasses((prev) => [...prev, fallbackItem])
-      setShowClassModal(false)
-      notify(`Class ${newClass.grade_level} Section ${newClass.section} added.`)
+      const msgText = errorMessage(err)
+      setModalError(msgText)
+      notify(msgText, 'error')
     }
   }
 
   const handleAddSubject = async (e) => {
     e.preventDefault()
+    setModalError('')
     try {
-      const res = await api.post('/academic/subjects', newSubject)
+      const payload = {
+        subject_code: (newSubject.subject_code || '').toUpperCase(),
+        subject_name: newSubject.subject_name,
+        subject_name_hi: newSubject.subject_name_hi || newSubject.multilingual_name || null,
+        category: (newSubject.category || 'CORE').toUpperCase(),
+        applicable_to: newSubject.applicable_to || newSubject.grade_level || 'General',
+        department_id: newSubject.department_id || null,
+        programme_id: newSubject.programme_id || null,
+        credits: Number(newSubject.credits) || 4.0,
+        theory_hours: newSubject.is_practical ? 2 : 4,
+        practical_hours: newSubject.is_practical ? 2 : 0,
+        is_practical: Boolean(newSubject.is_practical),
+      }
+      const res = await api.post('/academic/subjects', payload)
       setSubjects((prev) => [...prev, res.data])
       setShowSubjectModal(false)
       notify(`Subject ${newSubject.subject_name} registered.`)
+      setNewSubject({
+        subject_code: '',
+        subject_name: '',
+        multilingual_name: '',
+        subject_name_hi: '',
+        credits: 4,
+        is_practical: false,
+        department_id: '',
+        grade_level: 'Class 10',
+        applicable_to: 'Class 10',
+      })
     } catch (err) {
-      const fallbackItem = {
-        id: `SUB-${newSubject.subject_code || Date.now()}`,
-        ...newSubject,
-        applicable_to: newSubject.grade_level,
-      }
-      setSubjects((prev) => [...prev, fallbackItem])
-      setShowSubjectModal(false)
-      notify(`Subject ${newSubject.subject_name} registered.`)
+      const msgText = errorMessage(err)
+      setModalError(msgText)
+      notify(msgText, 'error')
     }
   }
 
   const handleAddEnrolment = async (e) => {
     e.preventDefault()
+    setModalError('')
     try {
-      const res = await api.post('/academic/enrolments', newEnrolment)
+      const selectedYearDoc = years.find((y) => (y.id || y._id) === newEnrolment.academic_year_id)
+      const yearLabel = selectedYearDoc?.year_label || (newEnrolment.academic_year || newEnrolment.academic_year_id || '2025-26').replace(/^AY-/, '')
+      const selectedClass = classes.find((c) => (c.class_id || c.id) === newEnrolment.class_id)
+      const payload = {
+        student_id: newEnrolment.student_id,
+        student_name: newEnrolment.student_name,
+        roll_number: newEnrolment.roll_number || newEnrolment.enrolment_number || null,
+        academic_year: yearLabel,
+        class_id: selectedClass ? (selectedClass.class_id || selectedClass.id) : (newEnrolment.class_id || null),
+        class_name: selectedClass ? `${selectedClass.grade_level} ${selectedClass.section}` : null,
+        section: selectedClass ? selectedClass.section : 'A',
+        remarks: newEnrolment.remarks || 'Regular enrolment.',
+      }
+      const res = await api.post('/academic/enrolments', payload)
       setEnrolments((prev) => [...prev, res.data])
       setShowEnrolModal(false)
       notify(`Enrolment for ${newEnrolment.student_name} recorded.`)
+      setNewEnrolment({
+        student_name: '',
+        student_id: '',
+        enrolment_number: '',
+        roll_number: '',
+        academic_year_id: 'AY-2025-26',
+        academic_year: '2025-26',
+        class_id: '',
+      })
     } catch (err) {
-      const fallbackItem = {
-        id: `ENR-${Date.now()}`,
-        ...newEnrolment,
-        status: 'active',
-        is_current: true,
-        enrolment_date: new Date().toISOString().slice(0, 10),
-      }
-      setEnrolments((prev) => [...prev, fallbackItem])
-      setShowEnrolModal(false)
-      notify(`Enrolment for ${newEnrolment.student_name} recorded.`)
+      const msgText = errorMessage(err)
+      setModalError(msgText)
+      notify(msgText, 'error')
     }
   }
 
   const handlePromoteStudent = async (e) => {
     e.preventDefault()
     if (!selectedEnrolment) return
+    setModalError('')
+    const enrolmentId = selectedEnrolment.enrolment_id || selectedEnrolment.id
     try {
+      const yearDoc = years.find((y) => (y.id || y._id) === promotionData.next_academic_year_id)
+      const targetYear = yearDoc?.year_label || (promotionData.target_academic_year || promotionData.next_academic_year_id || '2026-27').replace(/^AY-/, '')
+      const payload = {
+        target_academic_year: targetYear,
+        target_grade_or_semester: promotionData.target_grade_or_semester || promotionData.next_grade_level || 'Class 11',
+        target_section: (promotionData.target_section || promotionData.next_section || 'A').toUpperCase(),
+        promotion_status: 'PROMOTED',
+        remarks: promotionData.remarks || promotionData.notes || 'Annual progression.',
+      }
       const res = await api.post(
-        `/academic/enrolments/${selectedEnrolment.id}/promote`,
-        promotionData,
+        `/academic/enrolments/${enrolmentId}/promote`,
+        payload,
       )
-      // Update local state: mark existing as promoted, add new active enrolment
       setEnrolments((prev) =>
         prev
           .map((enr) =>
-            enr.id === selectedEnrolment.id
-              ? { ...enr, status: 'promoted', is_current: false }
+            (enr.enrolment_id || enr.id) === enrolmentId
+              ? { ...enr, status: 'PROMOTED', is_current: false }
               : enr,
           )
-          .concat(
-            res.data || {
-              id: `ENR-PRM-${Date.now()}`,
-              student_name: selectedEnrolment.student_name,
-              student_id: selectedEnrolment.student_id,
-              enrolment_number: `${selectedEnrolment.enrolment_number}-P`,
-              academic_year_id: promotionData.next_academic_year_id,
-              class_id: `${promotionData.next_grade_level}-${promotionData.next_section}`,
-              status: 'active',
-              is_current: true,
-              enrolment_date: new Date().toISOString().slice(0, 10),
-            },
-          ),
+          .concat(res.data),
       )
       setShowPromotionModal(false)
       notify(
-        `Student ${selectedEnrolment.student_name} promoted to ${promotionData.next_grade_level} ${promotionData.next_section}. Previous history preserved.`,
+        `Student ${selectedEnrolment.student_name} promoted to ${payload.target_grade_or_semester} ${payload.target_section}. Previous history preserved.`,
       )
     } catch (err) {
-      setEnrolments((prev) =>
-        prev.map((enr) =>
-          enr.id === selectedEnrolment.id
-            ? { ...enr, status: 'promoted', is_current: false }
-            : enr,
-        ),
-      )
-      setShowPromotionModal(false)
-      notify(
-        `Student ${selectedEnrolment.student_name} promoted. Historical record maintained.`,
-      )
+      const msgText = errorMessage(err)
+      setModalError(msgText)
+      notify(msgText, 'error')
     }
   }
 
   const handleTransferSection = async (e) => {
     e.preventDefault()
     if (!selectedEnrolment) return
+    setModalError('')
+    const enrolmentId = selectedEnrolment.enrolment_id || selectedEnrolment.id
     try {
-      await api.post(
-        `/academic/enrolments/${selectedEnrolment.id}/transfer-section`,
-        transferData,
+      const payload = {
+        target_class_id: transferData.target_class_id || selectedEnrolment.class_id || `CLS-${selectedEnrolment.class_name || 'CLASS'}-${transferData.new_section || 'B'}`,
+        target_section: (transferData.target_section || transferData.new_section || 'B').toUpperCase(),
+        transfer_reason: transferData.transfer_reason || transferData.reason || 'Administrative section transfer.',
+      }
+      const res = await api.post(
+        `/academic/enrolments/${enrolmentId}/transfer-section`,
+        payload,
       )
       setEnrolments((prev) =>
         prev.map((enr) =>
-          enr.id === selectedEnrolment.id
-            ? { ...enr, section: transferData.new_section }
+          (enr.enrolment_id || enr.id) === enrolmentId
+            ? res.data
             : enr,
         ),
       )
       setShowTransferModal(false)
       notify(
-        `Student section transferred to Section ${transferData.new_section}. Audit log updated.`,
+        `Student section transferred to Section ${payload.target_section}. Audit log updated.`,
       )
     } catch (err) {
-      setEnrolments((prev) =>
-        prev.map((enr) =>
-          enr.id === selectedEnrolment.id
-            ? { ...enr, section: transferData.new_section }
-            : enr,
-        ),
-      )
-      setShowTransferModal(false)
-      notify(
-        `Student transferred to Section ${transferData.new_section}.`,
-      )
+      const msgText = errorMessage(err)
+      setModalError(msgText)
+      notify(msgText, 'error')
     }
   }
 
   const handleAddAssignment = async (e) => {
     e.preventDefault()
+    setModalError('')
     try {
+      const selectedSubj = subjects.find((s) => (s.subject_id || s.id || s.subject_code) === newAssignment.subject_id)
+      const selectedCls = classes.find((c) => (c.class_id || c.id) === newAssignment.class_id)
+      const roleMap = {
+        'Primary Teacher': 'PRIMARY_INSTRUCTOR',
+        'Assistant Teacher': 'ASSISTANT_INSTRUCTOR',
+        'Guest Lecturer': 'GUEST_LECTURER',
+        'Lab Instructor': 'LAB_INSTRUCTOR',
+      }
+      const payload = {
+        teacher_id: newAssignment.teacher_id,
+        teacher_name: newAssignment.teacher_name,
+        subject_id: selectedSubj ? (selectedSubj.subject_id || selectedSubj.id) : newAssignment.subject_id,
+        subject_name: selectedSubj ? selectedSubj.subject_name : (newAssignment.subject_name || 'Subject'),
+        target_type: 'CLASS',
+        target_id: selectedCls ? (selectedCls.class_id || selectedCls.id) : (newAssignment.class_id || 'CLS-DEFAULT'),
+        target_label: selectedCls ? `${selectedCls.grade_level} ${selectedCls.section}` : (newAssignment.target_label || 'Class Section'),
+        academic_year: (newAssignment.academic_year || overview?.current_academic_year || '2025-26').replace(/^AY-/, ''),
+        role_in_course: roleMap[newAssignment.role_in_course] || (newAssignment.role_in_course || 'PRIMARY_INSTRUCTOR').toUpperCase().replace(/\s+/g, '_'),
+      }
       const res = await api.post(
         '/academic/teacher-assignments',
-        newAssignment,
+        payload,
       )
       setAssignments((prev) => [...prev, res.data])
       setShowAssignModal(false)
       notify(
-        `Teacher ${newAssignment.teacher_name} allocated to subject.`,
+        `Teacher ${payload.teacher_name} allocated to subject.`,
       )
+      setNewAssignment({
+        teacher_name: '',
+        teacher_id: '',
+        subject_id: '',
+        class_id: '',
+        role_in_course: 'Primary Teacher',
+        academic_year_id: 'AY-2025-26',
+      })
     } catch (err) {
-      const fallbackItem = {
-        id: `ASG-${Date.now()}`,
-        ...newAssignment,
-      }
-      setAssignments((prev) => [...prev, fallbackItem])
-      setShowAssignModal(false)
-      notify(
-        `Teacher ${newAssignment.teacher_name} allocated to subject.`,
-      )
+      const msgText = errorMessage(err)
+      setModalError(msgText)
+      notify(msgText, 'error')
     }
   }
 
   const handleDeleteAssignment = async (assignmentId) => {
     try {
       await api.delete(`/academic/teacher-assignments/${assignmentId}`)
-      setAssignments((prev) => prev.filter((a) => a.id !== assignmentId))
+      setAssignments((prev) => prev.filter((a) => (a.assignment_id || a.id) !== assignmentId))
       notify('Faculty allocation removed.')
     } catch (err) {
-      setAssignments((prev) => prev.filter((a) => a.id !== assignmentId))
-      notify('Faculty allocation removed.')
+      notify(errorMessage(err), 'error')
     }
   }
 
   const handleAddEvent = async (e) => {
     e.preventDefault()
+    setModalError('')
     try {
-      const res = await api.post('/academic/calendar/events', newEvent)
+      const typeMap = {
+        'holiday': 'HOLIDAY',
+        'exam': 'EXAM',
+        'admission': 'ADMISSION',
+        'event': 'INSTITUTION_EVENT',
+        'term_start': 'SEMESTER_START',
+        'term_end': 'SEMESTER_END',
+      }
+      const rawType = (newEvent.event_type || 'holiday').toLowerCase()
+      const evType = typeMap[rawType] || rawType.toUpperCase()
+      const payload = {
+        academic_year: (newEvent.academic_year || overview?.current_academic_year || '2025-26').replace(/^AY-/, ''),
+        title: newEvent.title,
+        description: newEvent.description || null,
+        event_type: evType,
+        start_date: newEvent.start_date,
+        end_date: newEvent.end_date || newEvent.start_date,
+        target_audience: 'ALL',
+        is_holiday: evType === 'HOLIDAY',
+        timezone: 'Asia/Kolkata',
+      }
+      const res = await api.post('/academic/calendar/events', payload)
       setCalendarEvents((prev) => [...prev, res.data])
       setShowEventModal(false)
-      notify(`Calendar event "${newEvent.title}" published.`)
+      notify(`Calendar event "${payload.title}" published.`)
+      setNewEvent({
+        title: '',
+        event_type: 'holiday',
+        start_date: '',
+        end_date: '',
+        description: '',
+      })
     } catch (err) {
-      const fallbackItem = {
-        id: `EVT-${Date.now()}`,
-        ...newEvent,
-      }
-      setCalendarEvents((prev) => [...prev, fallbackItem])
-      setShowEventModal(false)
-      notify(`Calendar event "${newEvent.title}" published.`)
+      const msgText = errorMessage(err)
+      setModalError(msgText)
+      notify(msgText, 'error')
     }
   }
 
   const handleDeleteEvent = async (eventId) => {
     try {
       await api.delete(`/academic/calendar/events/${eventId}`)
-      setCalendarEvents((prev) => prev.filter((e) => e.id !== eventId))
+      setCalendarEvents((prev) => prev.filter((e) => (e.event_id || e.id) !== eventId))
       notify('Calendar event removed.')
     } catch (err) {
-      setCalendarEvents((prev) => prev.filter((e) => e.id !== eventId))
-      notify('Calendar event removed.')
+      notify(errorMessage(err), 'error')
     }
   }
 
@@ -791,15 +719,18 @@ export default function AcademicSetupPage() {
   const filteredEvents =
     calendarFilter === 'all'
       ? calendarEvents
-      : calendarEvents.filter((ev) => ev.event_type === calendarFilter)
+      : calendarEvents.filter((ev) => (ev.event_type || '').toLowerCase() === calendarFilter.toLowerCase())
 
   const filteredEnrolments = enrolments.filter((enr) => {
+    const enrYear = enr.academic_year || enr.academic_year_id
     const matchesYear =
-      filterYear === 'all' || enr.academic_year_id === filterYear
+      filterYear === 'all' || enrYear === filterYear || enr.academic_year_id === filterYear
+    const studentName = enr.student_name || ''
+    const enrolNum = enr.roll_number || enr.enrolment_number || ''
     const matchesQuery =
       !searchQuery ||
-      enr.student_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      enr.enrolment_number.toLowerCase().includes(searchQuery.toLowerCase())
+      studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      enrolNum.toLowerCase().includes(searchQuery.toLowerCase())
     return matchesYear && matchesQuery
   })
 
@@ -902,7 +833,7 @@ export default function AcademicSetupPage() {
                   className="w-full text-xs"
                   onClick={() => {
                     setActiveTab('years')
-                    setShowYearModal(true)
+                    openModal(setShowYearModal)
                   }}
                 >
                   New Academic Year
@@ -912,7 +843,7 @@ export default function AcademicSetupPage() {
                   className="w-full text-xs"
                   onClick={() => {
                     setActiveTab('classes')
-                    setShowClassModal(true)
+                    openModal(setShowClassModal)
                   }}
                 >
                   New Class / Section
@@ -922,7 +853,7 @@ export default function AcademicSetupPage() {
                   className="w-full text-xs"
                   onClick={() => {
                     setActiveTab('enrolments')
-                    setShowEnrolModal(true)
+                    openModal(setShowEnrolModal)
                   }}
                 >
                   Enrol Student
@@ -932,7 +863,7 @@ export default function AcademicSetupPage() {
                   className="w-full text-xs"
                   onClick={() => {
                     setActiveTab('calendar')
-                    setShowEventModal(true)
+                    openModal(setShowEventModal)
                   }}
                 >
                   Schedule Event
@@ -984,7 +915,7 @@ export default function AcademicSetupPage() {
             actions={
               <Button
                 variant="primary"
-                onClick={() => setShowYearModal(true)}
+                onClick={() => openModal(setShowYearModal)}
                 className="text-xs"
               >
                 Create Academic Year
@@ -1004,7 +935,7 @@ export default function AcademicSetupPage() {
                 </thead>
                 <tbody className="divide-y divide-line">
                   {years.map((y) => (
-                    <tr key={y.id} className="hover:bg-surface-2">
+                    <tr key={y.id || y._id} className="hover:bg-surface-2">
                       <td className="px-3 py-2.5 font-bold text-navy dark:text-white">
                         {y.year_label}
                       </td>
@@ -1012,8 +943,8 @@ export default function AcademicSetupPage() {
                         {y.start_date} to {y.end_date}
                       </td>
                       <td className="px-3 py-2.5 text-muted">
-                        {y.admission_start && y.admission_end
-                          ? `${y.admission_start} to ${y.admission_end}`
+                        {(y.admission_start_date || y.admission_start) && (y.admission_end_date || y.admission_end)
+                          ? `${y.admission_start_date || y.admission_start} to ${y.admission_end_date || y.admission_end}`
                           : 'Not configured'}
                       </td>
                       <td className="px-3 py-2.5">
@@ -1021,7 +952,7 @@ export default function AcademicSetupPage() {
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                             Active Session
                           </span>
-                        ) : y.is_archived ? (
+                        ) : y.status === 'ARCHIVED' || y.is_archived ? (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-2 text-muted border border-line">
                             Archived
                           </span>
@@ -1032,19 +963,19 @@ export default function AcademicSetupPage() {
                         )}
                       </td>
                       <td className="px-3 py-2.5 text-right space-x-2">
-                        {!y.is_current && !y.is_archived && (
+                        {!y.is_current && y.status !== 'ARCHIVED' && !y.is_archived && (
                           <button
                             type="button"
-                            onClick={() => handleActivateYear(y.id)}
+                            onClick={() => handleActivateYear(y.id || y._id)}
                             className="text-xs font-semibold text-bright-blue hover:underline"
                           >
                             Set Active
                           </button>
                         )}
-                        {!y.is_archived && (
+                        {y.status !== 'ARCHIVED' && !y.is_archived && (
                           <button
                             type="button"
-                            onClick={() => handleArchiveYear(y.id)}
+                            onClick={() => handleArchiveYear(y.id || y._id)}
                             className="text-xs font-semibold text-crimson hover:underline"
                           >
                             Archive
@@ -1065,7 +996,7 @@ export default function AcademicSetupPage() {
             actions={
               <Button
                 variant="secondary"
-                onClick={() => setShowTermModal(true)}
+                onClick={() => openModal(setShowTermModal)}
                 className="text-xs"
               >
                 Add Term / Semester
@@ -1086,15 +1017,15 @@ export default function AcademicSetupPage() {
                 </thead>
                 <tbody className="divide-y divide-line">
                   {terms.map((t) => (
-                    <tr key={t.id} className="hover:bg-surface-2">
+                    <tr key={t.term_id || t.id} className="hover:bg-surface-2">
                       <td className="px-3 py-2 font-medium text-navy dark:text-white">
-                        {t.term_name}
+                        {t.name || t.term_name}
                       </td>
-                      <td className="px-3 py-2 capitalize text-muted">{t.term_type}</td>
-                      <td className="px-3 py-2 text-muted">Term {t.term_number}</td>
+                      <td className="px-3 py-2 uppercase text-muted">{t.term_type}</td>
+                      <td className="px-3 py-2 text-muted">{t.term_number ? `Term ${t.term_number}` : '-'}</td>
                       <td className="px-3 py-2 text-muted">{t.start_date}</td>
                       <td className="px-3 py-2 text-muted">{t.end_date}</td>
-                      <td className="px-3 py-2 text-muted font-mono">{t.academic_year_id}</td>
+                      <td className="px-3 py-2 text-muted font-mono">{t.academic_year || t.academic_year_id}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1113,7 +1044,7 @@ export default function AcademicSetupPage() {
             actions={
               <Button
                 variant="primary"
-                onClick={() => setShowDeptModal(true)}
+                onClick={() => openModal(setShowDeptModal)}
                 className="text-xs"
               >
                 Add Department
@@ -1133,15 +1064,15 @@ export default function AcademicSetupPage() {
                 </thead>
                 <tbody className="divide-y divide-line">
                   {departments.map((d) => (
-                    <tr key={d.id} className="hover:bg-surface-2">
+                    <tr key={d.department_id || d.id} className="hover:bg-surface-2">
                       <td className="px-3 py-2 font-mono font-bold text-navy dark:text-bright-blue">
-                        {d.dept_code}
+                        {d.department_code || d.dept_code}
                       </td>
                       <td className="px-3 py-2 font-medium text-navy dark:text-white">
                         {d.name}
                       </td>
-                      <td className="px-3 py-2 text-muted">{d.head_of_department || '-'}</td>
-                      <td className="px-3 py-2 text-muted font-mono text-[11px]">{d.email || '-'}</td>
+                      <td className="px-3 py-2 text-muted">{d.head_of_department_name || d.head_of_department || '-'}</td>
+                      <td className="px-3 py-2 text-muted font-mono text-[11px]">{d.contact_email || d.email || '-'}</td>
                       <td className="px-3 py-2">
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                           Active
@@ -1160,7 +1091,7 @@ export default function AcademicSetupPage() {
             actions={
               <Button
                 variant="secondary"
-                onClick={() => setShowProgModal(true)}
+                onClick={() => openModal(setShowProgModal)}
                 className="text-xs"
               >
                 Add Programme
@@ -1175,21 +1106,21 @@ export default function AcademicSetupPage() {
                     <th className="px-3 py-2 border-b border-line">Programme Title</th>
                     <th className="px-3 py-2 border-b border-line">Level / Degree Type</th>
                     <th className="px-3 py-2 border-b border-line">Total Semesters</th>
-                    <th className="px-3 py-2 border-b border-line">Credits</th>
+                    <th className="px-3 py-2 border-b border-line">Credits / Intake</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
                   {programmes.map((p) => (
-                    <tr key={p.id} className="hover:bg-surface-2">
+                    <tr key={p.programme_id || p.id} className="hover:bg-surface-2">
                       <td className="px-3 py-2 font-mono font-bold text-navy dark:text-bright-blue">
                         {p.programme_code}
                       </td>
                       <td className="px-3 py-2 font-medium text-navy dark:text-white">
                         {p.name}
                       </td>
-                      <td className="px-3 py-2 text-muted">{p.degree_type}</td>
+                      <td className="px-3 py-2 text-muted">{p.degree_awarded || p.academic_level || p.degree_type}</td>
                       <td className="px-3 py-2 text-muted">{p.total_semesters} Semesters</td>
-                      <td className="px-3 py-2 text-muted">{p.total_credits} Credits</td>
+                      <td className="px-3 py-2 text-muted">{p.approved_intake ? `${p.approved_intake} Intake` : `${p.total_credits || 160} Credits`}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1207,7 +1138,7 @@ export default function AcademicSetupPage() {
           actions={
             <Button
               variant="primary"
-              onClick={() => setShowClassModal(true)}
+              onClick={() => openModal(setShowClassModal)}
               className="text-xs"
             >
               Add Class / Section
@@ -1228,7 +1159,7 @@ export default function AcademicSetupPage() {
               </thead>
               <tbody className="divide-y divide-line">
                 {classes.map((c) => (
-                  <tr key={c.id || `${c.grade_level}-${c.section}`} className="hover:bg-surface-2">
+                  <tr key={c.class_id || c.id || `${c.grade_level}-${c.section}`} className="hover:bg-surface-2">
                     <td className="px-3 py-2 font-bold text-navy dark:text-white">
                       {c.grade_level}
                     </td>
@@ -1257,7 +1188,7 @@ export default function AcademicSetupPage() {
           actions={
             <Button
               variant="primary"
-              onClick={() => setShowSubjectModal(true)}
+              onClick={() => openModal(setShowSubjectModal)}
               className="text-xs"
             >
               Add Subject
@@ -1278,14 +1209,14 @@ export default function AcademicSetupPage() {
               </thead>
               <tbody className="divide-y divide-line">
                 {subjects.map((s) => (
-                  <tr key={s.id || s.subject_code} className="hover:bg-surface-2">
+                  <tr key={s.subject_id || s.id || s.subject_code} className="hover:bg-surface-2">
                     <td className="px-3 py-2 font-mono font-bold text-navy dark:text-bright-blue">
                       {s.subject_code}
                     </td>
                     <td className="px-3 py-2 font-medium text-navy dark:text-white">
                       {s.subject_name}
                     </td>
-                    <td className="px-3 py-2 text-muted">{s.multilingual_name || '-'}</td>
+                    <td className="px-3 py-2 text-muted">{s.subject_name_hi || s.multilingual_name || '-'}</td>
                     <td className="px-3 py-2 text-muted">{s.credits} Credits</td>
                     <td className="px-3 py-2">
                       {s.is_practical ? (
@@ -1298,7 +1229,7 @@ export default function AcademicSetupPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-muted">{s.applicable_to || '-'}</td>
+                    <td className="px-3 py-2 text-muted">{s.applicable_to || s.grade_level || '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1315,7 +1246,7 @@ export default function AcademicSetupPage() {
           actions={
             <Button
               variant="primary"
-              onClick={() => setShowEnrolModal(true)}
+              onClick={() => openModal(setShowEnrolModal)}
               className="text-xs"
             >
               Enrol Student
@@ -1338,7 +1269,7 @@ export default function AcademicSetupPage() {
             >
               <option value="all">All Academic Years</option>
               {years.map((y) => (
-                <option key={y.id} value={y.id}>
+                <option key={y.id || y._id} value={y.id || y._id}>
                   {y.year_label}
                 </option>
               ))}
@@ -1360,22 +1291,22 @@ export default function AcademicSetupPage() {
               </thead>
               <tbody className="divide-y divide-line">
                 {filteredEnrolments.map((enr) => (
-                  <tr key={enr.id} className="hover:bg-surface-2">
+                  <tr key={enr.enrolment_id || enr.id} className="hover:bg-surface-2">
                     <td className="px-3 py-2 font-mono font-bold text-navy dark:text-bright-blue">
-                      {enr.enrolment_number}
+                      {enr.roll_number || enr.enrolment_number || '-'}
                     </td>
                     <td className="px-3 py-2 font-medium text-navy dark:text-white">
                       {enr.student_name}
                     </td>
-                    <td className="px-3 py-2 text-muted font-mono">{enr.class_id}</td>
-                    <td className="px-3 py-2 text-muted">{enr.academic_year_id}</td>
-                    <td className="px-3 py-2 text-muted">{enr.enrolment_date}</td>
+                    <td className="px-3 py-2 text-muted font-mono">{enr.class_name || enr.class_id || '-'}</td>
+                    <td className="px-3 py-2 text-muted">{enr.academic_year || enr.academic_year_id}</td>
+                    <td className="px-3 py-2 text-muted">{enr.enrolled_date || enr.enrolment_date || '-'}</td>
                     <td className="px-3 py-2">
-                      {enr.status === 'active' ? (
+                      {String(enr.status || '').toUpperCase() === 'ACTIVE' ? (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                           Active
                         </span>
-                      ) : enr.status === 'promoted' ? (
+                      ) : String(enr.status || '').toUpperCase() === 'PROMOTED' ? (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
                           Promoted
                         </span>
@@ -1390,20 +1321,14 @@ export default function AcademicSetupPage() {
                         <>
                           <button
                             type="button"
-                            onClick={() => {
-                              setSelectedEnrolment(enr)
-                              setShowPromotionModal(true)
-                            }}
+                            onClick={() => openModal(setShowPromotionModal, enr)}
                             className="text-xs font-semibold text-bright-blue hover:underline"
                           >
                             Promote
                           </button>
                           <button
                             type="button"
-                            onClick={() => {
-                              setSelectedEnrolment(enr)
-                              setShowTransferModal(true)
-                            }}
+                            onClick={() => openModal(setShowTransferModal, enr)}
                             className="text-xs font-semibold text-muted hover:text-navy hover:underline"
                           >
                             Transfer
@@ -1427,7 +1352,7 @@ export default function AcademicSetupPage() {
           actions={
             <Button
               variant="primary"
-              onClick={() => setShowAssignModal(true)}
+              onClick={() => openModal(setShowAssignModal)}
               className="text-xs"
             >
               Assign Faculty
@@ -1448,22 +1373,22 @@ export default function AcademicSetupPage() {
               </thead>
               <tbody className="divide-y divide-line">
                 {assignments.map((asg) => (
-                  <tr key={asg.id} className="hover:bg-surface-2">
+                  <tr key={asg.assignment_id || asg.id} className="hover:bg-surface-2">
                     <td className="px-3 py-2 font-bold text-navy dark:text-white">
                       {asg.teacher_name}
                     </td>
-                    <td className="px-3 py-2 font-mono text-muted">{asg.subject_id}</td>
-                    <td className="px-3 py-2 font-mono text-muted">{asg.class_id}</td>
+                    <td className="px-3 py-2 font-mono text-muted">{asg.subject_name || asg.subject_id}</td>
+                    <td className="px-3 py-2 font-mono text-muted">{asg.target_label || asg.class_id}</td>
                     <td className="px-3 py-2">
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-2 text-navy border border-line">
                         {asg.role_in_course}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-muted">{asg.academic_year_id}</td>
+                    <td className="px-3 py-2 text-muted">{asg.academic_year || asg.academic_year_id}</td>
                     <td className="px-3 py-2 text-right">
                       <button
                         type="button"
-                        onClick={() => handleDeleteAssignment(asg.id)}
+                        onClick={() => handleDeleteAssignment(asg.assignment_id || asg.id)}
                         className="text-xs font-semibold text-crimson hover:underline"
                       >
                         Unassign
@@ -1485,7 +1410,7 @@ export default function AcademicSetupPage() {
           actions={
             <Button
               variant="primary"
-              onClick={() => setShowEventModal(true)}
+              onClick={() => openModal(setShowEventModal)}
               className="text-xs"
             >
               New Calendar Event
@@ -1515,7 +1440,7 @@ export default function AcademicSetupPage() {
           <div className="space-y-3">
             {filteredEvents.map((ev) => (
               <div
-                key={ev.id}
+                key={ev.event_id || ev.id}
                 className="p-4 rounded-md border border-line bg-surface-2 flex items-start justify-between gap-4"
               >
                 <div>
@@ -1525,11 +1450,11 @@ export default function AcademicSetupPage() {
                     </span>
                     <span
                       className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                        ev.event_type === 'holiday'
+                        (ev.event_type || '').toLowerCase() === 'holiday'
                           ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                          : ev.event_type === 'exam'
+                          : (ev.event_type || '').toLowerCase() === 'exam'
                             ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
-                            : ev.event_type === 'admission'
+                            : (ev.event_type || '').toLowerCase() === 'admission'
                               ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
                               : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
                       }`}
@@ -1546,7 +1471,7 @@ export default function AcademicSetupPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => handleDeleteEvent(ev.id)}
+                  onClick={() => handleDeleteEvent(ev.event_id || ev.id)}
                   className="text-xs font-semibold text-crimson hover:underline"
                 >
                   Delete
@@ -1566,6 +1491,11 @@ export default function AcademicSetupPage() {
             <h3 className="font-bold text-base text-navy dark:text-white">
               Create Academic Year
             </h3>
+            {modalError && (
+              <div role="alert" className="p-3 rounded-md border text-xs font-medium bg-danger-surface text-danger-strong border-danger/30">
+                {modalError}
+              </div>
+            )}
             <form onSubmit={handleAddYear} className="space-y-3 text-xs">
               <div>
                 <label className="block text-muted mb-1 font-medium">Year Label</label>
@@ -1633,7 +1563,10 @@ export default function AcademicSetupPage() {
               <div className="flex justify-end gap-2 pt-2">
                 <Button
                   variant="secondary"
-                  onClick={() => setShowYearModal(false)}
+                  onClick={() => {
+                    setShowYearModal(false)
+                    setModalError('')
+                  }}
                 >
                   Cancel
                 </Button>
@@ -1653,6 +1586,11 @@ export default function AcademicSetupPage() {
             <h3 className="font-bold text-base text-navy dark:text-white">
               Add Term / Semester
             </h3>
+            {modalError && (
+              <div role="alert" className="p-3 rounded-md border text-xs font-medium bg-danger-surface text-danger-strong border-danger/30">
+                {modalError}
+              </div>
+            )}
             <form onSubmit={handleAddTerm} className="space-y-3 text-xs">
               <div>
                 <label className="block text-muted mb-1 font-medium">Term Name</label>
@@ -1667,6 +1605,24 @@ export default function AcademicSetupPage() {
                   className="w-full px-3 py-2 border border-line rounded-md bg-surface text-navy dark:text-white"
                 />
               </div>
+              {years.length > 0 && (
+                <div>
+                  <label className="block text-muted mb-1 font-medium">Academic Year</label>
+                  <select
+                    value={newTerm.academic_year || years[0]?.year_label || ''}
+                    onChange={(e) =>
+                      setNewTerm({ ...newTerm, academic_year: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-line rounded-md bg-surface text-navy dark:text-white"
+                  >
+                    {years.map((y) => (
+                      <option key={y.id} value={y.year_label}>
+                        {y.year_label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-muted mb-1 font-medium">Term Type</label>
@@ -1729,7 +1685,10 @@ export default function AcademicSetupPage() {
               <div className="flex justify-end gap-2 pt-2">
                 <Button
                   variant="secondary"
-                  onClick={() => setShowTermModal(false)}
+                  onClick={() => {
+                    setShowTermModal(false)
+                    setModalError('')
+                  }}
                 >
                   Cancel
                 </Button>
@@ -1749,6 +1708,11 @@ export default function AcademicSetupPage() {
             <h3 className="font-bold text-base text-navy dark:text-white">
               Create Department
             </h3>
+            {modalError && (
+              <div role="alert" className="p-3 rounded-md border text-xs font-medium bg-danger-surface text-danger-strong border-danger/30">
+                {modalError}
+              </div>
+            )}
             <form onSubmit={handleAddDept} className="space-y-3 text-xs">
               <div>
                 <label className="block text-muted mb-1 font-medium">Department Code</label>
@@ -1806,7 +1770,10 @@ export default function AcademicSetupPage() {
               <div className="flex justify-end gap-2 pt-2">
                 <Button
                   variant="secondary"
-                  onClick={() => setShowDeptModal(false)}
+                  onClick={() => {
+                    setShowDeptModal(false)
+                    setModalError('')
+                  }}
                 >
                   Cancel
                 </Button>
@@ -1826,6 +1793,11 @@ export default function AcademicSetupPage() {
             <h3 className="font-bold text-base text-navy dark:text-white">
               Add Academic Programme
             </h3>
+            {modalError && (
+              <div role="alert" className="p-3 rounded-md border text-xs font-medium bg-danger-surface text-danger-strong border-danger/30">
+                {modalError}
+              </div>
+            )}
             <form onSubmit={handleAddProgramme} className="space-y-3 text-xs">
               <div>
                 <label className="block text-muted mb-1 font-medium">Programme Code</label>
@@ -1853,6 +1825,24 @@ export default function AcademicSetupPage() {
                   className="w-full px-3 py-2 border border-line rounded-md bg-surface text-navy dark:text-white"
                 />
               </div>
+              {departments.length > 0 && (
+                <div>
+                  <label className="block text-muted mb-1 font-medium">Department</label>
+                  <select
+                    value={newProg.department_id || departments[0]?.id || ''}
+                    onChange={(e) =>
+                      setNewProg({ ...newProg, department_id: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-line rounded-md bg-surface text-navy dark:text-white"
+                  >
+                    {departments.map((d) => (
+                      <option key={d.id || d.department_code} value={d.id || d.department_code}>
+                        {d.department_code ? `${d.department_code} - ` : ''}{d.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-muted mb-1 font-medium">Degree Type</label>
@@ -1890,7 +1880,10 @@ export default function AcademicSetupPage() {
               <div className="flex justify-end gap-2 pt-2">
                 <Button
                   variant="secondary"
-                  onClick={() => setShowProgModal(false)}
+                  onClick={() => {
+                    setShowProgModal(false)
+                    setModalError('')
+                  }}
                 >
                   Cancel
                 </Button>
@@ -1910,6 +1903,11 @@ export default function AcademicSetupPage() {
             <h3 className="font-bold text-base text-navy dark:text-white">
               Add Class / Section
             </h3>
+            {modalError && (
+              <div role="alert" className="p-3 rounded-md border text-xs font-medium bg-danger-surface text-danger-strong border-danger/30">
+                {modalError}
+              </div>
+            )}
             <form onSubmit={handleAddClass} className="space-y-3 text-xs">
               <div>
                 <label className="block text-muted mb-1 font-medium">Grade / Level</label>
@@ -1924,6 +1922,25 @@ export default function AcademicSetupPage() {
                   className="w-full px-3 py-2 border border-line rounded-md bg-surface text-navy dark:text-white"
                 />
               </div>
+              {programmes.length > 0 && (
+                <div>
+                  <label className="block text-muted mb-1 font-medium">Programme (Optional)</label>
+                  <select
+                    value={newClass.programme_id || ''}
+                    onChange={(e) =>
+                      setNewClass({ ...newClass, programme_id: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-line rounded-md bg-surface text-navy dark:text-white"
+                  >
+                    <option value="">None / Standalone Class</option>
+                    {programmes.map((p) => (
+                      <option key={p.id || p.programme_code} value={p.id || p.programme_code}>
+                        {p.programme_code} - {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-muted mb-1 font-medium">Section</label>
@@ -1999,7 +2016,10 @@ export default function AcademicSetupPage() {
               <div className="flex justify-end gap-2 pt-2">
                 <Button
                   variant="secondary"
-                  onClick={() => setShowClassModal(false)}
+                  onClick={() => {
+                    setShowClassModal(false)
+                    setModalError('')
+                  }}
                 >
                   Cancel
                 </Button>
@@ -2019,6 +2039,11 @@ export default function AcademicSetupPage() {
             <h3 className="font-bold text-base text-navy dark:text-white">
               Add Subject to Catalog
             </h3>
+            {modalError && (
+              <div role="alert" className="p-3 rounded-md border text-xs font-medium bg-danger-surface text-danger-strong border-danger/30">
+                {modalError}
+              </div>
+            )}
             <form onSubmit={handleAddSubject} className="space-y-3 text-xs">
               <div>
                 <label className="block text-muted mb-1 font-medium">Subject Code</label>
@@ -2061,6 +2086,25 @@ export default function AcademicSetupPage() {
                   className="w-full px-3 py-2 border border-line rounded-md bg-surface text-navy dark:text-white"
                 />
               </div>
+              {departments.length > 0 && (
+                <div>
+                  <label className="block text-muted mb-1 font-medium">Department (Optional)</label>
+                  <select
+                    value={newSubject.department_id || ''}
+                    onChange={(e) =>
+                      setNewSubject({ ...newSubject, department_id: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-line rounded-md bg-surface text-navy dark:text-white"
+                  >
+                    <option value="">None / General</option>
+                    {departments.map((d) => (
+                      <option key={d.id || d.department_code} value={d.id || d.department_code}>
+                        {d.department_code ? `${d.department_code} - ` : ''}{d.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-muted mb-1 font-medium">Credits</label>
@@ -2110,7 +2154,10 @@ export default function AcademicSetupPage() {
               <div className="flex justify-end gap-2 pt-2">
                 <Button
                   variant="secondary"
-                  onClick={() => setShowSubjectModal(false)}
+                  onClick={() => {
+                    setShowSubjectModal(false)
+                    setModalError('')
+                  }}
                 >
                   Cancel
                 </Button>
@@ -2130,6 +2177,11 @@ export default function AcademicSetupPage() {
             <h3 className="font-bold text-base text-navy dark:text-white">
               Enrol Student in Session
             </h3>
+            {modalError && (
+              <div role="alert" className="p-3 rounded-md border text-xs font-medium bg-danger-surface text-danger-strong border-danger/30">
+                {modalError}
+              </div>
+            )}
             <form onSubmit={handleAddEnrolment} className="space-y-3 text-xs">
               <div>
                 <label className="block text-muted mb-1 font-medium">Student Full Name</label>
@@ -2223,7 +2275,10 @@ export default function AcademicSetupPage() {
               <div className="flex justify-end gap-2 pt-2">
                 <Button
                   variant="secondary"
-                  onClick={() => setShowEnrolModal(false)}
+                  onClick={() => {
+                    setShowEnrolModal(false)
+                    setModalError('')
+                  }}
                 >
                   Cancel
                 </Button>
@@ -2243,6 +2298,11 @@ export default function AcademicSetupPage() {
             <h3 className="font-bold text-base text-navy dark:text-white">
               Promote Student to Next Academic Level
             </h3>
+            {modalError && (
+              <div role="alert" className="p-3 rounded-md border text-xs font-medium bg-danger-surface text-danger-strong border-danger/30">
+                {modalError}
+              </div>
+            )}
             <p className="text-xs text-muted">
               Promoting <strong className="text-navy dark:text-white">{selectedEnrolment.student_name}</strong> ({selectedEnrolment.enrolment_number}).
               The student previous enrolment record will be preserved as historical record with status `promoted`, and a new active enrolment will be created.
@@ -2317,7 +2377,10 @@ export default function AcademicSetupPage() {
               <div className="flex justify-end gap-2 pt-2">
                 <Button
                   variant="secondary"
-                  onClick={() => setShowPromotionModal(false)}
+                  onClick={() => {
+                    setShowPromotionModal(false)
+                    setModalError('')
+                  }}
                 >
                   Cancel
                 </Button>
@@ -2337,6 +2400,11 @@ export default function AcademicSetupPage() {
             <h3 className="font-bold text-base text-navy dark:text-white">
               Transfer Student Section
             </h3>
+            {modalError && (
+              <div role="alert" className="p-3 rounded-md border text-xs font-medium bg-danger-surface text-danger-strong border-danger/30">
+                {modalError}
+              </div>
+            )}
             <p className="text-xs text-muted">
               Transferring <strong className="text-navy dark:text-white">{selectedEnrolment.student_name}</strong> within current session.
             </p>
@@ -2376,7 +2444,10 @@ export default function AcademicSetupPage() {
               <div className="flex justify-end gap-2 pt-2">
                 <Button
                   variant="secondary"
-                  onClick={() => setShowTransferModal(false)}
+                  onClick={() => {
+                    setShowTransferModal(false)
+                    setModalError('')
+                  }}
                 >
                   Cancel
                 </Button>
@@ -2396,6 +2467,11 @@ export default function AcademicSetupPage() {
             <h3 className="font-bold text-base text-navy dark:text-white">
               Assign Faculty Member
             </h3>
+            {modalError && (
+              <div role="alert" className="p-3 rounded-md border text-xs font-medium bg-danger-surface text-danger-strong border-danger/30">
+                {modalError}
+              </div>
+            )}
             <form onSubmit={handleAddAssignment} className="space-y-3 text-xs">
               <div>
                 <label className="block text-muted mb-1 font-medium">Teacher Name</label>
@@ -2492,7 +2568,10 @@ export default function AcademicSetupPage() {
               <div className="flex justify-end gap-2 pt-2">
                 <Button
                   variant="secondary"
-                  onClick={() => setShowAssignModal(false)}
+                  onClick={() => {
+                    setShowAssignModal(false)
+                    setModalError('')
+                  }}
                 >
                   Cancel
                 </Button>
@@ -2512,6 +2591,11 @@ export default function AcademicSetupPage() {
             <h3 className="font-bold text-base text-navy dark:text-white">
               Create Calendar Event
             </h3>
+            {modalError && (
+              <div role="alert" className="p-3 rounded-md border text-xs font-medium bg-danger-surface text-danger-strong border-danger/30">
+                {modalError}
+              </div>
+            )}
             <form onSubmit={handleAddEvent} className="space-y-3 text-xs">
               <div>
                 <label className="block text-muted mb-1 font-medium">Event Title</label>
@@ -2584,7 +2668,10 @@ export default function AcademicSetupPage() {
               <div className="flex justify-end gap-2 pt-2">
                 <Button
                   variant="secondary"
-                  onClick={() => setShowEventModal(false)}
+                  onClick={() => {
+                    setShowEventModal(false)
+                    setModalError('')
+                  }}
                 >
                   Cancel
                 </Button>
