@@ -160,16 +160,26 @@ async def list_linked_children(
         inst = await db["institutions"].find_one({"institution_id": inst_id}) or {}
 
         # Attendance calculation
-        records = await db["attendance_records"].find({"student_id": stu_id}).to_list(500)
+        records = await db["attendance_records"].find({
+            "institution_id": inst_id,
+            "student_id": stu_id,
+        }).to_list(500)
         total_sessions = len(records)
         present = sum(1 for r in records if r.get("status") in {"PRESENT", "LATE"})
         rate = round((present / total_sessions * 100), 1) if total_sessions > 0 else 100.0
 
         # Published results only!
-        marks = await db["assessment_marks"].find({"student_id": stu_id, "is_published": True}).to_list(50)
+        marks = await db["assessment_marks"].find({
+            "institution_id": inst_id,
+            "student_id": stu_id,
+            "is_published": True,
+        }).to_list(50)
         results: List[StudentResultOut] = []
         for m in marks:
-            asm = await db["assessments"].find_one({"_id": m["assessment_id"]})
+            asm = await db["assessments"].find_one({
+                "_id": m["assessment_id"],
+                "institution_id": inst_id,
+            })
             if asm and asm.get("status") == AssessmentStatus.PUBLISHED.value:
                 results.append(
                     StudentResultOut(

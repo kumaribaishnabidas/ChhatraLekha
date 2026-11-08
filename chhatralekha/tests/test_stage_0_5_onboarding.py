@@ -329,6 +329,62 @@ async def test_guardian_verification_and_portal_fail_closed_for_cross_tenant_lin
 
 
 @pytest.mark.asyncio
+async def test_guardian_portal_scopes_academic_records_to_linked_institution(client: AsyncClient):
+    db = mongo.db()
+    inst_id, student_apaar = await seed_institution_and_student(db)
+    other_inst_id = "INST-ACADEMIC-OTHER"
+    parent_token = await create_user_helper(db, "PARENT-ACADEMIC-SCOPE", role="parent")
+    await db["students"].update_one(
+        {"apaar_id": student_apaar},
+        {"$set": {"academic_year": "2024-25", "program_id": "Synthetic test programme"}},
+    )
+    await db["guardian_relationships"].insert_one({
+        "_id": "GLINK-ACADEMIC-SCOPE",
+        "parent_user_id": "PARENT-ACADEMIC-SCOPE",
+        "student_id": student_apaar,
+        "student_name": "Aarav Sharma",
+        "institution_id": inst_id,
+        "relationship": "Guardian",
+        "status": "VERIFIED",
+    })
+    await db["attendance_records"].insert_many([
+        {"institution_id": inst_id, "student_id": student_apaar, "status": "PRESENT"},
+        {"institution_id": other_inst_id, "student_id": student_apaar, "status": "ABSENT"},
+    ])
+    await db["assessments"].insert_one({
+        "_id": "ASM-FOREIGN-TENANT",
+        "institution_id": other_inst_id,
+        "name": "Foreign synthetic assessment",
+        "term": "Test term",
+        "subject_name": "Test subject",
+        "status": "PUBLISHED",
+    })
+    await db["assessment_marks"].insert_one({
+        "institution_id": other_inst_id,
+        "assessment_id": "ASM-FOREIGN-TENANT",
+        "student_id": student_apaar,
+        "is_published": True,
+        "marks_obtained": 99.0,
+        "max_marks": 100.0,
+        "passing_marks": 35.0,
+        "percentage": 99.0,
+        "grade": "A+",
+        "status": "PASS",
+    })
+
+    response = await client.get(
+        "/api/parent/children",
+        headers=auth_header(parent_token),
+    )
+    assert response.status_code == 200
+    overview = response.json()[0]
+    assert overview["total_sessions"] == 1
+    assert overview["present_sessions"] == 1
+    assert overview["attendance_percentage"] == 100.0
+    assert overview["published_results"] == []
+
+
+@pytest.mark.asyncio
 async def test_admin_join_request_lifecycle_and_self_approval_prevention(client: AsyncClient):
     db = mongo.db()
     inst_id, _ = await seed_institution_and_student(db)
