@@ -6,7 +6,7 @@ pydantic==2.9.2
 pydantic-settings==2.7.1
 PyJWT==2.15.1
 passlib[bcrypt]==1.7.4
-bcrypt==4.2.0
+bcrypt==5.0.0
 python-multipart==0.0.32
 cryptography==50.0.2
 qrcode[pil]==7.4.2
