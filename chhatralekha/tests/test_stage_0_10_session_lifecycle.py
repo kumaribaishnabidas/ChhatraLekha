@@ -10,6 +10,9 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime, timedelta, timezone
 
+import jwt
+
+from app.core.config import get_settings
 from app.core.database import mongo
 from app.core.security import (
     create_refresh_token,
@@ -179,6 +182,22 @@ async def test_unknown_token_identifier_is_rejected(client):
     )
     assert refresh_resp.status_code == 401
     assert "unknown" in refresh_resp.json()["detail"].lower() or "invalid" in refresh_resp.json()["detail"].lower()
+
+
+async def test_untracked_legacy_refresh_token_without_jti_is_rejected(client):
+    """Legacy tokens bypassed session revocation and therefore must not be exchanged."""
+    settings = get_settings()
+    now = int(datetime.now(timezone.utc).timestamp())
+    legacy_token = jwt.encode(
+        {"sub": "USR-STU", "type": "refresh", "iat": now, "exp": now + 3600},
+        settings.secret_key,
+        algorithm=settings.algorithm,
+    )
+
+    response = await client.post("/api/auth/refresh", json={"refresh_token": legacy_token})
+    assert response.status_code == 401
+    assert "unknown refresh token" in response.json()["detail"].lower()
+    assert await mongo.db()["refresh_sessions"].count_documents({"user_id": "USR-STU"}) == 0
 
 
 # -----------------------------------------------------------------------------

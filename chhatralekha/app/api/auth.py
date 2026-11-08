@@ -172,11 +172,6 @@ async def register(
         "institution_id": None,
     }
 
-    if payload.identifier and requested_role == "student":
-        ident = payload.identifier.strip()
-        if ident.isdigit() and len(ident) == 12:
-            user_doc["apaar_id"] = ident
-
     await db["users"].insert_one(user_doc)
 
     if is_admin_request:
@@ -237,7 +232,12 @@ async def register(
     )
 
 
-@router.post("/login", response_model=TokenPair, summary="Sign in and receive a JWT pair")
+@router.post(
+    "/login",
+    response_model=TokenPair,
+    summary="Sign in and receive a JWT pair",
+    dependencies=[Depends(enforce_rate_limit)],
+)
 async def login(
     payload: LoginRequest,
     request: Request,
@@ -330,39 +330,13 @@ async def refresh(
     users = UserRepository(db["users"], db["api_keys"], db["revoked_credentials"])
     audit = AuditRepository(db["audit_events"])
 
-    # If session not found in database:
+    # Every refresh token must correspond to a persisted session. In particular,
+    # legacy untracked tokens are rejected rather than exchanged outside revocation.
     if session is None:
-        if claims.get("jti") is None:
-            # Safe compatibility path for pre-existing legacy tokens without a jti
-            user = await users.by_user_id(claims.get("sub") or "")
-            if user is None or not user.get("is_active", True):
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED, detail="The account is not active."
-                )
-            new_refresh = await _issue_and_persist_refresh_token(
-                sessions, user["user_id"], request=request
-            )
-            extra = {"apaar_id": user["apaar_id"]} if user.get("apaar_id") else None
-            return TokenPair(
-                access_token=create_access_token(
-                    subject=user["user_id"],
-                    role=user["role"],
-                    institution_id=user.get("institution_id"),
-                    extra_claims=extra,
-                ),
-                refresh_token=new_refresh,
-                expires_in=settings.access_token_expire_minutes * 60,
-                role=user["role"],
-                user_id=user["user_id"],
-                display_name=user.get("full_name") or user.get("email", ""),
-                institution_id=user.get("institution_id"),
-                apaar_id=user.get("apaar_id"),
-            )
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or unknown refresh token identifier.",
-            )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or unknown refresh token.",
+        )
 
     # 1. Expiration validation
     now = datetime.now(timezone.utc)

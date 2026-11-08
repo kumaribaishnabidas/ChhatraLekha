@@ -30,6 +30,8 @@ RESTRICTED_ROLES = {
     "platform_operator",
     "aicte_admin",
     "university_admin",
+    "academic_admin",
+    "verifier",
     "state_admin",
     "district_admin",
     "regulator_admin",
@@ -213,21 +215,16 @@ async def submit_institution_join_request(
 
         # Cryptographic matching check against student register
         matched_student = await db["students"].find_one({
+            "institution_id": payload.institution_id,
             "$or": [
                 {"apaar_id": payload.student_identifier},
                 {"student_institute_roll_no": payload.student_identifier},
             ],
         })
-        if not matched_student:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="No student record matches the provided identifier.",
-            )
-
-        if matched_student.get("date_of_birth") != payload.student_dob:
+        if not matched_student or matched_student.get("date_of_birth") != payload.student_dob:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Student identification details do not match.",
+                detail="Unable to verify student details. Check the institution, identifier, and date of birth.",
             )
 
         role_details = {

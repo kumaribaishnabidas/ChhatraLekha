@@ -102,11 +102,21 @@ async def verify_guardian_link(
     if not link:
         raise HTTPException(status_code=404, detail="Link request not found.")
 
-    principal.require_scope(link.get("institution_id"))
+    institution_id = link.get("institution_id")
+    principal.require_scope(institution_id)
+    student_id = link.get("student_id")
+    student = await db["students"].find_one({
+        "institution_id": institution_id,
+        "$or": [{"apaar_id": student_id}, {"_id": student_id}],
+    })
+    if not student:
+        raise HTTPException(status_code=404, detail="Student record not found for this institution.")
+    if link.get("status") != GuardianVerificationStatus.PENDING.value:
+        raise HTTPException(status_code=400, detail="Link request is not pending verification.")
 
     now = datetime.now(timezone.utc)
     await db["guardian_relationships"].update_one(
-        {"_id": link_id},
+        {"_id": link_id, "institution_id": institution_id, "status": GuardianVerificationStatus.PENDING.value},
         {"$set": {"status": payload.verification_status.value, "verified_at": now, "verified_by": principal.subject}},
     )
 
@@ -138,8 +148,15 @@ async def list_linked_children(
     overviews: List[GuardianStudentOverviewOut] = []
     for link in links:
         stu_id = link.get("student_id")
-        student = await db["students"].find_one({"apaar_id": stu_id}) or await db["students"].find_one({"_id": stu_id})
         inst_id = link.get("institution_id", "")
+        student = await db["students"].find_one({
+            "institution_id": inst_id,
+            "$or": [{"apaar_id": stu_id}, {"_id": stu_id}],
+        })
+        if not student:
+            # Fail closed for stale or inconsistent links; never disclose a student
+            # record whose actual institution differs from the verified link.
+            continue
         inst = await db["institutions"].find_one({"institution_id": inst_id}) or {}
 
         # Attendance calculation

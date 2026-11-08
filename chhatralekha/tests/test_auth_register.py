@@ -19,8 +19,13 @@ def anyio_backend():
 
 @pytest.mark.anyio
 async def test_register_student_success():
-    """A student can successfully self-register and then sign in."""
+    """Self-registration cannot claim an existing student record by asserting its ID."""
     db = mongo.db()
+    await db["students"].insert_one({
+        "apaar_id": "123456789012",
+        "student_name": "Existing Test Student",
+        "institution_id": "INST-T1",
+    })
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         resp = await client.post(
@@ -46,7 +51,7 @@ async def test_register_student_success():
         assert saved is not None
         assert saved["full_name"] == "Aarav Sharma"
         assert saved["role"] == "student"
-        assert saved["apaar_id"] == "123456789012"
+        assert "apaar_id" not in saved
         assert saved["is_active"] is True
 
         # Verify audit log was recorded
@@ -68,7 +73,33 @@ async def test_register_student_success():
         token_data = login_resp.json()
         assert token_data["role"] == "student"
         assert token_data["user_id"] == saved["user_id"]
-        assert token_data["apaar_id"] == "123456789012"
+        assert token_data.get("apaar_id") is None
+        profile = await client.get(
+            f"{settings.api_prefix}/me/profile",
+            headers={"Authorization": f"Bearer {token_data['access_token']}"},
+        )
+        assert profile.status_code == 404
+        assert "claim code" in profile.json()["detail"].lower()
+
+
+@pytest.mark.anyio
+async def test_login_is_rate_limited(monkeypatch, client: AsyncClient):
+    """Login requests use the shared limiter and the limiter records accepted hits."""
+    from app.api import deps
+
+    deps._hits.clear()
+    monkeypatch.setattr(deps.settings, "rate_limit_per_minute", 1)
+    first = await client.post(
+        f"{settings.api_prefix}/auth/login",
+        json={"email": "aicte@chhatralekha.test", "password": "Test@1234"},
+    )
+    second = await client.post(
+        f"{settings.api_prefix}/auth/login",
+        json={"email": "aicte@chhatralekha.test", "password": "Test@1234"},
+    )
+    deps._hits.clear()
+    assert first.status_code == 200
+    assert second.status_code == 429
 
 
 @pytest.mark.anyio

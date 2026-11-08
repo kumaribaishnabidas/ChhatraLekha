@@ -1447,13 +1447,15 @@ async def transfer_student_section(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Enrolment record not found.")
     principal.require_scope(enrol.get("institution_id", ""))
 
-    if payload.target_class_id:
-        target_cls = await db["classes"].find_one({"_id": payload.target_class_id})
-        if target_cls and target_cls.get("institution_id") != enrol.get("institution_id"):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Target class does not belong to student's institution.",
-            )
+    target_cls = await db["classes"].find_one({
+        "_id": payload.target_class_id,
+        "institution_id": enrol.get("institution_id"),
+    })
+    if not target_cls:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Target class was not found in the student's institution.",
+        )
 
     old_section = enrol.get("section", "")
     await db["student_enrolments"].update_one(

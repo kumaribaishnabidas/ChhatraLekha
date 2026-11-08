@@ -157,6 +157,14 @@ async def test_institution_registration_and_review(http_client):
     new_inst_id = reg_data["institution_id"]
     assert reg_data["verification_status"] == "PENDING_REVIEW"
     assert new_inst_id.startswith("SCH-CUT-")
+    pending_admin = await mongo.db()["users"].find_one({"email": "admin@svm-cuttack.org"})
+    assert pending_admin["is_active"] is False
+    assert pending_admin["pending_institution_review"] is True
+    inactive_login = await http_client.post(
+        "/api/auth/login",
+        json={"email": "admin@svm-cuttack.org", "password": "SecurePassword@123"},
+    )
+    assert inactive_login.status_code == 403
 
     # 2. Platform operator reviews and approves the institution
     review_res = await http_client.post(
@@ -170,6 +178,14 @@ async def test_institution_registration_and_review(http_client):
     assert review_res.status_code == 200
     assert review_res.json()["is_active"] is True
     assert review_res.json()["verification_status"] == "VERIFIED"
+    active_admin = await mongo.db()["users"].find_one({"email": "admin@svm-cuttack.org"})
+    assert active_admin["is_active"] is True
+    assert active_admin["pending_institution_review"] is False
+    active_login = await http_client.post(
+        "/api/auth/login",
+        json={"email": "admin@svm-cuttack.org", "password": "SecurePassword@123"},
+    )
+    assert active_login.status_code == 200
 
 
 # -----------------------------------------------------------------------------

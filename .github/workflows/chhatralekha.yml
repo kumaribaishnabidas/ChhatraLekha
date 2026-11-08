@@ -11,12 +11,8 @@ on:
       - ".github/workflows/chhatralekha.yml"
   pull_request:
     branches: [main]
-    paths:
-      - "chhatralekha/**"
-      - "frontend/**"
-      - "android/**"
-      - "docker-compose.yml"
-      - ".github/workflows/chhatralekha.yml"
+    # Run the full suite for every PR update so required checks stay current
+    # even when the latest changes are documentation-only.
 
 concurrency:
   group: chhatralekha-${{ github.ref }}

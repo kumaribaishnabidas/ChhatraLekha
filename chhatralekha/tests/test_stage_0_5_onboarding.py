@@ -151,14 +151,14 @@ async def test_join_request_privilege_escalation_forbidden(client: AsyncClient):
     inst_id, _ = await seed_institution_and_student(db)
     token = await create_user_helper(db, "ATTACKER-01")
 
-    payload = {
-        "institution_id": inst_id,
-        "requested_role": "university_admin",
-    }
-    resp = await client.post("/api/onboarding/join-request", json=payload, headers=auth_header(token))
-    # Should be rejected with 403 Forbidden
-    assert resp.status_code == 403
-    assert "Security violation" in resp.json()["detail"]
+    for restricted_role in ("university_admin", "academic_admin", "verifier"):
+        payload = {
+            "institution_id": inst_id,
+            "requested_role": restricted_role,
+        }
+        resp = await client.post("/api/onboarding/join-request", json=payload, headers=auth_header(token))
+        assert resp.status_code == 403
+        assert "Security violation" in resp.json()["detail"]
 
 
 @pytest.mark.asyncio
@@ -205,7 +205,7 @@ async def test_parent_linking_dob_verification(client: AsyncClient):
     }
     resp_bad = await client.post("/api/onboarding/join-request", json=bad_payload, headers=auth_header(token))
     assert resp_bad.status_code == 400
-    assert "do not match" in resp_bad.json()["detail"]
+    assert "unable to verify" in resp_bad.json()["detail"].lower()
 
     # 2. Matching Date of Birth -> Accepted into pending state
     good_payload = {
@@ -225,6 +225,107 @@ async def test_parent_linking_dob_verification(client: AsyncClient):
     assert glink is not None
     assert glink["status"] == "PENDING"
     assert glink["student_name"] == "Aarav Sharma"
+    assert glink["institution_id"] == inst_id
+    assert glink["student_id"] == student_apaar
+
+
+@pytest.mark.asyncio
+async def test_parent_join_request_requires_identifier_and_dob(client: AsyncClient):
+    db = mongo.db()
+    inst_id, student_apaar = await seed_institution_and_student(db)
+    token = await create_user_helper(db, "PARENT-MISSING-DATA", role="parent")
+    payload = {
+        "institution_id": inst_id,
+        "requested_role": "parent",
+        "student_identifier": student_apaar,
+        "student_dob": "2005-08-15",
+        "relationship": "Guardian",
+    }
+
+    missing_identifier = await client.post(
+        "/api/onboarding/join-request",
+        json={key: value for key, value in payload.items() if key != "student_identifier"},
+        headers=auth_header(token),
+    )
+    missing_dob = await client.post(
+        "/api/onboarding/join-request",
+        json={key: value for key, value in payload.items() if key != "student_dob"},
+        headers=auth_header(token),
+    )
+
+    assert missing_identifier.status_code == missing_dob.status_code == 400
+    assert missing_identifier.json()["detail"] == missing_dob.json()["detail"]
+    assert await db["guardian_relationships"].count_documents({"parent_user_id": "PARENT-MISSING-DATA"}) == 0
+
+
+@pytest.mark.asyncio
+async def test_parent_join_request_is_scoped_to_institution_and_uses_uniform_failure(client: AsyncClient):
+    db = mongo.db()
+    inst_id, student_apaar = await seed_institution_and_student(db)
+    other_inst_id = "INST-TEST-002"
+    await db["institutions"].insert_one({"institution_id": other_inst_id, "name": "Other Institute"})
+    token = await create_user_helper(db, "PARENT-SCOPE-01", role="parent")
+
+    base_payload = {
+        "institution_id": inst_id,
+        "requested_role": "parent",
+        "student_identifier": student_apaar,
+        "student_dob": "2005-08-15",
+        "relationship": "Guardian",
+    }
+    wrong_tenant = await client.post(
+        "/api/onboarding/join-request",
+        json={**base_payload, "institution_id": other_inst_id},
+        headers=auth_header(token),
+    )
+    nonexistent_identifier = await client.post(
+        "/api/onboarding/join-request",
+        json={**base_payload, "student_identifier": "NO-SUCH-STUDENT"},
+        headers=auth_header(token),
+    )
+    wrong_dob = await client.post(
+        "/api/onboarding/join-request",
+        json={**base_payload, "student_dob": "2000-01-01"},
+        headers=auth_header(token),
+    )
+
+    assert [wrong_tenant.status_code, nonexistent_identifier.status_code, wrong_dob.status_code] == [400, 400, 400]
+    assert wrong_tenant.json()["detail"] == nonexistent_identifier.json()["detail"] == wrong_dob.json()["detail"]
+    assert await db["guardian_relationships"].count_documents({"parent_user_id": "PARENT-SCOPE-01"}) == 0
+
+
+@pytest.mark.asyncio
+async def test_guardian_verification_and_portal_fail_closed_for_cross_tenant_links(client: AsyncClient):
+    db = mongo.db()
+    _inst_id, student_apaar = await seed_institution_and_student(db)
+    other_inst_id = "INST-OTHER-002"
+    admin_token = await create_user_helper(
+        db, "OTHER-INST-ADMIN", role="institution_admin", institution_id=other_inst_id
+    )
+    parent_token = await create_user_helper(db, "PARENT-CROSS-TENANT", role="parent")
+    await db["guardian_relationships"].insert_one({
+        "_id": "GLINK-CROSS-TENANT",
+        "link_id": "GLINK-CROSS-TENANT",
+        "parent_user_id": "PARENT-CROSS-TENANT",
+        "student_id": student_apaar,
+        "institution_id": other_inst_id,
+        "status": "PENDING",
+    })
+
+    verify = await client.post(
+        "/api/parent/link/GLINK-CROSS-TENANT/verify",
+        json={"verification_status": "VERIFIED"},
+        headers=auth_header(admin_token),
+    )
+    assert verify.status_code == 404
+    link = await db["guardian_relationships"].find_one({"_id": "GLINK-CROSS-TENANT"})
+    assert link["status"] == "PENDING"
+
+    link["status"] = "VERIFIED"
+    await db["guardian_relationships"].replace_one({"_id": link["_id"]}, link)
+    children = await client.get("/api/parent/children", headers=auth_header(parent_token))
+    assert children.status_code == 200
+    assert children.json() == []
 
 
 @pytest.mark.asyncio

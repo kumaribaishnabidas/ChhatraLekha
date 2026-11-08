@@ -284,6 +284,8 @@ async def test_student_promotion_preserves_historical_records(async_client: Asyn
 @pytest.mark.asyncio
 async def test_section_transfer_and_auditing(async_client: AsyncClient, admin_auth_headers):
     """Section transfer updates student section, remarks, and logs audit event."""
+    from app.core.database import mongo
+
     enrol_payload = {
         "student_id": "STU-TRANSFER-01",
         "student_name": "Devendra Patil",
@@ -293,11 +295,20 @@ async def test_section_transfer_and_auditing(async_client: AsyncClient, admin_au
     }
     res = await async_client.post("/api/academic/enrolments", json=enrol_payload, headers=admin_auth_headers)
     assert res.status_code == 200
-    enrol_id = res.json()["enrolment_id"]
+    enrol_doc = res.json()
+    enrol_id = enrol_doc["enrolment_id"]
+    target_class_id = f"CLS-{enrol_doc['institution_id']}-TRANSFER-B"
+    await mongo.db()["classes"].insert_one({
+        "_id": target_class_id,
+        "class_id": target_class_id,
+        "institution_id": enrol_doc["institution_id"],
+        "grade_level": "Class 10",
+        "section": "B",
+    })
 
     # Transfer from Section A to Section B
     transfer_payload = {
-        "target_class_id": "CLS-INST-DEFAULT-CLASS_10-B-2025-26",
+        "target_class_id": target_class_id,
         "target_section": "B",
         "transfer_reason": "Language elective scheduling accommodation.",
     }
@@ -310,6 +321,32 @@ async def test_section_transfer_and_auditing(async_client: AsyncClient, admin_au
     updated = transfer_res.json()
     assert updated["section"] == "B"
     assert "Language elective scheduling accommodation" in updated["remarks"]
+
+    db = mongo.db()
+    await db["classes"].insert_one({
+        "_id": "CLS-FOREIGN-TENANT",
+        "institution_id": "INST-OTHER",
+        "class_name": "Class 10",
+    })
+    for invalid_class_id in ("CLS-DOES-NOT-EXIST", "CLS-FOREIGN-TENANT"):
+        rejected = await async_client.post(
+            f"/api/academic/enrolments/{enrol_id}/transfer-section",
+            json={
+                "target_class_id": invalid_class_id,
+                "target_section": "C",
+                "transfer_reason": "Invalid target validation test.",
+            },
+            headers=admin_auth_headers,
+        )
+        assert rejected.status_code == 404
+
+    current = await async_client.get(
+        "/api/academic/enrolments?student_id=STU-TRANSFER-01",
+        headers=admin_auth_headers,
+    )
+    assert current.status_code == 200
+    assert current.json()[0]["section"] == "B"
+    assert current.json()[0]["class_id"] == transfer_payload["target_class_id"]
 
 
 @pytest.mark.asyncio
