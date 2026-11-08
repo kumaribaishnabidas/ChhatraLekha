@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import ThemeToggle from '../components/common/ThemeToggle'
 import LanguageSwitcher from '../components/common/LanguageSwitcher'
-import { useAuth } from '../hooks/useAuth'
+import { api, errorMessage } from '../services/api'
 
 const ROLES = [
   { id: 'student', label: 'Student', desc: 'Access your APAAR ID, timetable & credentials' },
@@ -15,7 +15,6 @@ const ROLES = [
 export default function SignupPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { login } = useAuth()
 
   const [selectedRole, setSelectedRole] = useState('student')
   const [fullName, setFullName] = useState('')
@@ -58,20 +57,31 @@ export default function SignupPage() {
 
     setIsSubmitting(true)
 
-    // Simulate account setup and onboard into active demo workspace
-    setTimeout(() => {
-      setIsSubmitting(false)
-      setSuccessMessage('Account created successfully! Redirecting to sign in...')
+    try {
+      const response = await api.post('/auth/register', {
+        email: email.trim().toLowerCase(),
+        password,
+        full_name: fullName.trim(),
+        role: selectedRole,
+        identifier: identifier.trim() || undefined,
+      })
+      const data = response.data
+      const message = data.message || 'Account created successfully! Redirecting to sign in...'
+      setSuccessMessage(message)
       setTimeout(() => {
         navigate('/login', {
           state: {
-            registeredEmail: email,
-            registeredRole: selectedRole,
-            notice: 'Registration recorded. You may now sign in.',
+            registeredEmail: email.trim().toLowerCase(),
+            registeredRole: data.role,
+            notice: message,
           },
         })
       }, 1200)
-    }, 800)
+    } catch (err) {
+      setError(errorMessage(err, 'Unable to complete registration. Please try again.', t))
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (

@@ -200,7 +200,8 @@ api.interceptors.response.use(
     const isAuthRoute =
       original?.url?.includes('/auth/login') ||
       original?.url?.includes('/auth/refresh') ||
-      original?.url?.includes('/auth/logout')
+      original?.url?.includes('/auth/logout') ||
+      original?.url?.includes('/auth/register')
 
     if (error.response?.status === 401 && !original?._retried && !isAuthRoute) {
       original._retried = true
@@ -255,3 +256,5 @@ export function errorMessage(error, fallback = 'Something went wrong.', t) {
 
 /** The API prefix, so the components can build absolute links to downloads. */
 export const API_BASE = BASE_URL
+
+export default api
