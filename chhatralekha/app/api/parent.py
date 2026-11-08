@@ -38,21 +38,28 @@ async def request_guardian_link(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> dict[str, Any]:
     """Guardian initiates relationship link; requires institution verification before activation."""
-    # Find matching student record by apaar_id or student_institute_roll_no
-    student = await db["students"].find_one({
+    # Student identifiers may legitimately be duplicated across institutions.
+    # If the parent did not select a tenant, accept only a globally unambiguous
+    # identifier; never let MongoDB's arbitrary first match choose the child.
+    student_query = {
         "$or": [
             {"apaar_id": payload.student_identifier},
             {"student_institute_roll_no": payload.student_identifier},
         ]
-    })
-    if not student:
-        raise HTTPException(status_code=404, detail="Student record not found in system.")
+    }
+    if payload.institution_id:
+        student_query["institution_id"] = payload.institution_id
+        student = await db["students"].find_one(student_query)
+    else:
+        matches = await db["students"].find(student_query).limit(2).to_list(2)
+        student = matches[0] if len(matches) == 1 else None
 
-    # Verify matching date of birth
-    if student.get("date_of_birth") != payload.student_dob:
+    # Keep nonexistent, ambiguous, wrong-institution, and wrong-DOB failures
+    # indistinguishable so this endpoint cannot be used to enumerate records.
+    if not student or student.get("date_of_birth") != payload.student_dob:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Student identification details do not match.",
+            detail="Unable to verify student details. Check the institution, identifier, and date of birth.",
         )
 
     link_id = f"GLINK-{secrets.token_hex(6)}"

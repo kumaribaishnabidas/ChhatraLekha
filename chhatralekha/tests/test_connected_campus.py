@@ -457,6 +457,48 @@ async def test_guardian_link_and_child_overview(http_client):
     assert child["verification_status"] == "VERIFIED"
 
 
+async def test_parent_link_requires_tenant_for_duplicate_student_identifier(http_client, campus_db):
+    parent_token = await _login(http_client, "ramesh.kumar@parent.test")
+    await campus_db["students"].insert_one({
+        "apaar_id": "984210357890",
+        "student_name": "Synthetic Duplicate Student",
+        "date_of_birth": "2010-05-15",
+        "institution_id": "COL-PUN-002",
+        "program_id": "Test programme",
+        "academic_year": "2025-26",
+    })
+    headers = {"Authorization": f"Bearer {parent_token}"}
+    request_data = {
+        "student_identifier": "984210357890",
+        "student_dob": "2010-05-15",
+        "relationship": "FATHER",
+        "guardian_phone": "+919876543200",
+    }
+
+    ambiguous = await http_client.post("/api/parent/link", headers=headers, json=request_data)
+    wrong_dob = await http_client.post(
+        "/api/parent/link", headers=headers,
+        json={**request_data, "student_dob": "2000-01-01"},
+    )
+    nonexistent = await http_client.post(
+        "/api/parent/link", headers=headers,
+        json={**request_data, "student_identifier": "NO-SUCH-STUDENT"},
+    )
+    assert ambiguous.status_code == wrong_dob.status_code == nonexistent.status_code == 400
+    assert ambiguous.json()["detail"] == wrong_dob.json()["detail"] == nonexistent.json()["detail"]
+    assert await campus_db["guardian_relationships"].count_documents({}) == 0
+
+    scoped = await http_client.post(
+        "/api/parent/link",
+        headers=headers,
+        json={**request_data, "institution_id": "SCH-DEL-001"},
+    )
+    assert scoped.status_code == 200
+    link = await campus_db["guardian_relationships"].find_one({"_id": scoped.json()["link_id"]})
+    assert link["institution_id"] == "SCH-DEL-001"
+    assert link["student_name"] == "Anil Kumar"
+
+
 # -----------------------------------------------------------------------------
 # 7. Public Sustainability & Transparency Charter
 # -----------------------------------------------------------------------------

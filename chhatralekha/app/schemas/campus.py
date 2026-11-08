@@ -564,6 +564,7 @@ class AnnouncementOut(BaseModel):
 # ------------------------------------------------------------- 6. Guardian / Parent
 class GuardianLinkRequestIn(BaseModel):
     student_identifier: str = Field(..., description="Student APAAR ID or internal student ref")
+    institution_id: Optional[str] = Field(None, description="Required when the student identifier is not globally unique")
     student_dob: str = Field(..., example="2008-04-12")
     relationship: GuardianRelationshipType = Field(GuardianRelationshipType.FATHER)
     guardian_phone: str = Field(..., min_length=10, max_length=20)
