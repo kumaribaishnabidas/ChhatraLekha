@@ -60,6 +60,8 @@ COLLECTIONS = (
     "announcements",
     "guardian_relationships",
     "institution_registrations",
+    "refresh_sessions",
+    "membership_requests",
 )
 
 #: The password hash of the test accounts, computed once for the whole suite.

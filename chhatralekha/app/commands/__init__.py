@@ -1,0 +1,2 @@
+"""ChhatraLekha administrative commands package."""
+

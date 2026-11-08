@@ -20,8 +20,8 @@
 | **SEC-EMAIL-01** | **Medium** | Authentication | `app/modules/profiles/service.py` | Plaintext verification code disclosure and universal bypass | **RESOLVED** | Stage 0.3 |
 | **CI-LINT-01** | **Informational** | CI / Quality | `app/modules/` | 13 Ruff lint diagnostics breaking backend CI matrix | **RESOLVED** | Stage 0.3 |
 | **SEC-TENANT-01** | **High** | Tenant Isolation | `app/api/academic.py`, `announcements.py`, `reports.py`, `attendance.py`, `teacher.py`, `transfers.py` | Fail-open queries on null/missing tenant context and unsafe default fallbacks | **RESOLVED** | Stage 0.4 |
-| **SEC-AUTH-02** | **Low** | Authentication | `app/api/auth.py` | Documented `POST /api/auth/logout` endpoint not implemented | Scheduled (P3) | Stage 0.5 |
-| **SEC-AUTH-03** | **Low** | Authentication | `app/core/security.py` | Stateless refresh tokens without database persistence or rotation | Scheduled (P3) | Stage 0.5 |
+| **SEC-AUTH-02** | **Low** | Authentication | `app/api/auth.py` | Documented `POST /api/auth/logout` endpoint not implemented | **RESOLVED** | Stage 0.10 |
+| **SEC-AUTH-03** | **Low** | Authentication | `app/core/security.py`, `app/repositories/sessions.py` | Stateless refresh tokens without database persistence or rotation | **RESOLVED** | Stage 0.10 |
 
 ---
 
@@ -59,6 +59,14 @@
 - **Notice Acknowledgement Ownership Enforced:** The announcement acknowledgement endpoint (`POST /api/announcements/{id}/acknowledge`) enforces `principal.require_scope(doc.get("institution_id"))`, preventing cross-tenant acknowledgements.
 - **Strictly Scoped Exports & Mutations:** Attendance sessions, corrections, review tasks, student registers, and academic setups enforce object-level ownership checks preventing cross-tenant reads or writes.
 - **Directorate Governance Preserved:** Regulators and platform administrators (`national_admin`, `aicte_admin`, `platform_operator`) retain explicitly authorized multi-tenant and cross-institution oversight capabilities.
+
+### 2.6 Secure Authentication Session Lifecycle (Stage 0.10)
+- **Stateful Refresh Tokens:** Issued refresh tokens carry unique `jti` and `family_id` claims, tracked in MongoDB `refresh_sessions`.
+- **Cryptographic At-Rest Token Hashing:** Only SHA-256 digests (`token_hash`) are persisted at rest. Plaintext tokens never enter the database or audit logs.
+- **Automatic Token Rotation:** Calling `POST /api/auth/refresh` atomically rotates the presented token, invalidating the predecessor and minting a fresh child token in the same lineage.
+- **Refresh-Token Reuse Detection:** Presenting an already rotated refresh token triggers immediate family-wide revocation and logs a critical security audit event (`REFRESH_TOKEN_REUSE_DETECTED`).
+- **Server-Side Logout:** `POST /api/auth/logout` allows callers to terminate their current device session or all active user sessions with caller authentication and cross-user revocation defense.
+- **Safe Legacy Migration:** Seamlessly upgrades pre-existing tokens on initial refresh without invalidating active production sessions.
 
 ---
 

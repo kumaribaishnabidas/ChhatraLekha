@@ -6,7 +6,7 @@
  */
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 
-import { api, tokenStore } from '../services/api'
+import { api, logoutUser, tokenStore } from '../services/api'
 import { can, permissionsFor } from '../utils/permissions'
 
 export const AuthContext = createContext(null)
@@ -43,9 +43,13 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  const logout = useCallback(() => {
-    tokenStore.clear()
-    setUser(null)
+  const logout = useCallback(async (allSessions = false) => {
+    try {
+      await logoutUser(allSessions)
+    } finally {
+      tokenStore.clear()
+      setUser(null)
+    }
   }, [])
 
   const value = useMemo(

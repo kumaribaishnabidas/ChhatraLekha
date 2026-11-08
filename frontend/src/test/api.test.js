@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
-import { api, apiBaseUrl, apiOrigin, errorMessage, normaliseApiUrl, tokenStore } from '../services/api'
+import {
+  api,
+  apiBaseUrl,
+  apiOrigin,
+  errorMessage,
+  logoutUser,
+  normaliseApiUrl,
+  refreshAccessToken,
+  tokenStore,
+} from '../services/api'
 
 describe('errorMessage', () => {
   it('uses a string detail', () => {
@@ -93,5 +102,21 @@ describe('the API base URL', () => {
     expect(api.getUri({ url: '/auth/login' })).toBe('/api/auth/login')
     expect(api.getUri({ url: '/students' })).toBe('/api/students')
     expect(api.getUri({ url: '/verify/token/abc' })).toBe('/api/verify/token/abc')
+  })
+})
+
+describe('session lifecycle operations', () => {
+  it('throws an error when refreshing with no refresh token in store', async () => {
+    tokenStore.clear()
+    await expect(refreshAccessToken()).rejects.toThrow('No refresh token available')
+  })
+
+  it('logoutUser clears tokenStore even when network request completes', async () => {
+    tokenStore.set({ access_token: 'valid_access', refresh_token: 'valid_refresh', role: 'student' })
+    expect(tokenStore.get()).toBe('valid_access')
+    await logoutUser(false)
+    expect(tokenStore.get()).toBe('')
+    expect(tokenStore.getRefresh()).toBe('')
+    expect(tokenStore.getUser()).toBeNull()
   })
 })

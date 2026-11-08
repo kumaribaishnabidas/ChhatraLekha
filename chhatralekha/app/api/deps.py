@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from collections import defaultdict, deque
+from collections import OrderedDict, deque
 from typing import Any, Optional
 
 import jwt
@@ -21,6 +21,7 @@ from app.repositories.audit import AuditRepository
 from app.repositories.consents import ConsentRepository
 from app.repositories.institutions import InstitutionRepository
 from app.repositories.programmes import ProgrammeRepository
+from app.repositories.sessions import SessionRepository
 from app.repositories.students import StudentRepository
 from app.repositories.submissions import SubmissionRepository
 from app.repositories.users import UserRepository
@@ -32,16 +33,18 @@ bearer_scheme = HTTPBearer(auto_error=False)
 
 # ------------------------------------------------------------- rate limiting
 
-_hits: dict[str, deque[float]] = defaultdict(deque)
+MAX_RATE_LIMIT_CLIENTS = 10_000
+_hits: OrderedDict[str, deque[float]] = OrderedDict()
 
 
 def enforce_rate_limit(request: Request) -> None:
-    """A simple in-process sliding-window rate limiter."""
+    """Bounded in-process sliding window; multi-worker deployments need a shared edge limiter."""
     if settings.rate_limit_per_minute <= 0:
         return
     client = request.client.host if request.client else "unknown"
     now = time.monotonic()
-    window = _hits[client]
+    window = _hits.setdefault(client, deque())
+    _hits.move_to_end(client)
     while window and now - window[0] > 60:
         window.popleft()
     if len(window) >= settings.rate_limit_per_minute:
@@ -49,6 +52,9 @@ def enforce_rate_limit(request: Request) -> None:
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Too many requests. Please slow down.",
         )
+    window.append(now)
+    if len(_hits) > MAX_RATE_LIMIT_CLIENTS:
+        _hits.popitem(last=False)
 
 
 # --------------------------------------------------------------- collections
@@ -91,6 +97,10 @@ def get_audit_repo(db: AsyncIOMotorDatabase = Depends(get_db)) -> AuditRepositor
 
 def get_submission_repo(db: AsyncIOMotorDatabase = Depends(get_db)) -> SubmissionRepository:
     return SubmissionRepository(db["submissions"])
+
+
+def get_session_repo(db: AsyncIOMotorDatabase = Depends(get_db)) -> SessionRepository:
+    return SessionRepository(db["refresh_sessions"])
 
 
 # ------------------------------------------------------------ authentication
@@ -419,3 +429,8 @@ def client_ip(request: Request) -> Optional[str]:
     if forwarded:
         return forwarded.split(",")[0].strip()
     return request.client.host if request.client else None
+
+
+def client_user_agent(request: Request) -> Optional[str]:
+    """The caller's User-Agent header value."""
+    return request.headers.get("User-Agent")

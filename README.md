@@ -127,6 +127,7 @@ python -m venv .venv && .venv\Scripts\activate   # Windows
 pip install -r requirements.txt
 cp .env.example .env                              # then edit the secrets
 python -m app.scripts.seed                        # synthetic demo dataset
+python -m app.scripts.seed_academic_data          # explicit academic management core seed data
 uvicorn app.main:app --reload
 ```
 
@@ -148,12 +149,13 @@ batch CSV ingestion with row-level validation and seat-impact preview,
 **student lifecycle state management** with transition reason audit logs,
 **case reviewer assignment, internal case notes, and structured dismissal reasons**,
 **versioned cryptographic key rotation and JWKS endpoint** for offline verification,
+**Academic Management Core (Stage 0.8)** with multi-tier hierarchy (Schools & Colleges), session cycles, terms, bilingual NEP subjects, enrolments, promotions, faculty allocations, and calendar,
 consent-aware verification, **opaque expiring revocable verification tokens**,
 APAAR QR badges, PDF certificates carrying the APAAR ID, CSV/PDF regulatory
 reports, an explainable per-institution risk score, versioned seat policy, and
 a hash-chained audit trail.
 
-**293 pytest tests, all passing.** See [`chhatralekha/README.md`](chhatralekha/README.md)
+**442 backend pytest tests and 135 frontend vitest tests, all passing (781 tests across all tiers).** See [`chhatralekha/README.md`](chhatralekha/README.md)
 and [`chhatralekha/docs/architecture.md`](chhatralekha/docs/architecture.md).
 
 #### Google sign-in

@@ -50,7 +50,7 @@ router = APIRouter(prefix="/academic", tags=["academic-core"])
 # Helper functions & Auto-Seeding
 # ==============================================================================
 
-async def _ensure_academic_seeds(db: AsyncIOMotorDatabase, inst_id: str) -> None:
+async def seed_academic_data(db: AsyncIOMotorDatabase, inst_id: str) -> None:
     """Seed synthetic demonstration academic data if institution collections are empty."""
     year_count = await db["academic_years"].count_documents({"institution_id": inst_id})
     if year_count > 0:
@@ -451,6 +451,10 @@ async def _ensure_academic_seeds(db: AsyncIOMotorDatabase, inst_id: str) -> None
         await db["academic_calendar_events"].update_one({"_id": ev["_id"]}, {"$set": ev}, upsert=True)
 
 
+# Backwards-compatible alias for explicit development seeding
+_ensure_academic_seeds = seed_academic_data
+
+
 # ==============================================================================
 # 1. Academic Overview & Summary
 # ==============================================================================
@@ -462,11 +466,10 @@ async def get_academic_overview(
 ) -> AcademicOverviewOut:
     """Return consolidated statistics of the academic hierarchy for the caller's institution."""
     inst_id = principal.require_tenant_context()
-    await _ensure_academic_seeds(db, inst_id)
 
     # Fetch current active year
     current_year_doc = await db["academic_years"].find_one({"institution_id": inst_id, "is_current": True})
-    current_year_label = current_year_doc.get("year_label") if current_year_doc else "2025-26"
+    current_year_label = current_year_doc.get("year_label") if current_year_doc else None
 
     # Aggregated metric counts
     total_departments = await db["departments"].count_documents({"institution_id": inst_id, "status": "ACTIVE"})
@@ -579,8 +582,6 @@ async def list_academic_years(
 ) -> List[AcademicYearOut]:
     """List configured academic years for the caller's institution."""
     target_inst_id = principal.get_scoped_institution_id(institution_id)
-    if target_inst_id:
-        await _ensure_academic_seeds(db, target_inst_id)
 
     query: dict[str, Any] = {}
     if target_inst_id:
@@ -766,8 +767,6 @@ async def list_semester_terms(
 ) -> List[SemesterTermOut]:
     """List configured semesters and academic terms."""
     target_inst_id = principal.get_scoped_institution_id(institution_id)
-    if target_inst_id:
-        await _ensure_academic_seeds(db, target_inst_id)
 
     query: dict[str, Any] = {}
     if target_inst_id:
@@ -846,8 +845,6 @@ async def list_departments(
 ) -> List[DepartmentOut]:
     """List departments for the caller's institution."""
     target_inst_id = principal.get_scoped_institution_id(institution_id)
-    if target_inst_id:
-        await _ensure_academic_seeds(db, target_inst_id)
 
     query: dict[str, Any] = {"status": "ACTIVE"}
     if target_inst_id:
@@ -939,6 +936,14 @@ async def create_programme(
 ) -> ProgrammeOut:
     """Create an academic programme, degree curriculum, or school grade structure."""
     inst_id = principal.require_tenant_context()
+    if payload.department_id:
+        dept = await db["departments"].find_one({"_id": payload.department_id, "institution_id": inst_id})
+        if not dept:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Department '{payload.department_id}' not found in institution.",
+            )
+
     prg_id = f"PRG-{inst_id}-{payload.programme_code.upper()}"
 
     doc = {
@@ -989,8 +994,6 @@ async def list_programmes(
 ) -> List[ProgrammeOut]:
     """List academic programmes for the institution."""
     target_inst_id = principal.get_scoped_institution_id(institution_id)
-    if target_inst_id:
-        await _ensure_academic_seeds(db, target_inst_id)
 
     query: dict[str, Any] = {"status": "ACTIVE"}
     if target_inst_id:
@@ -1033,6 +1036,14 @@ async def create_class_section(
 ) -> ClassSectionOut:
     """Create a school class grade and section or college cohort."""
     inst_id = principal.require_tenant_context()
+    if payload.programme_id:
+        prg = await db["programmes"].find_one({"_id": payload.programme_id, "institution_id": inst_id})
+        if not prg:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Programme '{payload.programme_id}' not found in institution.",
+            )
+
     clean_grade = payload.grade_level.replace(" ", "_").upper()
     class_id = f"CLS-{inst_id}-{clean_grade}-{payload.section.upper()}-{payload.academic_year.replace('/', '-')}"
 
@@ -1095,8 +1106,6 @@ async def list_classes(
 ) -> List[ClassSectionOut]:
     """List configured classes and sections."""
     target_inst_id = principal.get_scoped_institution_id(institution_id)
-    if target_inst_id:
-        await _ensure_academic_seeds(db, target_inst_id)
 
     query: dict[str, Any] = {"status": "ACTIVE"}
     if target_inst_id:
@@ -1139,6 +1148,21 @@ async def create_subject(
 ) -> SubjectOut:
     """Create a subject for a class or course curriculum."""
     inst_id = principal.require_tenant_context()
+    if payload.department_id:
+        dept = await db["departments"].find_one({"_id": payload.department_id, "institution_id": inst_id})
+        if not dept:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Department '{payload.department_id}' not found in institution.",
+            )
+    if payload.programme_id:
+        prg = await db["programmes"].find_one({"_id": payload.programme_id, "institution_id": inst_id})
+        if not prg:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Programme '{payload.programme_id}' not found in institution.",
+            )
+
     subj_id = f"SUB-{inst_id}-{payload.subject_code.upper()}"
 
     doc = {
@@ -1191,8 +1215,6 @@ async def list_subjects(
 ) -> List[SubjectOut]:
     """List configured subjects."""
     target_inst_id = principal.get_scoped_institution_id(institution_id)
-    if target_inst_id:
-        await _ensure_academic_seeds(db, target_inst_id)
 
     query: dict[str, Any] = {"status": "ACTIVE"}
     if target_inst_id:
@@ -1310,8 +1332,6 @@ async def list_enrolments(
 ) -> List[StudentEnrolmentOut]:
     """List student enrolments with filtering. Preserves all historical records."""
     target_inst_id = principal.get_scoped_institution_id(institution_id)
-    if target_inst_id:
-        await _ensure_academic_seeds(db, target_inst_id)
 
     query: dict[str, Any] = {}
     if target_inst_id:
@@ -1427,6 +1447,16 @@ async def transfer_student_section(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Enrolment record not found.")
     principal.require_scope(enrol.get("institution_id", ""))
 
+    target_cls = await db["classes"].find_one({
+        "_id": payload.target_class_id,
+        "institution_id": enrol.get("institution_id"),
+    })
+    if not target_cls:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Target class was not found in the student's institution.",
+        )
+
     old_section = enrol.get("section", "")
     await db["student_enrolments"].update_one(
         {"_id": enrolment_id},
@@ -1531,8 +1561,6 @@ async def list_teacher_assignments(
 ) -> List[TeacherAssignmentOut]:
     """List allocations of teachers to classes/courses."""
     target_inst_id = principal.get_scoped_institution_id(institution_id)
-    if target_inst_id:
-        await _ensure_academic_seeds(db, target_inst_id)
 
     query: dict[str, Any] = {"status": "ACTIVE"}
     if target_inst_id:
@@ -1655,8 +1683,6 @@ async def list_calendar_events(
 ) -> List[AcademicCalendarEventOut]:
     """List academic calendar events for the caller's institution."""
     target_inst_id = principal.get_scoped_institution_id(institution_id)
-    if target_inst_id:
-        await _ensure_academic_seeds(db, target_inst_id)
 
     query: dict[str, Any] = {}
     if target_inst_id:

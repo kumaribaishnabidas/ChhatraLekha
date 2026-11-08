@@ -140,16 +140,35 @@ def create_access_token(
     return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
 
 
-def create_refresh_token(subject: str) -> str:
-    """Issue a signed refresh token."""
+def create_refresh_token(
+    subject: str,
+    jti: Optional[str] = None,
+    family_id: Optional[str] = None,
+) -> str:
+    """Issue a signed refresh token with a unique jti and optional family ID."""
     expires_at = _now() + timedelta(days=settings.refresh_token_expire_days)
-    payload = {
+    payload: Dict[str, Any] = {
         "sub": subject,
         "type": "refresh",
+        "jti": jti or secrets.token_urlsafe(32),
         "iat": int(_now().timestamp()),
         "exp": int(expires_at.timestamp()),
     }
+    if family_id:
+        payload["family_id"] = family_id
     return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
+
+
+def hash_refresh_token(raw_token: str) -> str:
+    """The SHA-256 hash of a refresh token for safe at-rest persistence."""
+    return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+
+
+def verify_refresh_token_hash(raw_token: str, expected_hash: str) -> bool:
+    """Constant-time comparison of a refresh token against its stored hash."""
+    if not raw_token or not expected_hash:
+        return False
+    return hmac.compare_digest(hash_refresh_token(raw_token), expected_hash.strip().lower())
 
 
 def decode_token(token: str, expected_type: str = "access") -> Dict[str, Any]:

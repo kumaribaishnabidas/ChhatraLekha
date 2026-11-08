@@ -241,7 +241,10 @@ async def register_institution(
         "role": "institution_admin",
         "institution_id": institution_id,
         "password_hash": pw_hash,
-        "is_active": True,
+        # Public registration is pending review; do not provision an active
+        # privileged account before the institution is verified.
+        "is_active": False,
+        "pending_institution_review": True,
         "created_at": now,
     }
     await db["users"].insert_one(admin_user)
@@ -293,6 +296,17 @@ async def review_institution_onboarding(
             "review_notes": payload.notes,
         }},
     )
+    # Activate only the initial account created by the public-registration
+    # flow. Do not reactivate administrators disabled for unrelated reasons.
+    if is_active:
+        await db["users"].update_many(
+            {
+                "institution_id": institution_id,
+                "role": "institution_admin",
+                "pending_institution_review": True,
+            },
+            {"$set": {"is_active": True, "pending_institution_review": False}},
+        )
 
     await writer.log(
         AuditRepository(db["audit_events"]),

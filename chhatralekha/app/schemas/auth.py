@@ -25,6 +25,42 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 
+class LogoutRequest(BaseModel):
+    """Payload presented to ``POST /api/auth/logout``."""
+
+    refresh_token: str | None = Field(None, description="The refresh token of the session to terminate.")
+    all_sessions: bool = Field(False, description="Whether to revoke all active sessions for the user.")
+
+
+class LogoutResponse(BaseModel):
+    """Response returned by ``POST /api/auth/logout``."""
+
+    status: str = "success"
+    message: str = "Logged out successfully."
+    revoked_sessions_count: int = 1
+
+
+class RegisterRequest(BaseModel):
+    """Payload presented to ``POST /api/auth/register`` for self-service registration."""
+
+    email: str = Field(..., description="Registered e-mail address.")
+    password: str = Field(..., min_length=1, max_length=256, description="Account password.")
+    full_name: str = Field(..., min_length=1, max_length=128, description="User full name.")
+    role: str = Field("student", description="Requested role: student, parent, teacher, or institution_admin.")
+    identifier: str | None = Field(None, max_length=128, description="Optional APAAR ID, roll number, or institution name.")
+
+
+class RegisterResponse(BaseModel):
+    """Response returned by ``POST /api/auth/register``."""
+
+    status: str = "success"
+    message: str
+    user_id: str
+    email: str
+    role: str
+    requires_approval: bool = False
+
+
 class TokenPair(BaseModel):
     """The issued token pair."""
 

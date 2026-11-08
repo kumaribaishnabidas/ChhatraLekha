@@ -38,21 +38,28 @@ async def request_guardian_link(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> dict[str, Any]:
     """Guardian initiates relationship link; requires institution verification before activation."""
-    # Find matching student record by apaar_id or student_institute_roll_no
-    student = await db["students"].find_one({
+    # Student identifiers may legitimately be duplicated across institutions.
+    # If the parent did not select a tenant, accept only a globally unambiguous
+    # identifier; never let MongoDB's arbitrary first match choose the child.
+    student_query = {
         "$or": [
             {"apaar_id": payload.student_identifier},
             {"student_institute_roll_no": payload.student_identifier},
         ]
-    })
-    if not student:
-        raise HTTPException(status_code=404, detail="Student record not found in system.")
+    }
+    if payload.institution_id:
+        student_query["institution_id"] = payload.institution_id
+        student = await db["students"].find_one(student_query)
+    else:
+        matches = await db["students"].find(student_query).limit(2).to_list(2)
+        student = matches[0] if len(matches) == 1 else None
 
-    # Verify matching date of birth
-    if student.get("date_of_birth") != payload.student_dob:
+    # Keep nonexistent, ambiguous, wrong-institution, and wrong-DOB failures
+    # indistinguishable so this endpoint cannot be used to enumerate records.
+    if not student or student.get("date_of_birth") != payload.student_dob:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Student identification details do not match.",
+            detail="Unable to verify student details. Check the institution, identifier, and date of birth.",
         )
 
     link_id = f"GLINK-{secrets.token_hex(6)}"
@@ -102,11 +109,21 @@ async def verify_guardian_link(
     if not link:
         raise HTTPException(status_code=404, detail="Link request not found.")
 
-    principal.require_scope(link.get("institution_id"))
+    institution_id = link.get("institution_id")
+    principal.require_scope(institution_id)
+    student_id = link.get("student_id")
+    student = await db["students"].find_one({
+        "institution_id": institution_id,
+        "$or": [{"apaar_id": student_id}, {"_id": student_id}],
+    })
+    if not student:
+        raise HTTPException(status_code=404, detail="Student record not found for this institution.")
+    if link.get("status") != GuardianVerificationStatus.PENDING.value:
+        raise HTTPException(status_code=400, detail="Link request is not pending verification.")
 
     now = datetime.now(timezone.utc)
     await db["guardian_relationships"].update_one(
-        {"_id": link_id},
+        {"_id": link_id, "institution_id": institution_id, "status": GuardianVerificationStatus.PENDING.value},
         {"$set": {"status": payload.verification_status.value, "verified_at": now, "verified_by": principal.subject}},
     )
 
@@ -138,21 +155,38 @@ async def list_linked_children(
     overviews: List[GuardianStudentOverviewOut] = []
     for link in links:
         stu_id = link.get("student_id")
-        student = await db["students"].find_one({"apaar_id": stu_id}) or await db["students"].find_one({"_id": stu_id})
         inst_id = link.get("institution_id", "")
+        student = await db["students"].find_one({
+            "institution_id": inst_id,
+            "$or": [{"apaar_id": stu_id}, {"_id": stu_id}],
+        })
+        if not student:
+            # Fail closed for stale or inconsistent links; never disclose a student
+            # record whose actual institution differs from the verified link.
+            continue
         inst = await db["institutions"].find_one({"institution_id": inst_id}) or {}
 
         # Attendance calculation
-        records = await db["attendance_records"].find({"student_id": stu_id}).to_list(500)
+        records = await db["attendance_records"].find({
+            "institution_id": inst_id,
+            "student_id": stu_id,
+        }).to_list(500)
         total_sessions = len(records)
         present = sum(1 for r in records if r.get("status") in {"PRESENT", "LATE"})
         rate = round((present / total_sessions * 100), 1) if total_sessions > 0 else 100.0
 
         # Published results only!
-        marks = await db["assessment_marks"].find({"student_id": stu_id, "is_published": True}).to_list(50)
+        marks = await db["assessment_marks"].find({
+            "institution_id": inst_id,
+            "student_id": stu_id,
+            "is_published": True,
+        }).to_list(50)
         results: List[StudentResultOut] = []
         for m in marks:
-            asm = await db["assessments"].find_one({"_id": m["assessment_id"]})
+            asm = await db["assessments"].find_one({
+                "_id": m["assessment_id"],
+                "institution_id": inst_id,
+            })
             if asm and asm.get("status") == AssessmentStatus.PUBLISHED.value:
                 results.append(
                     StudentResultOut(
