@@ -40,6 +40,27 @@ class LogoutResponse(BaseModel):
     revoked_sessions_count: int = 1
 
 
+class RegisterRequest(BaseModel):
+    """Payload presented to ``POST /api/auth/register`` for self-service registration."""
+
+    email: str = Field(..., description="Registered e-mail address.")
+    password: str = Field(..., min_length=8, max_length=256, description="Account password (min 8 characters).")
+    full_name: str = Field(..., min_length=1, max_length=128, description="User full name.")
+    role: str = Field("student", description="Requested role: student, parent, teacher, or institution_admin.")
+    identifier: str | None = Field(None, max_length=128, description="Optional APAAR ID, roll number, or institution name.")
+
+
+class RegisterResponse(BaseModel):
+    """Response returned by ``POST /api/auth/register``."""
+
+    status: str = "success"
+    message: str
+    user_id: str
+    email: str
+    role: str
+    requires_approval: bool = False
+
+
 class TokenPair(BaseModel):
     """The issued token pair."""
 

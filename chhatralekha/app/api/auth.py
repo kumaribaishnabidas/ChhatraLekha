@@ -17,6 +17,7 @@ from app.api.deps import (
     Principal,
     client_ip,
     client_user_agent,
+    enforce_rate_limit,
     get_db,
     get_principal,
     get_session_repo,
@@ -24,9 +25,12 @@ from app.api.deps import (
 from app.audit import writer
 from app.core.config import get_settings
 from app.core.security import (
+    ROLE_INSTITUTION,
+    ROLE_PENDING,
     create_access_token,
     create_refresh_token,
     decode_token,
+    hash_password,
     hash_refresh_token,
     password_policy_violations,
     verify_password,
@@ -40,6 +44,8 @@ from app.schemas.auth import (
     LogoutRequest,
     LogoutResponse,
     RefreshRequest,
+    RegisterRequest,
+    RegisterResponse,
     TokenPair,
     UserOut,
 )
@@ -50,6 +56,20 @@ logger = logging.getLogger("chhatralekha.auth")
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
 settings = get_settings()
+
+SELF_SERVICE_ROLES = {"student", "parent", "teacher"}
+INSTITUTION_ADMIN_ROLES = {"institution_admin", "school_admin", "college_admin"}
+RESTRICTED_ROLES = {
+    "national_admin",
+    "platform_operator",
+    "aicte_admin",
+    "university_admin",
+    "state_admin",
+    "district_admin",
+    "regulator_admin",
+    "academic_admin",
+    "verifier",
+}
 
 
 async def _issue_and_persist_refresh_token(
@@ -77,6 +97,144 @@ async def _issue_and_persist_refresh_token(
         user_agent=client_user_agent(request) if request else None,
     )
     return token
+
+
+@router.post(
+    "/register",
+    response_model=RegisterResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Self-service user registration",
+    dependencies=[Depends(enforce_rate_limit)],
+)
+async def register(
+    payload: RegisterRequest,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> RegisterResponse:
+    """Register a new user account with secure password hashing and role validation."""
+    requested_role = payload.role.strip().lower()
+
+    if requested_role in RESTRICTED_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Registration for role '{requested_role}' is restricted and requires administrator invitation.",
+        )
+
+    if requested_role not in SELF_SERVICE_ROLES and requested_role not in INSTITUTION_ADMIN_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid registration role '{requested_role}'. Allowed roles are student, parent, teacher, or institution_admin.",
+        )
+
+    violations = password_policy_violations(payload.password)
+    if violations:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=" ".join(violations),
+        )
+
+    users = UserRepository(db["users"], db["api_keys"], db["revoked_credentials"])
+    audit = AuditRepository(db["audit_events"])
+
+    normalized_email = payload.email.strip().lower()
+    existing_user = await users.by_email(normalized_email)
+    if existing_user is not None:
+        await writer.log(
+            audit,
+            actor=normalized_email,
+            action="REGISTER_DUPLICATE_ATTEMPT",
+            subject=normalized_email,
+            details="Registration attempted with existing email address.",
+            category="SECURITY",
+            ip_address=client_ip(request),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to complete registration. If an account already exists with this email, please sign in or reset your password.",
+        )
+
+    user_id = f"usr_{secrets.token_hex(8)}"
+    hashed_pw = hash_password(payload.password)
+    now = datetime.now(timezone.utc)
+
+    is_admin_request = requested_role in INSTITUTION_ADMIN_ROLES
+    effective_role = ROLE_PENDING if is_admin_request else requested_role
+
+    user_doc = {
+        "user_id": user_id,
+        "email": normalized_email,
+        "full_name": payload.full_name.strip(),
+        "password_hash": hashed_pw,
+        "role": effective_role,
+        "is_active": True,
+        "created_at": now,
+        "updated_at": now,
+        "institution_id": None,
+    }
+
+    if payload.identifier and requested_role == "student":
+        ident = payload.identifier.strip()
+        if ident.isdigit() and len(ident) == 12:
+            user_doc["apaar_id"] = ident
+
+    await db["users"].insert_one(user_doc)
+
+    if is_admin_request:
+        req_id = f"req-{secrets.token_hex(6)}"
+        req_doc = {
+            "_id": req_id,
+            "request_id": req_id,
+            "user_id": user_id,
+            "user_name": payload.full_name.strip(),
+            "user_email": normalized_email,
+            "institution_id": None,
+            "institution_name": payload.identifier.strip() if payload.identifier else None,
+            "requested_role": ROLE_INSTITUTION,
+            "role_details": {"institution_name": payload.identifier.strip()} if payload.identifier else {},
+            "status": "PENDING",
+            "created_at": now,
+        }
+        await db["membership_requests"].insert_one(req_doc)
+
+        await writer.log(
+            audit,
+            actor=user_id,
+            actor_role=ROLE_PENDING,
+            action="REGISTER_INSTITUTION_ADMIN_PENDING",
+            subject=user_id,
+            details=f"User registered with email '{normalized_email}' requesting institution admin access (pending approval).",
+            category="SECURITY",
+            ip_address=client_ip(request),
+        )
+
+        return RegisterResponse(
+            status="success",
+            message="Registration successful. Institutional administrator access requires review before administrative privileges are granted.",
+            user_id=user_id,
+            email=normalized_email,
+            role=ROLE_PENDING,
+            requires_approval=True,
+        )
+
+    await writer.log(
+        audit,
+        actor=user_id,
+        actor_role=effective_role,
+        action="REGISTER",
+        subject=user_id,
+        details=f"User registered with email '{normalized_email}' as '{effective_role}'.",
+        category="SECURITY",
+        ip_address=client_ip(request),
+    )
+
+    return RegisterResponse(
+        status="success",
+        message="Account created successfully! You may now sign in.",
+        user_id=user_id,
+        email=normalized_email,
+        role=effective_role,
+        requires_approval=False,
+    )
 
 
 @router.post("/login", response_model=TokenPair, summary="Sign in and receive a JWT pair")
