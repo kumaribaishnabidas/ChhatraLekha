@@ -44,7 +44,7 @@ class RegisterRequest(BaseModel):
     """Payload presented to ``POST /api/auth/register`` for self-service registration."""
 
     email: str = Field(..., description="Registered e-mail address.")
-    password: str = Field(..., min_length=8, max_length=256, description="Account password (min 8 characters).")
+    password: str = Field(..., min_length=1, max_length=256, description="Account password.")
     full_name: str = Field(..., min_length=1, max_length=128, description="User full name.")
     role: str = Field("student", description="Requested role: student, parent, teacher, or institution_admin.")
     identifier: str | None = Field(None, max_length=128, description="Optional APAAR ID, roll number, or institution name.")

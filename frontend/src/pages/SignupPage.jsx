@@ -78,7 +78,7 @@ export default function SignupPage() {
         })
       }, 1200)
     } catch (err) {
-      setError(errorMessage(err, 'Unable to complete registration. Please try again.', t))
+      setError(errorMessage(err, 'Unable to complete registration. Please try again.'))
     } finally {
       setIsSubmitting(false)
     }

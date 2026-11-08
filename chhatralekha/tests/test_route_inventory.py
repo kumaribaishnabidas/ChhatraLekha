@@ -18,6 +18,7 @@ from app.main import app
 PUBLIC_ROUTE_PATHS = {
     "/health",
     "/api/health",
+    "/api/auth/register",
     "/api/auth/login",
     "/api/auth/refresh",
     "/api/auth/google",
