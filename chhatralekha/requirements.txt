@@ -22,4 +22,4 @@ Pillow==13.0.0
 # MongoDB
 motor==3.7.1
 pymongo==4.19.0
-mongomock-motor==0.0.35
+mongomock-motor==0.0.36
