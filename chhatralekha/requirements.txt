@@ -1,7 +1,7 @@
 # ChhatraLekha - Python backend
 fastapi==0.162.2
 starlette==1.10.0
-uvicorn[standard]==0.32.0
+uvicorn[standard]==0.54.0
 pydantic==2.9.2
 pydantic-settings==2.7.1
 PyJWT==2.15.1
