@@ -1,5 +1,4 @@
 {
-  "name": "chhatralekha",
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
