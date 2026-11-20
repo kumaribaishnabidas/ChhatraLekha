@@ -33,6 +33,12 @@ academic operations, student credentials, attendance, examinations, and families
 | Python backend | `chhatralekha/` | FastAPI, Motor (async MongoDB), Pydantic v2, `cryptography` |
 | Android client | `android/` | Kotlin 2.2, Jetpack Compose, Material 3, Room |
 | iOS client roadmap | [`docs/IOS_ARCHITECTURE_AND_ROADMAP.md`](docs/IOS_ARCHITECTURE_AND_ROADMAP.md) | Swift 6, SwiftUI, GRDB.swift, CryptoKit |
+| Linux desktop | [`linux/desktop/`](linux/desktop/) | Electron desktop shell for the existing web portal; online-only, packaged as AppImage and `.deb` |
+
+The Linux build is a desktop wrapper around the existing web application, not a
+separate native/offline implementation. It requires internet access and an
+available ChhatraLekha web deployment. Student records are not stored by the
+desktop package; backend authorization and tenant isolation remain server-side.
 
 The **Connected Campus Core** unites school and college academic operations with
 **Academic Record Change Impact Detection**: preview corrections, verify credentials
@@ -82,6 +88,7 @@ ChhatraLekha/
 │   ├── public/brand/         ← ChhatraLekha logo artwork
 │   ├── vercel.json           ← the Vercel deployment of the frontend
 │   └── vite.config.js
+├── linux/desktop/             ← Linux desktop shell and AppImage/.deb packaging
 └── android/                  ← the Android application
     ├── app/                  ← Kotlin + Jetpack Compose source, unit tests, Room schema
     ├── core/                 ← the shared Kotlin module (validator, anomaly engine, seal, QR)
@@ -92,6 +99,9 @@ ChhatraLekha/
     ├── build.ps1 / build.cmd ← convenience launcher (pins JDK 17, sanitises PATH)
     └── README.md             ← full technical documentation
 ```
+
+See [`linux/desktop/README.md`](linux/desktop/README.md) for Linux installation,
+build and test instructions.
 
 There are **two implementations of the same rules**, and that is deliberate:
 

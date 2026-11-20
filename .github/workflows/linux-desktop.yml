@@ -1,0 +1,55 @@
+name: Linux desktop
+
+on:
+  pull_request:
+    paths:
+      - 'linux/desktop/**'
+      - '.github/workflows/linux-desktop.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'linux/desktop/**'
+      - '.github/workflows/linux-desktop.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux-desktop:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: linux/desktop/package-lock.json
+
+      - name: Install dependencies
+        working-directory: linux/desktop
+        run: npm ci
+
+      - name: Audit desktop dependencies
+        working-directory: linux/desktop
+        run: npm audit --audit-level=low
+
+      - name: Test desktop URL policy
+        working-directory: linux/desktop
+        run: npm test
+
+      - name: Build Linux packages
+        working-directory: linux/desktop
+        run: npm run dist:linux
+
+      - name: Upload Linux packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: chhatralekha-linux-desktop
+          path: linux/desktop/release/*
+          if-no-files-found: error
+          retention-days: 14

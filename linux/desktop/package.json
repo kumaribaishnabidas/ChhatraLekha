@@ -1,0 +1,55 @@
+{
+  "name": "chhatralekha-linux-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Linux desktop shell for the ChhatraLekha web portal",
+  "homepage": "https://github.com/kumaribaishnabidas/ChhatraLekha",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kumaribaishnabidas/ChhatraLekha.git"
+  },
+  "author": "ChhatraLekha",
+  "desktopName": "org.chhatralekha.desktop",
+  "main": "main.cjs",
+  "engines": {
+    "node": ">=22 <27"
+  },
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test",
+    "dist:linux": "electron-builder --linux AppImage deb --publish never"
+  },
+  "devDependencies": {
+    "electron": "45.4.1",
+    "electron-builder": "26.18.0"
+  },
+  "overrides": {
+    "minimatch@>=7.0.0 <11.0.1": "11.0.9"
+  },
+  "build": {
+    "appId": "org.chhatralekha.desktop",
+    "productName": "ChhatraLekha",
+    "directories": {
+      "output": "release",
+      "buildResources": "assets"
+    },
+    "files": [
+      "main.cjs",
+      "url-policy.cjs",
+      "offline.html",
+      "package.json"
+    ],
+    "linux": {
+      "category": "Education",
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "assets/icon.png",
+      "syncDesktopName": true,
+      "synopsis": "Student records and credential verification portal",
+      "maintainer": "ChhatraLekha",
+      "executableName": "chhatralekha"
+    }
+  }
+}
