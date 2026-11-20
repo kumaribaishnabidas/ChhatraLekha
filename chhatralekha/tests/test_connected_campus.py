@@ -26,91 +26,126 @@ async def campus_db():
     db = mongo.db()
 
     # Seed an active school and active college
-    await db["institutions"].insert_many([
-        {
-            "institution_id": "SCH-DEL-001",
-            "name": "Delhi Public Model School",
-            "category": "SCHOOL",
-            "institution_type": "SCHOOL",
-            "state": "Delhi",
-            "city": "New Delhi",
-            "is_active": True,
-            "verification_status": "VERIFIED",
-        },
-        {
-            "institution_id": "COL-PUN-002",
-            "name": "Pune Institute of Science",
-            "category": "COLLEGE",
-            "institution_type": "COLLEGE",
-            "state": "Maharashtra",
-            "city": "Pune",
-            "is_active": True,
-            "verification_status": "VERIFIED",
-        },
-    ])
+    await db["institutions"].insert_many(
+        [
+            {
+                "institution_id": "SCH-DEL-001",
+                "name": "Delhi Public Model School",
+                "category": "SCHOOL",
+                "institution_type": "SCHOOL",
+                "state": "Delhi",
+                "city": "New Delhi",
+                "is_active": True,
+                "verification_status": "VERIFIED",
+            },
+            {
+                "institution_id": "COL-PUN-002",
+                "name": "Pune Institute of Science",
+                "category": "COLLEGE",
+                "institution_type": "COLLEGE",
+                "state": "Maharashtra",
+                "city": "Pune",
+                "is_active": True,
+                "verification_status": "VERIFIED",
+            },
+        ]
+    )
 
     # Seed users across roles
-    await db["users"].insert_many([
-        {
-            "user_id": "USR-OP",
-            "email": "operator@chhatralekha.test",
-            "full_name": "Platform Operator",
-            "role": "platform_operator",
-            "institution_id": None,
-            "password_hash": TEST_PW_HASH,
-            "is_active": True,
-        },
-        {
-            "user_id": "USR-SCH-ADMIN",
-            "email": "principal@delhischool.test",
-            "full_name": "School Principal",
-            "role": "institution_admin",
-            "institution_id": "SCH-DEL-001",
-            "password_hash": TEST_PW_HASH,
-            "is_active": True,
-        },
-        {
-            "user_id": "USR-TEACHER",
-            "email": "teacher.sharma@delhischool.test",
-            "full_name": "Sunita Sharma",
-            "role": "teacher",
-            "institution_id": "SCH-DEL-001",
-            "password_hash": TEST_PW_HASH,
-            "is_active": True,
-        },
-        {
-            "user_id": "USR-STUDENT-ANIL",
-            "email": "anil.kumar@student.test",
-            "full_name": "Anil Kumar",
-            "role": "student",
-            "institution_id": "SCH-DEL-001",
-            "apaar_id": "984210357890",
-            "password_hash": TEST_PW_HASH,
-            "is_active": True,
-        },
-        {
-            "user_id": "USR-PARENT",
-            "email": "ramesh.kumar@parent.test",
-            "full_name": "Ramesh Kumar (Father)",
-            "role": "parent",
-            "institution_id": None,
-            "password_hash": TEST_PW_HASH,
-            "is_active": True,
-        },
-    ])
+    await db["users"].insert_many(
+        [
+            {
+                "user_id": "USR-OP",
+                "email": "operator@chhatralekha.test",
+                "full_name": "Platform Operator",
+                "role": "platform_operator",
+                "institution_id": None,
+                "password_hash": TEST_PW_HASH,
+                "is_active": True,
+            },
+            {
+                "user_id": "USR-SCH-ADMIN",
+                "email": "principal@delhischool.test",
+                "full_name": "School Principal",
+                "role": "institution_admin",
+                "institution_id": "SCH-DEL-001",
+                "password_hash": TEST_PW_HASH,
+                "is_active": True,
+            },
+            {
+                "user_id": "USR-TEACHER",
+                "email": "teacher.sharma@delhischool.test",
+                "full_name": "Sunita Sharma",
+                "role": "teacher",
+                "institution_id": "SCH-DEL-001",
+                "password_hash": TEST_PW_HASH,
+                "is_active": True,
+            },
+            {
+                "user_id": "USR-STUDENT-ANIL",
+                "email": "anil.kumar@student.test",
+                "full_name": "Anil Kumar",
+                "role": "student",
+                "institution_id": "SCH-DEL-001",
+                "apaar_id": "984210357890",
+                "password_hash": TEST_PW_HASH,
+                "is_active": True,
+            },
+            {
+                "user_id": "USR-PARENT",
+                "email": "ramesh.kumar@parent.test",
+                "full_name": "Ramesh Kumar (Father)",
+                "role": "parent",
+                "institution_id": None,
+                "password_hash": TEST_PW_HASH,
+                "is_active": True,
+            },
+        ]
+    )
 
     # Seed student record
-    await db["students"].insert_one({
-        "apaar_id": "984210357890",
-        "student_name": "Anil Kumar",
-        "date_of_birth": "2010-05-15",
-        "gender": "M",
-        "institution_id": "SCH-DEL-001",
-        "program_id": "Class 10-A",
-        "academic_year": "2025-26",
-        "record_status": "ACTIVE",
-        "is_active": True,
-    })
+    await db["students"].insert_one(
+        {
+            "apaar_id": "984210357890",
+            "student_name": "Anil Kumar",
+            "date_of_birth": "2010-05-15",
+            "gender": "M",
+            "institution_id": "SCH-DEL-001",
+            "program_id": "Class 10-A",
+            "academic_year": "2025-26",
+            "record_status": "ACTIVE",
+            "is_active": True,
+        }
+    )
+
+    # Seed class and teacher assignment for teacher workspace
+    await db["classes"].insert_one(
+        {
+            "_id": "CLS-CLASS-10-A",
+            "class_id": "CLS-CLASS-10-A",
+            "institution_id": "SCH-DEL-001",
+            "grade_level": "Class 10",
+            "section": "A",
+            "academic_year": "2025-26",
+            "class_teacher_id": "USR-TEACHER",
+            "class_teacher_name": "Sunita Sharma",
+            "is_active": True,
+        }
+    )
+    await db["teacher_assignments"].insert_one(
+        {
+            "assignment_id": "ASN-SCH-DEL-001-10A",
+            "institution_id": "SCH-DEL-001",
+            "teacher_id": "USR-TEACHER",
+            "teacher_name": "Sunita Sharma",
+            "subject_id": "SUB-MATH-10",
+            "subject_name": "Mathematics",
+            "target_type": "CLASS",
+            "target_id": "CLS-CLASS-10-A",
+            "target_label": "Class 10-A",
+            "status": "ACTIVE",
+        }
+    )
 
     return db
 
@@ -124,6 +159,7 @@ async def _login(client: httpx.AsyncClient, email: str) -> str:
 @pytest.fixture
 async def http_client(campus_db):
     from app.main import app
+
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
         yield client
@@ -459,14 +495,16 @@ async def test_guardian_link_and_child_overview(http_client):
 
 async def test_parent_link_requires_tenant_for_duplicate_student_identifier(http_client, campus_db):
     parent_token = await _login(http_client, "ramesh.kumar@parent.test")
-    await campus_db["students"].insert_one({
-        "apaar_id": "984210357890",
-        "student_name": "Synthetic Duplicate Student",
-        "date_of_birth": "2010-05-15",
-        "institution_id": "COL-PUN-002",
-        "program_id": "Test programme",
-        "academic_year": "2025-26",
-    })
+    await campus_db["students"].insert_one(
+        {
+            "apaar_id": "984210357890",
+            "student_name": "Synthetic Duplicate Student",
+            "date_of_birth": "2010-05-15",
+            "institution_id": "COL-PUN-002",
+            "program_id": "Test programme",
+            "academic_year": "2025-26",
+        }
+    )
     headers = {"Authorization": f"Bearer {parent_token}"}
     request_data = {
         "student_identifier": "984210357890",
@@ -477,11 +515,13 @@ async def test_parent_link_requires_tenant_for_duplicate_student_identifier(http
 
     ambiguous = await http_client.post("/api/parent/link", headers=headers, json=request_data)
     wrong_dob = await http_client.post(
-        "/api/parent/link", headers=headers,
+        "/api/parent/link",
+        headers=headers,
         json={**request_data, "student_dob": "2000-01-01"},
     )
     nonexistent = await http_client.post(
-        "/api/parent/link", headers=headers,
+        "/api/parent/link",
+        headers=headers,
         json={**request_data, "student_identifier": "NO-SUCH-STUDENT"},
     )
     assert ambiguous.status_code == wrong_dob.status_code == nonexistent.status_code == 400

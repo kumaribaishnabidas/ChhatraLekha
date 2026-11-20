@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import csv
+import io
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -98,14 +101,36 @@ async def test_record_attendance_session_tallies_and_records(async_client: Async
         "subject_name": "Mathematics",
         "academic_year_id": "AY-2025-26",
         "records": [
-            {"student_id": "STU-01", "student_name": "Aarav Sharma", "status": "PRESENT", "remarks": None},
-            {"student_id": "STU-02", "student_name": "Diya Sen", "status": "ABSENT", "remarks": "Uninformed absence"},
-            {"student_id": "STU-03", "student_name": "Rohan Mehra", "status": "LATE", "remarks": "Bus delayed 15m"},
-            {"student_id": "STU-04", "student_name": "Zara Khan", "status": "EXCUSED", "remarks": "Medical leave"},
+            {
+                "student_id": "STU-01",
+                "student_name": "Aarav Sharma",
+                "status": "PRESENT",
+                "remarks": None,
+            },
+            {
+                "student_id": "STU-02",
+                "student_name": "Diya Sen",
+                "status": "ABSENT",
+                "remarks": "Uninformed absence",
+            },
+            {
+                "student_id": "STU-03",
+                "student_name": "Rohan Mehra",
+                "status": "LATE",
+                "remarks": "Bus delayed 15m",
+            },
+            {
+                "student_id": "STU-04",
+                "student_name": "Zara Khan",
+                "status": "EXCUSED",
+                "remarks": "Medical leave",
+            },
         ],
     }
 
-    res = await async_client.post("/api/attendance/sessions", json=payload, headers=auth(token_admin))
+    res = await async_client.post(
+        "/api/attendance/sessions", json=payload, headers=auth(token_admin)
+    )
     assert res.status_code == 200
     session_data = res.json()
     assert session_data["total_students"] == 4
@@ -121,7 +146,9 @@ async def test_record_attendance_session_tallies_and_records(async_client: Async
     assert sess_doc["target_id"] == "CLS-GRADE10-A"
 
     # Verify detail endpoint
-    det_res = await async_client.get(f"/api/attendance/sessions/{session_id}", headers=auth(token_admin))
+    det_res = await async_client.get(
+        f"/api/attendance/sessions/{session_id}", headers=auth(token_admin)
+    )
     assert det_res.status_code == 200
     records = det_res.json()["records"]
     assert len(records) == 4
@@ -149,11 +176,15 @@ async def test_duplicate_attendance_submission_rejected(async_client: AsyncClien
     }
 
     # First submission succeeds
-    res1 = await async_client.post("/api/attendance/sessions", json=payload, headers=auth(token_admin))
+    res1 = await async_client.post(
+        "/api/attendance/sessions", json=payload, headers=auth(token_admin)
+    )
     assert res1.status_code == 200
 
     # Second submission on same date and target rejected with 409
-    res2 = await async_client.post("/api/attendance/sessions", json=payload, headers=auth(token_admin))
+    res2 = await async_client.post(
+        "/api/attendance/sessions", json=payload, headers=auth(token_admin)
+    )
     assert res2.status_code == 409
     assert "already submitted" in res2.json()["detail"].lower()
 
@@ -170,24 +201,28 @@ async def test_teacher_assignment_authorization(async_client: AsyncClient):
     )
 
     # Seed an assignment for teacher to Class 10A
-    await db["teacher_assignments"].insert_one({
-        "institution_id": inst_id,
-        "teacher_id": teacher_id,
-        "teacher_name": "Prof. Assigned",
-        "class_id": "CLS-10A",
-        "subject_id": "SUB-CS-101",
-        "role_in_course": "Primary Teacher",
-    })
+    await db["teacher_assignments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "teacher_id": teacher_id,
+            "teacher_name": "Prof. Assigned",
+            "class_id": "CLS-10A",
+            "subject_id": "SUB-CS-101",
+            "role_in_course": "Primary Teacher",
+        }
+    )
 
     # Also seed a different class 12B assigned to another teacher
-    await db["teacher_assignments"].insert_one({
-        "institution_id": inst_id,
-        "teacher_id": "TEA-OTHER",
-        "teacher_name": "Prof. Other",
-        "class_id": "CLS-12B",
-        "subject_id": "SUB-HIST",
-        "role_in_course": "Primary Teacher",
-    })
+    await db["teacher_assignments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "teacher_id": "TEA-OTHER",
+            "teacher_name": "Prof. Other",
+            "class_id": "CLS-12B",
+            "subject_id": "SUB-HIST",
+            "role_in_course": "Primary Teacher",
+        }
+    )
 
     # Submitting for assigned class CLS-10A succeeds
     res_ok = await async_client.post(
@@ -240,18 +275,27 @@ async def test_absence_creates_attendance_notification(async_client: AsyncClient
             "target_type": "CLASS",
             "target_id": "CLS-8A",
             "target_label": "Class 8A",
-            "records": [{"student_id": student_id, "student_name": "Rahul Verma", "status": "ABSENT", "remarks": "Unexcused"}],
+            "records": [
+                {
+                    "student_id": student_id,
+                    "student_name": "Rahul Verma",
+                    "status": "ABSENT",
+                    "remarks": "Unexcused",
+                }
+            ],
         },
         headers=auth(token_admin),
     )
     assert res.status_code == 200
 
     # Check notification collection
-    notif = await db["notifications"].find_one({
-        "institution_id": inst_id,
-        "student_id": student_id,
-        "category": "ATTENDANCE",
-    })
+    notif = await db["notifications"].find_one(
+        {
+            "institution_id": inst_id,
+            "student_id": student_id,
+            "category": "ATTENDANCE",
+        }
+    )
     assert notif is not None
     assert "absence" in notif["title"].lower() or "absent" in notif["title"].lower()
     assert student_id in notif["user_id"]
@@ -271,32 +315,36 @@ async def test_attendance_roster_endpoint(async_client: AsyncClient):
     )
 
     # Seed student enrolments
-    await db["student_enrolments"].insert_many([
-        {
-            "institution_id": inst_id,
-            "student_id": "STU-R1",
-            "student_name": "Rohan Gupta",
-            "enrolment_number": "ENR-R1",
-            "roll_number": "101",
-            "class_id": class_id,
-            "section": "A",
-            "status": "active",
-            "is_current": True,
-        },
-        {
-            "institution_id": inst_id,
-            "student_id": "STU-R2",
-            "student_name": "Simran Kaur",
-            "enrolment_number": "ENR-R2",
-            "roll_number": "102",
-            "class_id": class_id,
-            "section": "A",
-            "status": "active",
-            "is_current": True,
-        },
-    ])
+    await db["student_enrolments"].insert_many(
+        [
+            {
+                "institution_id": inst_id,
+                "student_id": "STU-R1",
+                "student_name": "Rohan Gupta",
+                "enrolment_number": "ENR-R1",
+                "roll_number": "101",
+                "class_id": class_id,
+                "section": "A",
+                "status": "active",
+                "is_current": True,
+            },
+            {
+                "institution_id": inst_id,
+                "student_id": "STU-R2",
+                "student_name": "Simran Kaur",
+                "enrolment_number": "ENR-R2",
+                "roll_number": "102",
+                "class_id": class_id,
+                "section": "A",
+                "status": "active",
+                "is_current": True,
+            },
+        ]
+    )
 
-    res = await async_client.get(f"/api/attendance/roster?class_id={class_id}", headers=auth(token_admin))
+    res = await async_client.get(
+        f"/api/attendance/roster?class_id={class_id}", headers=auth(token_admin)
+    )
     assert res.status_code == 200
     roster = res.json()
     assert len(roster) >= 2
@@ -326,7 +374,9 @@ async def test_attendance_correction_lifecycle_preserves_audit_trail(async_clien
             "target_type": "CLASS",
             "target_id": "CLS-CORR-1",
             "target_label": "Class 10C",
-            "records": [{"student_id": student_id, "student_name": "Meera Joshi", "status": "ABSENT"}],
+            "records": [
+                {"student_id": student_id, "student_name": "Meera Joshi", "status": "ABSENT"}
+            ],
         },
         headers=auth(token_admin),
     )
@@ -369,10 +419,12 @@ async def test_attendance_correction_lifecycle_preserves_audit_trail(async_clien
     assert rev_data["status"] == "APPROVED"
 
     # 5. Verify student record in database has status updated AND audit_trail preserved
-    rec = await db["attendance_records"].find_one({
-        "session_id": session_id,
-        "student_id": student_id,
-    })
+    rec = await db["attendance_records"].find_one(
+        {
+            "session_id": session_id,
+            "student_id": student_id,
+        }
+    )
     assert rec["status"] == "EXCUSED"
     assert len(rec["audit_trail"]) == 1
     audit_entry = rec["audit_trail"][0]
@@ -406,7 +458,9 @@ async def test_attendance_correction_rejection(async_client: AsyncClient):
             "target_type": "CLASS",
             "target_id": "CLS-REJ-1",
             "target_label": "Class 10D",
-            "records": [{"student_id": student_id, "student_name": "Karan Roy", "status": "ABSENT"}],
+            "records": [
+                {"student_id": student_id, "student_name": "Karan Roy", "status": "ABSENT"}
+            ],
         },
         headers=auth(token_admin),
     )
@@ -435,10 +489,12 @@ async def test_attendance_correction_rejection(async_client: AsyncClient):
     assert "cctv review" in rev_res.json()["review_notes"].lower()
 
     # Original attendance record remains unchanged as ABSENT
-    rec = await db["attendance_records"].find_one({
-        "session_id": session_id,
-        "student_id": student_id,
-    })
+    rec = await db["attendance_records"].find_one(
+        {
+            "session_id": session_id,
+            "student_id": student_id,
+        }
+    )
     assert rec["status"] == "ABSENT"
 
 
@@ -477,7 +533,9 @@ async def test_attendance_reports_and_csv_export(async_client: AsyncClient):
     assert summary["average_attendance_percentage"] >= 0
 
     # 2. CSV Export
-    csv_res = await async_client.get("/api/attendance/reports/export-csv", headers=auth(token_admin))
+    csv_res = await async_client.get(
+        "/api/attendance/reports/export-csv", headers=auth(token_admin)
+    )
     assert csv_res.status_code == 200
     assert "text/csv" in csv_res.headers["content-type"]
     assert "attachment; filename=" in csv_res.headers["content-disposition"]
@@ -511,3 +569,568 @@ async def test_student_and_parent_ownership_isolation(async_client: AsyncClient)
     )
     assert res_other.status_code == 403
     assert "own attendance record" in res_other.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_unassigned_teacher_rejected_without_silent_bypass(async_client: AsyncClient):
+    """11. An unassigned teacher is rejected with 403 even if the institution has zero assignments configured."""
+    db = mongo.db()
+    inst_id = "INST-ATT-ZERO-ASG"
+    teacher_id = "TEA-UNASSIGNED-99"
+
+    token_teacher = await create_test_user(
+        db, user_id=teacher_id, role="teacher", institution_id=inst_id
+    )
+
+    # Ensure teacher_assignments collection is empty for this institution
+    await db["teacher_assignments"].delete_many({"institution_id": inst_id})
+
+    res = await async_client.post(
+        "/api/attendance/sessions",
+        json={
+            "session_date": "2026-03-25",
+            "mode": "DAILY",
+            "target_type": "CLASS",
+            "target_id": "CLS-NONEXISTENT",
+            "target_label": "Class Nonexistent",
+            "records": [{"student_id": "STU-X", "student_name": "Student X", "status": "PRESENT"}],
+        },
+        headers=auth(token_teacher),
+    )
+    assert res.status_code == 403
+    assert "not assigned" in res.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_teacher_assigned_via_target_id_accepted(async_client: AsyncClient):
+    """12. Teacher assignment using target_id (from academic module) is correctly accepted."""
+    db = mongo.db()
+    inst_id = "INST-ATT-TARGET-ID"
+    teacher_id = "TEA-TARGET-01"
+
+    token_teacher = await create_test_user(
+        db, user_id=teacher_id, role="teacher", institution_id=inst_id
+    )
+
+    # Seed assignment using target_id and target_type as created by academic module
+    await db["teacher_assignments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "teacher_id": teacher_id,
+            "teacher_name": "Target Teacher",
+            "target_id": "CLS-TGT-10",
+            "target_type": "CLASS",
+            "role_in_course": "Primary Teacher",
+        }
+    )
+
+    res = await async_client.post(
+        "/api/attendance/sessions",
+        json={
+            "session_date": "2026-03-25",
+            "mode": "DAILY",
+            "target_type": "CLASS",
+            "target_id": "CLS-TGT-10",
+            "target_label": "Class Target 10",
+            "records": [
+                {"student_id": "STU-T1", "student_name": "Student T1", "status": "PRESENT"}
+            ],
+        },
+        headers=auth(token_teacher),
+    )
+    assert res.status_code == 200
+    assert res.json()["target_id"] == "CLS-TGT-10"
+
+
+@pytest.mark.asyncio
+async def test_intra_batch_duplicate_student_rejected(async_client: AsyncClient):
+    """13. Rejects submission payloads containing duplicate student IDs with 422 Unprocessable Entity."""
+    db = mongo.db()
+    inst_id = "INST-ATT-INTRA-DUP"
+    token_admin = await create_test_user(
+        db, user_id="USR-ADM-INTRA", role="school_admin", institution_id=inst_id
+    )
+
+    payload = {
+        "session_date": "2026-03-25",
+        "mode": "DAILY",
+        "target_type": "CLASS",
+        "target_id": "CLS-INTRA",
+        "target_label": "Class Intra",
+        "records": [
+            {"student_id": "STU-DUP-1", "student_name": "Student A", "status": "PRESENT"},
+            {"student_id": "STU-DUP-1", "student_name": "Student A", "status": "ABSENT"},
+        ],
+    }
+
+    res = await async_client.post(
+        "/api/attendance/sessions", json=payload, headers=auth(token_admin)
+    )
+    assert res.status_code == 422
+    assert "duplicate student" in str(res.json()).lower()
+
+
+@pytest.mark.asyncio
+async def test_period_wise_requires_period_and_allows_different_periods(async_client: AsyncClient):
+    """14. Period-wise mode enforces period number and distinguishes sessions by period."""
+    db = mongo.db()
+    inst_id = "INST-ATT-PERIOD"
+    token_admin = await create_test_user(
+        db, user_id="USR-ADM-PER", role="school_admin", institution_id=inst_id
+    )
+
+    # 1. Period-wise without period_number is rejected (422)
+    res_no_period = await async_client.post(
+        "/api/attendance/sessions",
+        json={
+            "session_date": "2026-03-26",
+            "mode": "PERIOD_WISE",
+            "target_type": "CLASS",
+            "target_id": "CLS-PER-1",
+            "target_label": "Class Per 1",
+            "records": [{"student_id": "STU-P1", "student_name": "Student P", "status": "PRESENT"}],
+        },
+        headers=auth(token_admin),
+    )
+    assert res_no_period.status_code == 422
+
+    # 2. Period 1 submission succeeds
+    res_p1 = await async_client.post(
+        "/api/attendance/sessions",
+        json={
+            "session_date": "2026-03-26",
+            "mode": "PERIOD_WISE",
+            "period_number": 1,
+            "target_type": "CLASS",
+            "target_id": "CLS-PER-1",
+            "target_label": "Class Per 1",
+            "records": [{"student_id": "STU-P1", "student_name": "Student P", "status": "PRESENT"}],
+        },
+        headers=auth(token_admin),
+    )
+    assert res_p1.status_code == 200
+
+    # 3. Period 2 on same class and date also succeeds (not a duplicate conflict)
+    res_p2 = await async_client.post(
+        "/api/attendance/sessions",
+        json={
+            "session_date": "2026-03-26",
+            "mode": "PERIOD_WISE",
+            "period_number": 2,
+            "target_type": "CLASS",
+            "target_id": "CLS-PER-1",
+            "target_label": "Class Per 1",
+            "records": [{"student_id": "STU-P1", "student_name": "Student P", "status": "PRESENT"}],
+        },
+        headers=auth(token_admin),
+    )
+    assert res_p2.status_code == 200
+
+    # 4. Duplicate period 1 is rejected (409)
+    res_p1_dup = await async_client.post(
+        "/api/attendance/sessions",
+        json={
+            "session_date": "2026-03-26",
+            "mode": "PERIOD_WISE",
+            "period_number": 1,
+            "target_type": "CLASS",
+            "target_id": "CLS-PER-1",
+            "target_label": "Class Per 1",
+            "records": [{"student_id": "STU-P1", "student_name": "Student P", "status": "PRESENT"}],
+        },
+        headers=auth(token_admin),
+    )
+    assert res_p1_dup.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_roster_active_enrolments_and_empty_handling(async_client: AsyncClient):
+    """15. Roster finds enrolments with uppercase ACTIVE status and returns [] when empty."""
+    db = mongo.db()
+    inst_id = "INST-ATT-ROST-ACT"
+    class_id = "CLS-ACT-10"
+
+    token_admin = await create_test_user(
+        db, user_id="USR-ADM-ROST-ACT", role="school_admin", institution_id=inst_id
+    )
+
+    # Seed enrolment with uppercase status "ACTIVE" and academic_year
+    await db["student_enrolments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "student_id": "STU-ACT-01",
+            "student_name": "Kavita Reddy",
+            "enrolment_number": "ENR-ACT-01",
+            "roll_number": "1",
+            "class_id": class_id,
+            "section": "A",
+            "status": "ACTIVE",
+            "academic_year": "AY-2025-26",
+            "is_current": True,
+        }
+    )
+
+    # Calling roster finds the student
+    res = await async_client.get(
+        f"/api/attendance/roster?class_id={class_id}&academic_year_id=AY-2025-26",
+        headers=auth(token_admin),
+    )
+    assert res.status_code == 200
+    items = res.json()
+    assert len(items) == 1
+    assert items[0]["student_name"] == "Kavita Reddy"
+
+    # Calling roster for non-existent class returns empty list [] (no fake records)
+    res_empty = await async_client.get(
+        "/api/attendance/roster?class_id=CLS-NONEXISTENT",
+        headers=auth(token_admin),
+    )
+    assert res_empty.status_code == 200
+    assert res_empty.json() == []
+
+
+@pytest.mark.asyncio
+async def test_teacher_classes_no_fake_demo_classes(async_client: AsyncClient):
+    """16. Teacher classes endpoint returns [] for unassigned teacher without fake CLS-10A/9B."""
+    db = mongo.db()
+    inst_id = "INST-ATT-TEA-EMPTY"
+    teacher_id = "TEA-UNASSIGNED-CLASS"
+
+    token_teacher = await create_test_user(
+        db, user_id=teacher_id, role="teacher", institution_id=inst_id
+    )
+
+    # With no assignments, teacher gets []
+    res = await async_client.get("/api/attendance/teacher-classes", headers=auth(token_teacher))
+    assert res.status_code == 200
+    classes = res.json()
+    assert classes == []
+
+    # Now add an authentic assignment via target_id
+    await db["teacher_assignments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "teacher_id": teacher_id,
+            "teacher_name": "Teacher Assigned",
+            "target_id": "CLS-REAL-1",
+            "target_label": "Grade 7 Section B",
+            "subject_id": "SUB-SCI-07",
+            "subject_name": "General Science",
+            "role_in_course": "Subject Teacher",
+        }
+    )
+
+    res_assigned = await async_client.get(
+        "/api/attendance/teacher-classes", headers=auth(token_teacher)
+    )
+    assert res_assigned.status_code == 200
+    assigned_classes = res_assigned.json()
+    assert len(assigned_classes) == 1
+    assert assigned_classes[0]["class_id"] == "CLS-REAL-1"
+    assert assigned_classes[0]["target_label"] == "Grade 7 Section B"
+    assert assigned_classes[0]["attendance_submitted"] is False
+
+
+@pytest.mark.asyncio
+async def test_parent_cross_tenant_isolation_in_my_summary(async_client: AsyncClient):
+    """17. Parent cannot access student from another institution or unverified child."""
+    db = mongo.db()
+    inst_a = "INST-ATT-TENANT-A"
+    parent_id = "USR-PARENT-ATT"
+    child_id = "STU-CHILD-ATT"
+
+    token_parent = await create_test_user(
+        db, user_id=parent_id, role="parent", institution_id=inst_a
+    )
+
+    # 1. Unlinked parent cannot access child
+    res_unlinked = await async_client.get(
+        f"/api/attendance/my-summary?student_id={child_id}", headers=auth(token_parent)
+    )
+    assert res_unlinked.status_code == 403
+
+    # 2. Seed verified guardian relationship in Tenant A
+    await db["guardian_relationships"].insert_one(
+        {
+            "parent_user_id": parent_id,
+            "student_id": child_id,
+            "institution_id": inst_a,
+            "status": "VERIFIED",
+        }
+    )
+    # Seed attendance policy with 85% requirement in Tenant A
+    await db["attendance_policies"].insert_one(
+        {
+            "institution_id": inst_a,
+            "minimum_attendance_percentage": 85.0,
+            "mode": "DAILY",
+        }
+    )
+
+    res_linked = await async_client.get(
+        f"/api/attendance/my-summary?student_id={child_id}", headers=auth(token_parent)
+    )
+    assert res_linked.status_code == 200
+    data = res_linked.json()
+    assert data["student_id"] == child_id
+    assert data["minimum_required"] == 85.0
+
+
+@pytest.mark.asyncio
+async def test_reports_summary_clean_zero_averages(async_client: AsyncClient):
+    """18. Attendance summary report returns 0.0 rather than hardcoded 92.4 when no sessions exist."""
+    db = mongo.db()
+    inst_id = "INST-ATT-ZERO-SESS"
+    token_admin = await create_test_user(
+        db, user_id="USR-ADM-ZERO", role="school_admin", institution_id=inst_id
+    )
+
+    res = await async_client.get("/api/attendance/reports/summary", headers=auth(token_admin))
+    assert res.status_code == 200
+    data = res.json()
+    assert data["total_sessions"] == 0
+    assert data["average_attendance_percentage"] == 0.0
+    assert data["class_summaries"] == []
+
+
+@pytest.mark.asyncio
+async def test_attendance_csv_export_escapes_formulas(async_client: AsyncClient):
+    """19. Attendance CSV export prepends single quote to cells beginning with =, +, -, @ (CWE-1236)."""
+    db = mongo.db()
+    inst_id = "INST-ATT-CSV-SEC"
+    token_admin = await create_test_user(
+        db, user_id="USR-ADM-CSV", role="school_admin", institution_id=inst_id
+    )
+
+    records = [
+        {
+            "institution_id": inst_id,
+            "session_id": "ATT-SESS-CSV-1",
+            "session_date": "2026-03-10",
+            "target_id": "CLS-SEC",
+            "target_label": "=cmd|' /C calc'!A0",
+            "subject_id": "SUB-1",
+            "subject_name": "+SUM(A1:A10)",
+            "student_id": "-1337-INJECT",
+            "student_name": '@HYPERLINK("http://evil.com","Click")',
+            "status": "PRESENT",
+            "remarks": "=1+1",
+            "recorded_by": "TEA-01",
+        },
+        {
+            "institution_id": inst_id,
+            "session_id": "ATT-SESS-CSV-2",
+            "session_date": "2026-03-10",
+            "target_id": "CLS-NORM",
+            "target_label": "Grade 10 Section A",
+            "subject_id": "SUB-NORM",
+            "subject_name": "Mathematics",
+            "student_id": "STU-CLEAN-01",
+            "student_name": "Normal Student",
+            "status": "PRESENT",
+            "remarks": "Clean record",
+            "recorded_by": "TEA-01",
+        },
+    ]
+    await db["attendance_records"].insert_many(records)
+
+    res = await async_client.get(
+        "/api/attendance/reports/export-csv",
+        headers=auth(token_admin),
+    )
+    assert res.status_code == 200
+    assert res.headers["content-type"].startswith("text/csv")
+
+    reader = csv.reader(io.StringIO(res.text))
+    rows = list(reader)
+    assert len(rows) >= 3
+
+    header = rows[0]
+    assert header == [
+        "Session Date",
+        "Target Class",
+        "Subject",
+        "Student ID",
+        "Student Name",
+        "Attendance Status",
+        "Remarks",
+        "Recorded By",
+    ]
+
+    injected_row = next(r for r in rows[1:] if "STU-CLEAN-01" not in r)
+    clean_row = next(r for r in rows[1:] if "STU-CLEAN-01" in r)
+
+    # Injected values escaped with single quote
+    assert injected_row[1] == "'=cmd|' /C calc'!A0"
+    assert injected_row[2] == "'+SUM(A1:A10)"
+    assert injected_row[3] == "'-1337-INJECT"
+    assert injected_row[4] == '\'@HYPERLINK("http://evil.com","Click")'
+    assert injected_row[6] == "'=1+1"
+
+    # Clean row values unescaped
+    assert clean_row[1] == "Grade 10 Section A"
+    assert clean_row[2] == "Mathematics"
+    assert clean_row[3] == "STU-CLEAN-01"
+    assert clean_row[4] == "Normal Student"
+    assert clean_row[6] == "Clean record"
+
+
+@pytest.mark.asyncio
+async def test_parent_unverified_ward_attendance_rejected(async_client: AsyncClient):
+    """20. Parent with unverified ward in profile or unverified relationship status is rejected (SEC-BE-001)."""
+    db = mongo.db()
+    inst_id = "INST-ATT-SEC-PAR"
+    parent_id = "USR-PAR-UNVERIFIED"
+    target_student_id = "STU-VICTIM-01"
+
+    token_parent = await create_test_user(
+        db, user_id=parent_id, role="parent", institution_id=inst_id
+    )
+    # Seed unverified ward_apaar_id in user profile
+    await db["users"].update_one(
+        {"user_id": parent_id},
+        {"$set": {"ward_apaar_id": target_student_id}},
+    )
+
+    # 1. No relationship document -> 403
+    res_no_rel = await async_client.get(
+        f"/api/attendance/my-summary?student_id={target_student_id}",
+        headers=auth(token_parent),
+    )
+    assert res_no_rel.status_code == 403
+    assert "verified linked children" in res_no_rel.json()["detail"].lower()
+
+    # 2. PENDING relationship -> 403
+    await db["guardian_relationships"].insert_one(
+        {
+            "parent_user_id": parent_id,
+            "student_id": target_student_id,
+            "institution_id": inst_id,
+            "status": "PENDING",
+        }
+    )
+
+    res_pending = await async_client.get(
+        f"/api/attendance/my-summary?student_id={target_student_id}",
+        headers=auth(token_parent),
+    )
+    assert res_pending.status_code == 403
+    assert "verified linked children" in res_pending.json()["detail"].lower()
+
+    # 3. VERIFIED relationship -> 200
+    await db["guardian_relationships"].update_one(
+        {"parent_user_id": parent_id, "student_id": target_student_id},
+        {"$set": {"status": "VERIFIED"}},
+    )
+
+    res_verified = await async_client.get(
+        f"/api/attendance/my-summary?student_id={target_student_id}",
+        headers=auth(token_parent),
+    )
+    assert res_verified.status_code == 200
+    assert res_verified.json()["student_id"] == target_student_id
+
+
+@pytest.mark.asyncio
+async def test_batch_attendance_rejects_unenrolled_or_alien_students(async_client: AsyncClient):
+    """21. Recording attendance session validates student IDs against enrolled institution students (SEC-BE-004)."""
+    db = mongo.db()
+    inst_main = "INST-ATT-BATCH-MAIN"
+    inst_alien = "INST-ATT-BATCH-ALIEN"
+    teacher_id = "TEA-BATCH-VAL"
+
+    token_teacher = await create_test_user(
+        db, user_id=teacher_id, role="teacher", institution_id=inst_main
+    )
+
+    # Assign teacher to target class
+    await db["teacher_assignments"].insert_one(
+        {
+            "institution_id": inst_main,
+            "teacher_id": teacher_id,
+            "teacher_name": "Teacher Assigned",
+            "target_id": "CLS-BATCH-1",
+            "target_label": "Batch Class",
+            "subject_name": "General",
+        }
+    )
+
+    # Seed one valid student in inst_main
+    await db["students"].insert_one(
+        {
+            "student_id": "STU-VALID-MAIN",
+            "institution_id": inst_main,
+            "name": "Valid Student",
+            "class_id": "CLS-BATCH-1",
+            "is_active": True,
+        }
+    )
+
+    # Seed one alien student in inst_alien
+    await db["students"].insert_one(
+        {
+            "student_id": "STU-ALIEN",
+            "institution_id": inst_alien,
+            "name": "Alien Student",
+            "class_id": "CLS-BATCH-1",
+            "is_active": True,
+        }
+    )
+
+    base_payload = {
+        "session_date": "2026-03-11",
+        "mode": "DAILY",
+        "target_type": "CLASS",
+        "target_id": "CLS-BATCH-1",
+        "target_label": "Batch Class",
+        "subject_name": "General",
+        "academic_year_id": "AY-2025-26",
+    }
+
+    # 1. Attempt with student not enrolled anywhere
+    payload_unenrolled = {
+        **base_payload,
+        "records": [
+            {"student_id": "STU-VALID-MAIN", "student_name": "Valid Student", "status": "PRESENT"},
+            {"student_id": "STU-NOT-EXISTS", "student_name": "Ghost Student", "status": "PRESENT"},
+        ],
+    }
+    res_unenrolled = await async_client.post(
+        "/api/attendance/sessions",
+        json=payload_unenrolled,
+        headers=auth(token_teacher),
+    )
+    assert res_unenrolled.status_code == 422
+    assert "not enrolled in this institution" in res_unenrolled.json()["detail"]
+    assert "STU-NOT-EXISTS" in res_unenrolled.json()["detail"]
+
+    # 2. Attempt with alien student from different institution
+    payload_alien = {
+        **base_payload,
+        "records": [
+            {"student_id": "STU-VALID-MAIN", "student_name": "Valid Student", "status": "PRESENT"},
+            {"student_id": "STU-ALIEN", "student_name": "Alien Student", "status": "PRESENT"},
+        ],
+    }
+    res_alien = await async_client.post(
+        "/api/attendance/sessions",
+        json=payload_alien,
+        headers=auth(token_teacher),
+    )
+    assert res_alien.status_code == 403
+    assert "belong to a different institution" in res_alien.json()["detail"]
+
+    # 3. Clean submission with valid enrolled student succeeds
+    payload_clean = {
+        **base_payload,
+        "records": [
+            {"student_id": "STU-VALID-MAIN", "student_name": "Valid Student", "status": "PRESENT"},
+        ],
+    }
+    res_clean = await async_client.post(
+        "/api/attendance/sessions",
+        json=payload_clean,
+        headers=auth(token_teacher),
+    )
+    assert res_clean.status_code == 200
+    assert res_clean.json()["total_students"] == 1

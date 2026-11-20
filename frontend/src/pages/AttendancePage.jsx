@@ -97,13 +97,12 @@ export default function AttendancePage() {
             setClasses(clsRes.value.data)
             if (clsRes.value.data.length > 0) {
               setSelectedClassId(clsRes.value.data[0].class_id)
+            } else {
+              setSelectedClassId('')
             }
           } else {
-            setClasses([
-              { class_id: 'CLS-10A', target_label: 'Class 10 Section A', subject_name: 'Mathematics' },
-              { class_id: 'CLS-10B', target_label: 'Class 10 Section B', subject_name: 'Mathematics' },
-            ])
-            setSelectedClassId('CLS-10A')
+            setClasses([])
+            setSelectedClassId('')
           }
 
           if (polRes.status === 'fulfilled' && polRes.value?.data) {
@@ -123,34 +122,8 @@ export default function AttendancePage() {
           }
         }
       } catch (err) {
-        // Fallback demo data
-        if (!isStaffOrAdmin) {
-          setMySummary({
-            student_id: user?.apaar_id || '992100000001',
-            total_sessions: 42,
-            present_sessions: 39,
-            absent_sessions: 2,
-            late_sessions: 1,
-            excused_sessions: 1,
-            attendance_rate: 92.8,
-            minimum_required: 75.0,
-            is_compliant: true,
-            subject_wise: [
-              { subject_name: 'Mathematics', total_classes: 14, attended_classes: 13, percentage: 92.9 },
-              { subject_name: 'General Science', total_classes: 14, attended_classes: 13, percentage: 92.9 },
-              { subject_name: 'English Literature', total_classes: 14, attended_classes: 13, percentage: 92.9 },
-            ],
-            recent_records: [
-              { session_date: '2026-03-01', status: 'PRESENT', target_label: 'Class 10A', subject_name: 'Mathematics' },
-              { session_date: '2026-03-02', status: 'PRESENT', target_label: 'Class 10A', subject_name: 'General Science' },
-              { session_date: '2026-03-03', status: 'LATE', target_label: 'Class 10A', subject_name: 'English Literature' },
-              { session_date: '2026-03-04', status: 'EXCUSED', target_label: 'Class 10A', remarks: 'Dental appointment' },
-            ],
-            excused_absences: [
-              { session_date: '2026-03-04', subject_name: 'General Science', reason: 'Medical appointment' },
-            ],
-          })
-        }
+        const errorMsg = err.response?.data?.detail || err.message || 'Failed to load attendance information.'
+        notify(errorMsg, 'error')
       } finally {
         setLoading(false)
       }
@@ -161,7 +134,11 @@ export default function AttendancePage() {
 
   // Load roster when selectedClassId changes
   useEffect(() => {
-    if (!selectedClassId || !isStaffOrAdmin) return
+    if (!selectedClassId || !isStaffOrAdmin) {
+      setRoster([])
+      setMarks({})
+      return
+    }
 
     async function loadRoster() {
       try {
@@ -174,31 +151,14 @@ export default function AttendancePage() {
           })
           setMarks(initialMarks)
         } else {
-          // Demo roster
-          const demoStudents = [
-            { student_id: 'STU-001', student_name: 'Aarav Patel', roll_number: '101', section: 'A', recent_attendance_rate: 96.0 },
-            { student_id: 'STU-002', student_name: 'Diya Sen', roll_number: '102', section: 'A', recent_attendance_rate: 94.5 },
-            { student_id: 'STU-003', student_name: 'Rohan Mehra', roll_number: '103', section: 'A', recent_attendance_rate: 89.2 },
-            { student_id: 'STU-004', student_name: 'Zara Khan', roll_number: '104', section: 'A', recent_attendance_rate: 98.0 },
-          ]
-          setRoster(demoStudents)
-          const initialMarks = {}
-          demoStudents.forEach((stu) => {
-            initialMarks[stu.student_id] = { status: 'PRESENT', remarks: '' }
-          })
-          setMarks(initialMarks)
+          setRoster([])
+          setMarks({})
         }
       } catch (err) {
-        const demoStudents = [
-          { student_id: 'STU-001', student_name: 'Aarav Patel', roll_number: '101', section: 'A', recent_attendance_rate: 96.0 },
-          { student_id: 'STU-002', student_name: 'Diya Sen', roll_number: '102', section: 'A', recent_attendance_rate: 94.5 },
-        ]
-        setRoster(demoStudents)
-        const initialMarks = {}
-        demoStudents.forEach((stu) => {
-          initialMarks[stu.student_id] = { status: 'PRESENT', remarks: '' }
-        })
-        setMarks(initialMarks)
+        setRoster([])
+        setMarks({})
+        const errorMsg = err.response?.data?.detail || err.message || 'Failed to load class roster.'
+        notify(errorMsg, 'error')
       }
     }
 
@@ -266,7 +226,8 @@ export default function AttendancePage() {
           'error',
         )
       } else {
-        notify(`Attendance recorded for ${targetLabel}.`, 'success')
+        const errorMsg = err.response?.data?.detail || err.message || 'Failed to record attendance session.'
+        notify(errorMsg, 'error')
       }
     } finally {
       setSubmittingSession(false)
@@ -282,7 +243,8 @@ export default function AttendancePage() {
       setPolicy(res.data)
       notify('Attendance policy updated successfully.')
     } catch (err) {
-      notify('Attendance policy updated.', 'success')
+      const errorMsg = err.response?.data?.detail || err.message || 'Failed to update attendance policy.'
+      notify(errorMsg, 'error')
     } finally {
       setSavingPolicy(false)
     }
@@ -292,9 +254,14 @@ export default function AttendancePage() {
   const handleSubmitCorrection = async (e) => {
     e.preventDefault()
     if (!correctionTarget) return
+    const sid = (correctionTarget.session_id || '').trim()
+    if (!sid) {
+      notify('Session ID is required for attendance correction.', 'error')
+      return
+    }
     try {
       const res = await api.post('/attendance/corrections', {
-        session_id: correctionTarget.session_id || 'ATT-MANUAL',
+        session_id: sid,
         student_id: correctionTarget.student_id,
         requested_status: correctionData.requested_status,
         reason: correctionData.reason,
@@ -304,8 +271,8 @@ export default function AttendancePage() {
       notify('Attendance correction request submitted for administrative review.')
       setCorrectionData({ requested_status: 'EXCUSED', reason: '' })
     } catch (err) {
-      setShowCorrectionModal(false)
-      notify('Correction request submitted for review.', 'success')
+      const errorMsg = err.response?.data?.detail || err.message || 'Failed to submit correction request.'
+      notify(errorMsg, 'error')
     }
   }
 
@@ -325,12 +292,8 @@ export default function AttendancePage() {
       setReviewNote('')
       notify(`Correction request ${decision.toLowerCase()}d successfully.`)
     } catch (err) {
-      setCorrections((prev) =>
-        prev.map((c) =>
-          c.id === correctionId ? { ...c, status: decision === 'APPROVE' ? 'APPROVED' : 'REJECTED' } : c,
-        ),
-      )
-      notify(`Correction request ${decision.toLowerCase()}d.`)
+      const errorMsg = err.response?.data?.detail || err.message || 'Failed to process correction review.'
+      notify(errorMsg, 'error')
     }
   }
 
@@ -355,7 +318,8 @@ export default function AttendancePage() {
       a.remove()
       notify('Attendance CSV report downloaded.')
     } catch (err) {
-      notify('Attendance CSV report downloaded.', 'success')
+      const errorMsg = err.response?.data?.detail || err.message || 'Failed to download attendance CSV report.'
+      notify(errorMsg, 'error')
     } finally {
       setExportingCsv(false)
     }
@@ -637,7 +601,7 @@ export default function AttendancePage() {
                                 setCorrectionTarget({
                                   student_id: stu.student_id,
                                   student_name: stu.student_name,
-                                  session_id: 'ATT-PREV',
+                                  session_id: submittedSession?.session_id || stu.recent_session_id || '',
                                 })
                                 setShowCorrectionModal(true)
                               }}
@@ -719,32 +683,36 @@ export default function AttendancePage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
-                  {(reportSummary?.class_summaries || [
-                    { class_id: 'CLS-10A', class_label: 'Class 10 Section A', total_sessions: 32, attendance_percentage: 94.2 },
-                    { class_id: 'CLS-10B', class_label: 'Class 10 Section B', total_sessions: 32, attendance_percentage: 91.8 },
-                    { class_id: 'CLS-9A', class_label: 'Class 9 Section A', total_sessions: 30, attendance_percentage: 72.4 },
-                  ]).map((cls) => (
-                    <tr key={cls.class_id} className="hover:bg-surface-2">
-                      <td className="px-3 py-2 font-bold text-navy dark:text-white">
-                        {cls.class_label || cls.class_id}
-                      </td>
-                      <td className="px-3 py-2 text-muted">{cls.total_sessions} sessions</td>
-                      <td className="px-3 py-2 font-bold">
-                        {cls.attendance_percentage}%
-                      </td>
-                      <td className="px-3 py-2">
-                        {cls.attendance_percentage >= 75.0 ? (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                            Compliant (&gt;=75%)
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-crimson/10 text-crimson border border-crimson/20">
-                            Action Required (&lt;75%)
-                          </span>
-                        )}
+                  {(reportSummary?.class_summaries || []).length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-3 py-6 text-center text-muted">
+                        No class attendance summaries recorded yet.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    (reportSummary?.class_summaries || []).map((cls) => (
+                      <tr key={cls.class_id} className="hover:bg-surface-2">
+                        <td className="px-3 py-2 font-bold text-navy dark:text-white">
+                          {cls.class_label || cls.class_id}
+                        </td>
+                        <td className="px-3 py-2 text-muted">{cls.total_sessions} sessions</td>
+                        <td className="px-3 py-2 font-bold">
+                          {cls.attendance_percentage}%
+                        </td>
+                        <td className="px-3 py-2">
+                          {cls.attendance_percentage >= 75.0 ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                              Compliant (&gt;=75%)
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-crimson/10 text-crimson border border-crimson/20">
+                              Action Required (&lt;75%)
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -1129,6 +1097,24 @@ export default function AttendancePage() {
               Submit an auditable correction request for <strong className="text-navy dark:text-white">{correctionTarget.student_name}</strong>.
             </p>
             <form onSubmit={handleSubmitCorrection} className="space-y-3 text-xs">
+              <div>
+                <label htmlFor="correction-session-id" className="block text-muted mb-1 font-medium">Session ID</label>
+                <input
+                  id="correction-session-id"
+                  type="text"
+                  required
+                  placeholder="e.g. ATT-001 or active session ID"
+                  value={correctionTarget.session_id || ''}
+                  onChange={(e) =>
+                    setCorrectionTarget({
+                      ...correctionTarget,
+                      session_id: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-line rounded-md bg-surface text-navy dark:text-white"
+                />
+              </div>
+
               <div>
                 <label className="block text-muted mb-1 font-medium">Requested Status</label>
                 <select

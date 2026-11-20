@@ -382,16 +382,6 @@ export default function App() {
           }
         />
         <Route
-          path="/me/attendance"
-          element={
-            <WorkspacePlaceholderPage
-              title="Attendance Register"
-              moduleName="Daily & Period Attendance"
-              features={['Daily Check-in Records', 'Subject-wise Percentage', 'Leave Applications', 'Parent Alerts']}
-            />
-          }
-        />
-        <Route
           path="/me/timetable"
           element={
             <WorkspacePlaceholderPage

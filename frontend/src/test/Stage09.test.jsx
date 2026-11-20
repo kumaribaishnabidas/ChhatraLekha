@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
+import { api } from '../services/api'
 import AttendancePage from '../pages/AttendancePage'
 
 // Mock useAuth
@@ -306,6 +307,212 @@ describe('Stage 0.9: Attendance Management System Frontend', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Attendance CSV report downloaded/i)).toBeInTheDocument()
+    })
+  })
+
+  it('renders authentic empty state when unassigned teacher has zero classes', async () => {
+    // Override teacher-classes to return empty array
+    const originalGet = api.get
+    api.get = vi.fn((url) => {
+      if (url.includes('/attendance/teacher-classes')) {
+        return Promise.resolve({ data: [] })
+      }
+      return originalGet(url)
+    })
+
+    render(
+      <BrowserRouter>
+        <AttendancePage />
+      </BrowserRouter>,
+    )
+
+    await waitFor(() => {
+      expect(screen.queryByText('CLS-10A')).not.toBeInTheDocument()
+      expect(screen.queryByText('CLS-10B')).not.toBeInTheDocument()
+    })
+
+    api.get = originalGet
+  })
+
+  it('displays authentic error message when session submission fails', async () => {
+    const originalPost = api.post
+    api.post = vi.fn((url, body) => {
+      if (url.includes('/attendance/sessions')) {
+        return Promise.reject({
+          response: {
+            status: 409,
+            data: { detail: 'Attendance session already submitted for this class today.' },
+          },
+        })
+      }
+      return originalPost(url, body)
+    })
+
+    render(
+      <BrowserRouter>
+        <AttendancePage />
+      </BrowserRouter>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Aarav Patel')).toBeInTheDocument()
+    })
+
+    const submitBtn = screen.getByRole('button', { name: /Submit Attendance Session/i })
+    fireEvent.click(submitBtn)
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Attendance already submitted for Class 10 Section A on/i),
+      ).toBeInTheDocument()
+    })
+
+    api.post = originalPost
+  })
+
+  it('renders authentic empty state in Overview & Analytics when no sessions exist', async () => {
+    const originalGet = api.get
+    api.get = vi.fn((url) => {
+      if (url.includes('/attendance/reports/summary')) {
+        return Promise.resolve({
+          data: {
+            institution_id: 'INST-0421',
+            period_start: '2025-06-01',
+            period_end: '2026-05-31',
+            total_sessions: 0,
+            average_attendance_percentage: 0.0,
+            class_summaries: [],
+            defaulters_count: 0,
+            daily_trends: [],
+          },
+        })
+      }
+      return originalGet(url)
+    })
+
+    render(
+      <BrowserRouter>
+        <AttendancePage />
+      </BrowserRouter>,
+    )
+
+    const analyticsTab = screen.getByRole('button', { name: /Overview & Analytics/i })
+    fireEvent.click(analyticsTab)
+
+    await waitFor(() => {
+      expect(screen.getByText('No class attendance summaries recorded yet.')).toBeInTheDocument()
+      expect(screen.queryByText('CLS-9A')).not.toBeInTheDocument()
+    })
+
+    api.get = originalGet
+  })
+
+  it('handles CSV export failure gracefully with error notification and resets loading state', async () => {
+    const originalGet = api.get
+    api.get = vi.fn((url, config) => {
+      if (url.includes('/attendance/reports/export-csv')) {
+        return Promise.reject({
+          response: {
+            status: 403,
+            data: { detail: 'Export forbidden: administrative role required.' },
+          },
+        })
+      }
+      return originalGet(url, config)
+    })
+
+    render(
+      <BrowserRouter>
+        <AttendancePage />
+      </BrowserRouter>,
+    )
+
+    const reportsTab = screen.getByRole('button', { name: /Reports & CSV Export/i })
+    fireEvent.click(reportsTab)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Export Attendance CSV' })).toBeInTheDocument()
+    })
+
+    const exportBtn = screen.getByRole('button', { name: 'Export Attendance CSV' })
+    fireEvent.click(exportBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText('Export forbidden: administrative role required.')).toBeInTheDocument()
+      expect(screen.queryByText(/Attendance CSV report downloaded/i)).not.toBeInTheDocument()
+    })
+
+    // Confirm button returned to idle and enabled
+    expect(screen.getByRole('button', { name: 'Export Attendance CSV' })).not.toBeDisabled()
+
+    api.get = originalGet
+  })
+
+  it('propagates valid session ID in attendance correction request and validates payload', async () => {
+    render(
+      <BrowserRouter>
+        <AttendancePage />
+      </BrowserRouter>,
+    )
+
+    // Wait for roster to load
+    await waitFor(() => {
+      expect(screen.getByText('Aarav Patel')).toBeInTheDocument()
+    })
+
+    // Click "Request Correction" on the first roster student (STU-001)
+    const correctionButtons = screen.getAllByRole('button', { name: 'Request Correction' })
+    expect(correctionButtons.length).toBeGreaterThan(0)
+    fireEvent.click(correctionButtons[0])
+
+    // Verify modal appears
+    await waitFor(() => {
+      expect(screen.getByText('Request Attendance Correction')).toBeInTheDocument()
+    })
+
+    const sessionIdInput = screen.getByLabelText(/Session ID/i)
+    const form = sessionIdInput.closest('form')
+
+    // 1. Submit with empty session ID -> triggers validation error and does NOT call api.post
+    fireEvent.change(sessionIdInput, { target: { value: '' } })
+    fireEvent.submit(form)
+
+    await waitFor(() => {
+      expect(screen.getByText('Session ID is required for attendance correction.')).toBeInTheDocument()
+    })
+    expect(api.post).not.toHaveBeenCalledWith(
+      '/attendance/corrections',
+      expect.anything(),
+    )
+
+    // 2. Fill valid session ID and justification
+    fireEvent.change(sessionIdInput, { target: { value: 'ATT-SESSION-2026-0310' } })
+    const reasonInput = screen.getByPlaceholderText(/Verified medical certificate submitted/i)
+    fireEvent.change(reasonInput, { target: { value: 'Verified medical leave approved' } })
+
+    fireEvent.submit(form)
+
+    await waitFor(() => {
+      expect(api.post).toHaveBeenCalledWith(
+        '/attendance/corrections',
+        expect.objectContaining({
+          session_id: 'ATT-SESSION-2026-0310',
+          student_id: 'STU-001',
+          requested_status: 'EXCUSED',
+          reason: 'Verified medical leave approved',
+        }),
+      )
+    })
+
+    // Explicitly verify the old hardcoded ATT-PREV was never sent
+    expect(api.post).not.toHaveBeenCalledWith(
+      '/attendance/corrections',
+      expect.objectContaining({ session_id: 'ATT-PREV' }),
+    )
+
+    // Modal closes on success
+    await waitFor(() => {
+      expect(screen.queryByText('Request Attendance Correction')).not.toBeInTheDocument()
     })
   })
 })

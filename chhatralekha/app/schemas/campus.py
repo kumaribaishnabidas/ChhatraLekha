@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.models.enums import (
     AnnouncementPriority,
@@ -25,7 +25,9 @@ class InstitutionRegisterIn(BaseModel):
     """Payload to register an institution on ChhatraLekha."""
 
     name: str = Field(..., min_length=2, max_length=150)
-    category: InstitutionCategory = Field(InstitutionCategory.SCHOOL, description="SCHOOL or COLLEGE")
+    category: InstitutionCategory = Field(
+        InstitutionCategory.SCHOOL, description="SCHOOL or COLLEGE"
+    )
     institution_type: str = Field("SCHOOL", min_length=2, max_length=50)
     state: str = Field(..., min_length=2, max_length=50)
     city: str = Field(..., min_length=2, max_length=50)
@@ -40,7 +42,9 @@ class InstitutionRegisterIn(BaseModel):
 class InstitutionReviewIn(BaseModel):
     """Decision by platform operator on an institution registration."""
 
-    decision: InstitutionVerificationStatus = Field(..., description="VERIFIED, REJECTED, or SUSPENDED")
+    decision: InstitutionVerificationStatus = Field(
+        ..., description="VERIFIED, REJECTED, or SUSPENDED"
+    )
     notes: str = Field("", max_length=500)
 
 
@@ -91,7 +95,9 @@ class SemesterTermOut(BaseModel):
 
 class DepartmentIn(BaseModel):
     department_code: str = Field(..., min_length=1, max_length=20, example="CSE")
-    name: str = Field(..., min_length=2, max_length=150, example="Department of Computer Science and Engineering")
+    name: str = Field(
+        ..., min_length=2, max_length=150, example="Department of Computer Science and Engineering"
+    )
     description: Optional[str] = None
     head_of_department_id: Optional[str] = None
     head_of_department_name: Optional[str] = None
@@ -116,9 +122,14 @@ class DepartmentOut(BaseModel):
 
 class ProgrammeIn(BaseModel):
     programme_code: str = Field(..., min_length=1, max_length=30, example="BTECH-CSE")
-    name: str = Field(..., min_length=2, max_length=150, example="Bachelor of Technology in Computer Science")
+    name: str = Field(
+        ..., min_length=2, max_length=150, example="Bachelor of Technology in Computer Science"
+    )
     department_id: Optional[str] = None
-    academic_level: str = Field("UNDERGRADUATE", description="PRIMARY, SECONDARY, HIGHER_SECONDARY, UNDERGRADUATE, POSTGRADUATE, DOCTORAL")
+    academic_level: str = Field(
+        "UNDERGRADUATE",
+        description="PRIMARY, SECONDARY, HIGHER_SECONDARY, UNDERGRADUATE, POSTGRADUATE, DOCTORAL",
+    )
     duration_years: int = Field(4, ge=1, le=8)
     total_semesters: int = Field(8, ge=1, le=16)
     degree_awarded: Optional[str] = "B.Tech"
@@ -174,7 +185,9 @@ class SubjectIn(BaseModel):
     subject_name: str = Field(..., min_length=2, max_length=100, example="Mathematics")
     subject_name_hi: Optional[str] = None
     category: str = Field("CORE", example="CORE, ELECTIVE, LAB, PROJECT, FOUNDATION")
-    applicable_to: str = Field(..., description="Class grade or College programme id", example="Class 10")
+    applicable_to: str = Field(
+        ..., description="Class grade or College programme id", example="Class 10"
+    )
     department_id: Optional[str] = None
     programme_id: Optional[str] = None
     semester: Optional[int] = None
@@ -282,7 +295,10 @@ class AcademicCalendarEventIn(BaseModel):
     academic_year: str = Field(..., example="2025-26")
     title: str = Field(..., min_length=3, max_length=150)
     description: Optional[str] = None
-    event_type: str = Field("HOLIDAY", description="HOLIDAY, EXAM, ADMISSION, SEMESTER_START, SEMESTER_END, ASSIGNMENT_DUE, INSTITUTION_EVENT")
+    event_type: str = Field(
+        "HOLIDAY",
+        description="HOLIDAY, EXAM, ADMISSION, SEMESTER_START, SEMESTER_END, ASSIGNMENT_DUE, INSTITUTION_EVENT",
+    )
     start_date: str = Field(..., example="2025-10-02")
     end_date: str = Field(..., example="2025-10-02")
     target_audience: str = Field("ALL", description="ALL, STUDENTS, TEACHERS, DEPARTMENT")
@@ -336,8 +352,37 @@ class AttendanceBatchSubmitIn(BaseModel):
     target_label: str = Field(...)
     subject_id: Optional[str] = None
     subject_name: Optional[str] = None
+    academic_year: Optional[str] = None
     academic_year_id: Optional[str] = None
     records: List[AttendanceRecordItem]
+
+    @field_validator("records")
+    @classmethod
+    def validate_unique_students(
+        cls, records: List[AttendanceRecordItem]
+    ) -> List[AttendanceRecordItem]:
+        seen = set()
+        duplicates = []
+        for r in records:
+            if r.student_id in seen:
+                duplicates.append(r.student_id)
+            seen.add(r.student_id)
+        if duplicates:
+            raise ValueError(
+                f"Duplicate student entries in batch submission: {', '.join(duplicates[:5])}"
+            )
+        return records
+
+    @model_validator(mode="after")
+    def validate_mode_and_period(self) -> AttendanceBatchSubmitIn:
+        if self.mode == AttendanceMode.PERIOD_WISE and self.period_number is None:
+            raise ValueError("Period number is required when attendance mode is PERIOD_WISE.")
+        # Synchronize academic_year and academic_year_id
+        if self.academic_year and not self.academic_year_id:
+            self.academic_year_id = self.academic_year
+        elif self.academic_year_id and not self.academic_year:
+            self.academic_year = self.academic_year_id
+        return self
 
 
 class AttendanceSessionOut(BaseModel):
@@ -351,6 +396,7 @@ class AttendanceSessionOut(BaseModel):
     target_label: str
     subject_id: Optional[str] = None
     subject_name: Optional[str] = None
+    academic_year: Optional[str] = None
     academic_year_id: Optional[str] = None
     recorded_by: str
     total_students: int
@@ -564,7 +610,9 @@ class AnnouncementOut(BaseModel):
 # ------------------------------------------------------------- 6. Guardian / Parent
 class GuardianLinkRequestIn(BaseModel):
     student_identifier: str = Field(..., description="Student APAAR ID or internal student ref")
-    institution_id: Optional[str] = Field(None, description="Required when the student identifier is not globally unique")
+    institution_id: Optional[str] = Field(
+        None, description="Required when the student identifier is not globally unique"
+    )
     student_dob: str = Field(..., example="2008-04-12")
     relationship: GuardianRelationshipType = Field(GuardianRelationshipType.FATHER)
     guardian_phone: str = Field(..., min_length=10, max_length=20)

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, errorMessage } from '../services/api'
 import { Card, Button, Badge } from '../components/common'
@@ -14,6 +15,7 @@ import {
 
 export default function TeacherWorkspacePage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [classes, setClasses] = useState([])
   const [timetable, setTimetable] = useState([])
   const [assignments, setAssignments] = useState([])
@@ -42,11 +44,16 @@ export default function TeacherWorkspacePage() {
       if (dashRes.status === 'fulfilled' && dashRes.value.data) {
         setDashboardStats(dashRes.value.data)
       }
-      if (clsRes.status === 'fulfilled' && clsRes.value.data) {
+      if (clsRes.status === 'fulfilled' && Array.isArray(clsRes.value.data)) {
         setClasses(clsRes.value.data)
         if (clsRes.value.data.length > 0) {
           setSelectedClass(clsRes.value.data[0])
+        } else {
+          setSelectedClass(null)
         }
+      } else {
+        setClasses([])
+        setSelectedClass(null)
       }
       if (ttRes.status === 'fulfilled' && ttRes.value.data) {
         setTimetable(ttRes.value.data)
@@ -55,21 +62,8 @@ export default function TeacherWorkspacePage() {
         setAssignments(asnRes.value.data)
       }
     } catch (err) {
-      // Fallback demo data
-      setClasses([
-        {
-          assignment_id: 'ASN-DEMO-1',
-          target_label: 'Class 10-A',
-          subject_name: 'Mathematics',
-          target_id: 'CLS-10A',
-        },
-        {
-          assignment_id: 'ASN-DEMO-2',
-          target_label: 'Class 9-B',
-          subject_name: 'Mathematics',
-          target_id: 'CLS-9B',
-        },
-      ])
+      setClasses([])
+      setSelectedClass(null)
     } finally {
       setLoading(false)
     }
@@ -81,27 +75,40 @@ export default function TeacherWorkspacePage() {
 
   const handleQuickAttendance = async (status) => {
     if (!selectedClass) return
+    const cid = selectedClass.target_id || selectedClass.class_id
     try {
+      // Fetch authentic class roster
+      const rosterRes = await api.get(`/attendance/roster?class_id=${cid}`)
+      const students = Array.isArray(rosterRes.data) ? rosterRes.data : []
+      if (students.length === 0) {
+        setSubmitMessage(`No enrolled students found for ${selectedClass.target_label || cid}.`)
+        setTimeout(() => setSubmitMessage(''), 4000)
+        return
+      }
+
+      const records = students.map((s) => ({
+        student_id: s.student_id,
+        student_name: s.student_name,
+        status: status,
+        remarks: 'Recorded from quick attendance',
+      }))
+
       await api.post('/attendance/sessions', {
         session_date: attendanceDate,
         mode: 'DAILY',
         target_type: 'CLASS',
-        target_id: selectedClass.target_id,
-        target_label: selectedClass.target_label,
-        records: [
-          {
-            student_id: 'DEMO-STU-01',
-            student_name: 'Class Attendance Batch',
-            status: status,
-            remarks: 'Recorded from teacher workspace',
-          },
-        ],
+        target_id: cid,
+        target_label: selectedClass.target_label || cid,
+        subject_id: selectedClass.subject_id || null,
+        subject_name: selectedClass.subject_name || null,
+        records,
       })
-      setSubmitMessage(`Attendance recorded (${status}) for ${selectedClass.target_label} on ${attendanceDate}.`)
+      setSubmitMessage(`Attendance recorded (${status}) for ${selectedClass.target_label || cid} on ${attendanceDate}: ${records.length} students.`)
       setTimeout(() => setSubmitMessage(''), 4000)
     } catch (err) {
-      setSubmitMessage(`Attendance recorded for ${selectedClass.target_label}.`)
-      setTimeout(() => setSubmitMessage(''), 4000)
+      const errorMsg = err.response?.data?.detail || err.message || 'Failed to record attendance.'
+      setSubmitMessage(`Error: ${errorMsg}`)
+      setTimeout(() => setSubmitMessage(''), 5000)
     }
   }
 
@@ -138,8 +145,8 @@ export default function TeacherWorkspacePage() {
     {
       id: 'take-attendance',
       label: 'Record Roll Call',
-      description: 'Mark daily attendance',
-      onClick: () => handleQuickAttendance('PRESENT'),
+      description: 'Open attendance register',
+      onClick: () => navigate('/attendance'),
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -363,7 +370,7 @@ export default function TeacherWorkspacePage() {
         />
         <SummaryCard
           label="Average Attendance"
-          value={`${dashboardStats?.average_attendance_rate || 91.8}%`}
+          value={dashboardStats?.average_attendance_rate !== undefined ? `${dashboardStats.average_attendance_rate}%` : 'N/A'}
           hint="Across assigned cohorts"
           tone="good"
           trend="Healthy Cohort"

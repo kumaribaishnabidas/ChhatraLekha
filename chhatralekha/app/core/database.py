@@ -43,6 +43,10 @@ COLLECTIONS = {
     "review_tasks": "review_tasks",
     "verification_tokens": "verification_tokens",
     "operation_status": "operation_status",
+    "attendance_sessions": "attendance_sessions",
+    "attendance_records": "attendance_records",
+    "attendance_policies": "attendance_policies",
+    "attendance_corrections": "attendance_corrections",
 }
 
 
@@ -123,8 +127,7 @@ class Mongo:
                 await self._client.admin.command("ping")
             except Exception as exc:  # noqa: BLE001
                 raise MongoConnectionError(
-                    "Could not reach the MongoDB server at "
-                    f"{redact_url(url)!r}: {exc}"
+                    f"Could not reach the MongoDB server at {redact_url(url)!r}: {exc}"
                 ) from exc
 
         self._db = self._client[settings.mongodb_database]
@@ -312,6 +315,38 @@ class Mongo:
             (
                 "operation_status",
                 [("operation_id", 1)],
+            ),
+            (
+                "attendance_policies",
+                [("institution_id", 1)],
+            ),
+            (
+                "attendance_sessions",
+                [("institution_id", 1), ("target_id", 1), ("session_date", 1), ("mode", 1)],
+            ),
+            (
+                "attendance_sessions",
+                [("institution_id", 1), ("session_date", -1)],
+            ),
+            (
+                "attendance_records",
+                [("institution_id", 1), ("session_id", 1), ("student_id", 1)],
+            ),
+            (
+                "attendance_records",
+                [("institution_id", 1), ("student_id", 1), ("session_date", -1)],
+            ),
+            (
+                "attendance_records",
+                [("institution_id", 1), ("target_id", 1), ("session_date", -1)],
+            ),
+            (
+                "attendance_corrections",
+                [("institution_id", 1), ("status", 1), ("requested_at", -1)],
+            ),
+            (
+                "attendance_corrections",
+                [("institution_id", 1), ("session_id", 1), ("student_id", 1)],
             ),
         ]
 
