@@ -1,0 +1,212 @@
+[
+  {
+    "question": "How do I check my attendance?",
+    "kind": "guidance",
+    "expected_doc": "kb:attendance",
+    "language": "en",
+    "role": "student"
+  },
+  {
+    "question": "Where can I see my subject-wise attendance percentage?",
+    "kind": "guidance",
+    "expected_doc": "kb:attendance",
+    "language": "en",
+    "role": "parent"
+  },
+  {
+    "question": "मेरा उपस्थिति कैसे देखूँ?",
+    "kind": "guidance",
+    "expected_doc": "kb:attendance",
+    "language": "hi",
+    "role": "student"
+  },
+  {
+    "question": "ମୋର ଉପସ୍ଥାନ କିପରି ଯାଞ୍ଚ କରିବି?",
+    "kind": "guidance",
+    "expected_doc": "kb:attendance",
+    "language": "or",
+    "role": "student"
+  },
+  {
+    "question": "How do teachers mark daily attendance?",
+    "kind": "guidance",
+    "expected_doc": "kb:attendance",
+    "language": "en",
+    "role": "teacher"
+  },
+  {
+    "question": "Where is my weekly class timetable?",
+    "kind": "guidance",
+    "expected_doc": "kb:timetable",
+    "language": "en",
+    "role": "student"
+  },
+  {
+    "question": "मेरी कक्षा की समय सारणी कहाँ है?",
+    "kind": "guidance",
+    "expected_doc": "kb:timetable",
+    "language": "hi",
+    "role": "student"
+  },
+  {
+    "question": "How do I use voice navigation?",
+    "kind": "guidance",
+    "expected_doc": "kb:language_and_voice",
+    "language": "en",
+    "role": "student"
+  },
+  {
+    "question": "भाषा कैसे बदलूँ?",
+    "kind": "guidance",
+    "expected_doc": "kb:language_and_voice",
+    "language": "hi",
+    "role": "parent"
+  },
+  {
+    "question": "How many Indian languages does the platform support?",
+    "kind": "guidance",
+    "expected_doc": "kb:language_and_voice",
+    "language": "en",
+    "role": "verifier"
+  },
+  {
+    "question": "Where can I find my digital APAAR ID card?",
+    "kind": "guidance",
+    "expected_doc": "kb:id_card_and_apaar",
+    "language": "en",
+    "role": "student"
+  },
+  {
+    "question": "How does the QR credential verification work?",
+    "kind": "guidance",
+    "expected_doc": "kb:id_card_and_apaar",
+    "language": "en",
+    "role": "verifier"
+  },
+  {
+    "question": "Is my APAAR number shown in public verification?",
+    "kind": "guidance",
+    "expected_doc": "kb:id_card_and_apaar",
+    "language": "en",
+    "role": "student"
+  },
+  {
+    "question": "Where can I see my SGPA and CGPA?",
+    "kind": "guidance",
+    "expected_doc": "kb:results_and_marks",
+    "language": "en",
+    "role": "student"
+  },
+  {
+    "question": "फलांफल कहाँ देख सकता हूँ?",
+    "kind": "guidance",
+    "expected_doc": "kb:results_and_marks",
+    "language": "hi",
+    "role": "parent"
+  },
+  {
+    "question": "How do teachers publish term grades?",
+    "kind": "guidance",
+    "expected_doc": "kb:results_and_marks",
+    "language": "en",
+    "role": "teacher"
+  },
+  {
+    "question": "How do I upload a student roster from CSV?",
+    "kind": "guidance",
+    "expected_doc": "kb:admin_operations",
+    "language": "en",
+    "role": "institution_admin"
+  },
+  {
+    "question": "How do I preview the impact of a record correction?",
+    "kind": "guidance",
+    "expected_doc": "kb:admin_operations",
+    "language": "en",
+    "role": "aicte_admin"
+  },
+  {
+    "question": "Where do I inspect flagged anomalies?",
+    "kind": "guidance",
+    "expected_doc": "kb:admin_operations",
+    "language": "en",
+    "role": "institution_admin"
+  },
+  {
+    "question": "What is ChhatraLekha?",
+    "kind": "guidance",
+    "expected_doc": "kb:platform_overview",
+    "language": "en",
+    "role": "anonymous"
+  },
+  {
+    "question": " Is the platform free for students?",
+    "kind": "guidance",
+    "expected_doc": "kb:platform_overview",
+    "language": "en",
+    "role": "anonymous"
+  },
+  {
+    "question": "How does the ten-layer anomaly engine work?",
+    "kind": "guidance",
+    "expected_doc": null,
+    "language": "en",
+    "role": "aicte_admin"
+  },
+  {
+    "question": "Explain the academic record change impact detector",
+    "kind": "guidance",
+    "expected_doc": null,
+    "language": "en",
+    "role": "aicte_admin"
+  },
+  {
+    "question": "What is a verification token?",
+    "kind": "guidance",
+    "expected_doc": null,
+    "language": "en",
+    "role": "verifier"
+  },
+  {
+    "question": "What is my attendance?",
+    "kind": "record",
+    "expected_intent": "attendance",
+    "language": "en",
+    "role": "student"
+  },
+  {
+    "question": "Show my latest results",
+    "kind": "record",
+    "expected_intent": "results",
+    "language": "en",
+    "role": "student"
+  },
+  {
+    "question": "Show my timetable",
+    "kind": "record",
+    "expected_intent": "timetable",
+    "language": "en",
+    "role": "student"
+  },
+  {
+    "question": "What notices are there for me?",
+    "kind": "record",
+    "expected_intent": "notices",
+    "language": "en",
+    "role": "student"
+  },
+  {
+    "question": "Show my ID card",
+    "kind": "record",
+    "expected_intent": "id_card",
+    "language": "en",
+    "role": "student"
+  },
+  {
+    "question": "How many anomalies are flagged?",
+    "kind": "record",
+    "expected_intent": "anomalies",
+    "language": "en",
+    "role": "institution_admin"
+  }
+]

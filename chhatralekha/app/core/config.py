@@ -112,6 +112,19 @@ class Settings(BaseSettings):
     #: proxy that strips spoofed values before they reach the app.
     trust_forwarded_headers: bool = False
 
+    # ------------------------------------------------------- AI assistant
+    #: ``deterministic`` needs no network, key or model download and is the
+    #: only provider enabled by default. ``ollama`` and ``gemini`` are opt-in.
+    ai_provider: str = "deterministic"
+    ai_ollama_url: str = "http://localhost:11434/api/generate"
+    ai_ollama_model: str = "qwen2.5:3b"
+    ai_gemini_api_key: str = ""
+    ai_gemini_model: str = "gemini-2.0-flash"
+    #: How many documentation passages are fed to the generator.
+    ai_top_k: int = 4
+    ai_timeout_seconds: float = 8.0
+    ai_max_context_chars: int = 4_000
+
     # ----------------------------------------------------------- demo data
     #: The password given to the seeded demo accounts. When it is empty the
     #: seed script generates one and prints it once.
@@ -137,6 +150,17 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             return [item.strip() for item in value.split(",") if item.strip()]
         return value
+
+    @field_validator("ai_provider")
+    @classmethod
+    def _valid_ai_provider(cls, value: str) -> str:
+        allowed = {"deterministic", "ollama", "gemini"}
+        provider = (value or "deterministic").strip().lower()
+        if provider not in allowed:
+            raise ValueError(
+                f"AI_PROVIDER must be one of: {', '.join(sorted(allowed))}"
+            )
+        return provider
 
     @model_validator(mode="after")
     def _cors_is_derived_from_the_frontend_origin(self) -> "Settings":

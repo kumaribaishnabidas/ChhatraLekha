@@ -84,8 +84,8 @@ KNOWLEDGE_BASE = [
     },
     {
         "id": "id_card_and_apaar",
-        "keywords": ["apaar", "id card", "identity", "qr", "badge", "token", "पहचान पत्र", "ପରିଚୟ ପତ୍ର"],
-        "roles": ["student", "parent", "institution_admin"],
+        "keywords": ["apaar", "id card", "identity", "qr", "badge", "token", "verification", "verify", "credential", "public", "privacy", "पहचान पत्र", "ପରିଚୟ ପତ୍ର"],
+        "roles": ["student", "parent", "institution_admin", "verifier", "teacher", "aicte_admin"],
         "en": (
             "Your digital APAAR ID card is accessible under the 'ID Card' tab (/me/id-card). "
             "It features your verified academic details and an opaque, time-limited cryptographic QR code. "

@@ -53,6 +53,31 @@ class Citation(BaseModel):
     scope: str = ""
 
 
+class RetrievedPassage(BaseModel):
+    """A documentation passage retrieved for a guidance answer."""
+
+    doc_id: str
+    section: str = ""
+    text: str = ""
+    score: float = 0.0
+    source: str = ""
+
+
+class RetrievalInfo(BaseModel):
+    """Which retriever produced the passages attached to an answer."""
+
+    provider: str
+    chunks: List[RetrievedPassage] = []
+
+
+class GenerationInfo(BaseModel):
+    """Whether a model generated the answer, and why it may have fallen back."""
+
+    provider: str
+    used: bool = False
+    failover_reason: str = ""
+
+
 class ChatResponse(BaseModel):
     reply: str
     actions: List[ActionChip] = []
@@ -64,6 +89,8 @@ class ChatResponse(BaseModel):
     data: Optional[Dict[str, Any]] = None
     citations: List[Citation] = []
     followups: List[str] = []
+    retrieval: Optional[RetrievalInfo] = None
+    generation: Optional[GenerationInfo] = None
 
 
 class PromptsResponse(BaseModel):

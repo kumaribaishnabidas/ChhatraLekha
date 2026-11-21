@@ -114,6 +114,12 @@ export default function AiAssistantDrawer({ isOpen, onClose }) {
         data: replyData.data || null,
         citations: Array.isArray(replyData.citations) ? replyData.citations : [],
         followups: Array.isArray(replyData.followups) ? replyData.followups : [],
+        // RAG pipeline metadata is optional and purely informational. It lets
+        // the demo show that retrieval is local and which provider produced
+        // the answer. Provider names are technical identifiers, so they are
+        // intentionally not routed through i18n.
+        retrieval: replyData.retrieval || null,
+        generation: replyData.generation || null,
       }
       setMessages((prev) => [...prev, assistantMessage])
     } catch {
@@ -318,9 +324,22 @@ export default function AiAssistantDrawer({ isOpen, onClose }) {
 
                   {!isUser && (
                     <div className="mt-2 pt-2 border-t border-line/60 flex items-center justify-between gap-2">
-                      <span className="text-[10px] text-muted truncate">
-                        {m.source}
-                      </span>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {m.retrieval && m.generation && (
+                          <span
+                            className="inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-semibold bg-brand/10 text-brand shrink-0"
+                            title={
+                              m.generation.failover_reason ||
+                              'Local retrieval with a faithfulness-constrained generator'
+                            }
+                          >
+                            RAG · {m.retrieval.provider} &rarr; {m.generation.provider}
+                          </span>
+                        )}
+                        <span className="text-[10px] text-muted truncate">
+                          {m.source}
+                        </span>
+                      </div>
                       <button
                         type="button"
                         onClick={() => speakText(m.text, idx)}

@@ -21,6 +21,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.services.ai_assistant import find_grounded_answer, get_quick_prompts_for_role
+from app.services.rag.generation import generate_grounded_answer
+from app.services.rag.retriever import chunks_to_citations, retrieve_context
 
 if TYPE_CHECKING:  # pragma: no cover - typing only, avoids an import cycle
     from app.api.deps import Principal
@@ -367,8 +369,10 @@ def _result(
     data: Optional[Dict[str, Any]] = None,
     citations: Optional[List[Dict[str, str]]] = None,
     followups: Optional[List[str]] = None,
+    retrieval: Optional[Dict[str, Any]] = None,
+    generation: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    return {
+    result: Dict[str, Any] = {
         "reply": reply,
         "actions": actions,
         "source": source,
@@ -380,6 +384,11 @@ def _result(
         "citations": citations or [],
         "followups": followups or [],
     }
+    if retrieval is not None:
+        result["retrieval"] = retrieval
+    if generation is not None:
+        result["generation"] = generation
+    return result
 
 
 def _sign_in_required(intent: str, language: str) -> Dict[str, Any]:
@@ -1605,16 +1614,25 @@ async def build_grounded_response(
     if handler is not None:
         return await handler(db, principal, answer_language)  # type: ignore[arg-type]
 
-    # Everything else is documentation. The knowledge base is deliberately
-    # small and reviewed, so an unknown question gets an honest redirect.
+    # Everything else is documentation. The reviewed catalogue supplies the
+    # answer; the local retrieval index supplies citable passages. An unknown
+    # question still gets an honest redirect instead of an invented answer.
+    guide_role = role if role != "anonymous" else "student"
     guidance = find_grounded_answer(
         query=query,
-        role=role if role != "anonymous" else "student",
+        role=guide_role,
         language=answer_language,
         user_context=None,
     )
+    chunks = retrieve_context(
+        query, role=guide_role, language=answer_language
+    )
+    retrieval = {"provider": "tfidf-local", "chunks": chunks} if chunks else None
+    generation = await generate_grounded_answer(
+        query=query, chunks=chunks, language=answer_language
+    )
     return _result(
-        reply=guidance["reply"],
+        reply=generation.text or guidance["reply"],
         actions=guidance.get("actions", []),
         source=guidance.get("source", "ChhatraLekha knowledge base"),
         confidence=float(guidance.get("confidence", 0.6)),
@@ -1622,8 +1640,8 @@ async def build_grounded_response(
         language=answer_language,
         grounded=False,
         data=None,
-        citations=[],
-        followups=get_quick_prompts_for_role(
-            role if role != "anonymous" else "student"
-        )[:3],
+        citations=chunks_to_citations(chunks),
+        followups=get_quick_prompts_for_role(guide_role)[:3],
+        retrieval=retrieval,
+        generation=generation.as_dict(),
     )
