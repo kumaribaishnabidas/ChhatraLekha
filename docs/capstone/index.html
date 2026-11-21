@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>How ChhatraLekha Works — BTech Capstone Workflow</title>
+<meta name="description" content="A visual guide to the ChhatraLekha capstone workflow: synthetic ingestion, deterministic anomaly rules, reviewable corrections, private verification and grounded AI assistance." />
+<link rel="icon" type="image/png" href="../assets/brand/favicon.png" />
+<style>
+  :root{
+    --navy-deep:#14246B; --navy:#0F2F73; --blue:#0F3A8A; --blue-bright:#1558B8;
+    --teal:#12B886; --saffron:#E65100; --ink:#121A24; --ink-soft:#41484D;
+    --surface:#F8F9FA; --card:#FFFFFF; --line:#DDE3EE; --radius:16px; --maxw:1100px;
+    --shadow:0 1px 2px rgba(20,36,107,.06), 0 8px 24px rgba(20,36,107,.07);
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;color:var(--ink);background:var(--surface);line-height:1.65;-webkit-font-smoothing:antialiased}
+  img{max-width:100%;height:auto;display:block}
+  a{color:var(--blue-bright);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .mono{font-family:Consolas,"SF Mono",Menlo,monospace;font-size:.9em}
+
+  header{background:linear-gradient(135deg,var(--navy-deep),var(--navy) 55%,var(--blue));color:#fff;padding-bottom:56px}
+  nav{display:flex;align-items:center;gap:18px;padding:16px 0;flex-wrap:wrap}
+  nav .brand{display:flex;align-items:center;gap:12px;margin-right:auto}
+  nav .brand img{height:44px;width:auto;background:#fff;padding:6px 10px;border-radius:10px}
+  nav .brand b{font-size:1.05rem;letter-spacing:.02em}
+  nav a{color:rgba(255,255,255,.85);font-size:.9rem;font-weight:500}
+  nav a:hover{color:#fff}
+  nav a.cta{background:var(--teal);color:#06281C;font-weight:700;padding:8px 15px;border-radius:999px}
+  .eyebrow{display:inline-block;font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:#8BE3C6}
+  h1{font-size:clamp(2rem,5vw,3.2rem);line-height:1.12;margin:14px 0 12px}
+  h1 span{color:#7EE0BF}
+  .lede{max-width:760px;font-size:1.08rem;color:rgba(255,255,255,.86)}
+  .disclaimer{margin-top:22px;padding:12px 16px;border-left:3px solid #F7B267;background:rgba(255,255,255,.08);border-radius:0 10px 10px 0;font-size:.86rem;color:rgba(255,255,255,.9)}
+
+  section{padding:56px 0}
+  section.alt{background:#EEF2F8}
+  h2{font-size:1.7rem;margin:0 0 8px}
+  .sub{color:var(--ink-soft);max-width:760px;margin:0 0 28px}
+
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);position:relative}
+  .step .num{width:34px;height:34px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:800;font-size:.9rem;margin-bottom:12px}
+  .step h3{margin:0 0 6px;font-size:1.05rem}
+  .step p{margin:0;font-size:.9rem;color:var(--ink-soft)}
+  .step .tag{display:inline-block;margin-top:12px;font-size:.72rem;font-weight:700;color:var(--blue);background:#EAF1FC;border-radius:999px;padding:3px 9px}
+
+  .rag{margin-top:22px;background:linear-gradient(100deg,#EAF8F3,#F4F8FF);border:1px solid #BFE8DA;border-radius:var(--radius);padding:20px 24px}
+  .rag h3{margin:0 0 6px;color:#0B4D38}
+  .rag p{margin:0;font-size:.93rem;color:var(--ink-soft)}
+
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);font-size:.88rem}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:var(--navy);color:#fff;font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}
+  tr:last-child td{border-bottom:0}
+  .ok{color:#0B6E4F;font-weight:700}
+  .pending{color:#9A5B00;font-weight:700}
+
+  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px}
+  .metric{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);text-align:center}
+  .metric strong{display:block;font-size:1.8rem;color:var(--navy)}
+  .metric span{font-size:.78rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em}
+
+  .formula{background:#0F1B3C;color:#DCE7FF;border-radius:var(--radius);padding:22px 24px;margin-top:18px}
+  .formula h3{margin:0 0 10px;color:#8BE3C6}
+  .formula code{display:block;margin:6px 0;color:#FFE7B8;font-size:.95rem}
+  .note{font-size:.88rem;color:var(--ink-soft)}
+
+  .callout{border-left:4px solid var(--saffron);background:#FFF6EE;padding:16px 20px;border-radius:0 12px 12px 0;margin-top:22px;font-size:.92rem}
+  .links{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}
+  .links a{display:inline-block;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:9px 16px;font-weight:600;box-shadow:var(--shadow)}
+
+  footer{background:var(--navy-deep);color:rgba(255,255,255,.8);padding:26px 0;font-size:.85rem}
+  footer .frow{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;align-items:center}
+  footer a{color:#9FE3CC}
+
+  @media(max-width:640px){nav a.navlink{display:none}section{padding:40px 0}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <nav>
+      <a class="brand" href="../index.html">
+        <img src="../assets/brand/chhatralekha-logo.png" alt="ChhatraLekha logo" />
+        <b>ChhatraLekha</b>
+      </a>
+      <a class="navlink" href="#workflow">Workflow</a>
+      <a class="navlink" href="#requirements">Requirements</a>
+      <a class="navlink" href="#baseline">Evidence</a>
+      <a class="navlink" href="../CAPSTONE_GUIDE.md">Guide</a>
+      <a class="cta" href="https://github.com/kumaribaishnabidas/ChhatraLekha" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+    <span class="eyebrow">BTech Capstone · Independent prototype</span>
+    <h1>How ChhatraLekha <span>works</span></h1>
+    <p class="lede">A guided tour from a synthetic CSV batch to a private,
+      verifiable credential — with deterministic rules, reviewable corrections
+      and a grounded AI assistant at every step.</p>
+    <div class="disclaimer"><strong>Not an official registry.</strong>
+      ChhatraLekha is an educational prototype. It is not affiliated with APAAR,
+      AICTE, CBSE or any government body. Every dataset shown here is synthetic.</div>
+  </div>
+</header>
+
+<section id="workflow">
+  <div class="wrap">
+    <h2>The five-step workflow</h2>
+    <p class="sub">Each step is a separate, testable operation. Nothing is
+      written or published until an authorised user explicitly commits it.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="num">1</div>
+        <h3>Ingest synthetic data</h3>
+        <p>Upload a CSV batch. The parser validates mandatory columns, APAAR
+          format, dates, quota, programme and seat impact.</p>
+        <span class="tag">Preview ≠ write</span>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <h3>Detect anomalies</h3>
+        <p>Ten deterministic rule layers check identifiers, duplicates,
+          intake, NRI/PMISSS ceilings, nationality rules and missing fields.
+          Each finding names its rule and evidence.</p>
+        <span class="tag">Explainable</span>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <h3>Review &amp; correct</h3>
+        <p>Preview the impact of a proposed correction with no write side
+          effect, then apply it against the expected record version. Review
+          work is recorded in the audit trail.</p>
+        <span class="tag">Version-checked</span>
+      </div>
+      <div class="step">
+        <div class="num">4</div>
+        <h3>Verify privately</h3>
+        <p>An opaque, expiring token replaces the student identifier. Public
+          verification returns an allowlisted response and withholds personal
+          fields unless consent is active.</p>
+        <span class="tag">No APAAR ID exposed</span>
+      </div>
+      <div class="step">
+        <div class="num">5</div>
+        <h3>Explain with AI</h3>
+        <p>The assistant retrieves reviewed documentation locally with TF-IDF,
+          cites its sources and answers record questions only from the
+          caller's authorised data.</p>
+        <span class="tag">Grounded · offline by default</span>
+      </div>
+    </div>
+    <div class="rag">
+      <h3>Why the assistant is "grounded"</h3>
+      <p>Retrieval always runs locally. A generator is optional (deterministic
+        templates by default; Ollama or Gemini are opt-in). Prompt injection,
+        provider errors, unsafe output and empty context all fall back to the
+        reviewed answer — the assistant fails closed rather than inventing.</p>
+    </div>
+  </div>
+</section>
+
+<section id="requirements" class="alt">
+  <div class="wrap">
+    <h2>Requirements at a glance</h2>
+    <p class="sub">Evidence was checked at commit <span class="mono">d9eb96d</span>.
+      "Verified" means the covering backend/frontend suite passed here; it is
+      not a formal audit. Full detail is in the capstone guide.</p>
+    <table>
+      <thead><tr><th>ID</th><th>Requirement</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>FR-01</td><td>Server-side permissions; UI is not the security boundary</td><td class="ok">Verified</td></tr>
+        <tr><td>FR-02</td><td>CSV preview validates without persisting; commit is separate</td><td class="ok">Verified</td></tr>
+        <tr><td>FR-03</td><td>Deterministic, explainable findings from ten rule layers</td><td class="pending">Rules verified · benchmark pending</td></tr>
+        <tr><td>FR-04</td><td>Correction preview is read-only; apply checks version and audits</td><td class="ok">Verified</td></tr>
+        <tr><td>FR-05</td><td>Allowlisted verification output; consent-aware privacy</td><td class="ok">Verified</td></tr>
+        <tr><td>FR-06</td><td>Hash-linked audit events with broken-chain detection</td><td class="ok">Verified</td></tr>
+        <tr><td>FR-07</td><td>Android offline-capable core and local persistence</td><td class="pending">Not run here</td></tr>
+        <tr><td>FR-08</td><td>Linux desktop origin allowlist and declared dependencies</td><td class="pending">Not run here</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="baseline">
+  <div class="wrap">
+    <h2>Verified baseline</h2>
+    <p class="sub">Recorded at commit <span class="mono">d9eb96d</span> on
+      22 November 2026. Re-run the commands before quoting these figures for
+      another commit.</p>
+    <div class="metrics">
+      <div class="metric"><strong>498</strong><span>Backend tests passed</span></div>
+      <div class="metric"><strong>146</strong><span>Frontend tests passed</span></div>
+      <div class="metric"><strong>13</strong><span>Locale files aligned</span></div>
+      <div class="metric"><strong>100%</strong><span>RAG retrieval hit rate</span></div>
+      <div class="metric"><strong>0</strong><span>PII leaks in evaluation</span></div>
+      <div class="metric"><strong>7.4 ms</strong><span>Retrieval p50 (this machine)</span></div>
+    </div>
+
+    <h2 style="margin-top:44px">Next milestone: labeled benchmark</h2>
+    <p class="sub">The synthetic anomaly benchmark measures agreement with
+      explicit labels. It cannot establish real-world accuracy or prove that a
+      flagged record is fraudulent.</p>
+    <div class="formula">
+      <h3>Per-rule metrics</h3>
+      <code>precision = TP / (TP + FP)</code>
+      <code>recall    = TP / (TP + FN)</code>
+      <code>F1        = 2 × precision × recall / (precision + recall)</code>
+      <p class="note">Use <span class="mono">N/A</span> when a denominator is
+        zero. Record dataset size, labelling procedure, rule configuration,
+        commit SHA and the exact command. Report timing only as a
+        machine-specific measurement.</p>
+    </div>
+    <div class="callout"><strong>Limits.</strong> Android and Linux checks were
+      not run in this environment; <span class="mono">npm run lint</span> cannot
+      run because eslint is not installed. Frontend tests must be run
+      sequentially with the backend suite to avoid 5-second timeout flakiness.</div>
+
+    <div class="links">
+      <a href="../CAPSTONE_GUIDE.md">Read the full capstone guide →</a>
+      <a href="../ai/EVALUATION.md">RAG evaluation report →</a>
+      <a href="../index.html">Back to product overview →</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap frow">
+    <div>ChhatraLekha · Independent educational prototype · Synthetic data only</div>
+    <div><a href="https://github.com/kumaribaishnabidas/ChhatraLekha" target="_blank" rel="noopener">Source repository ↗</a></div>
+  </div>
+</footer>
+
+</body>
+</html>
