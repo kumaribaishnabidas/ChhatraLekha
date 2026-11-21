@@ -1,0 +1,408 @@
+{
+  "version": "1.0.0",
+  "ruleset_id": "CHHATRALEKHA_RULES_2026_V1",
+  "fixture_seed": "synthetic-anomaly-benchmark-v1",
+  "unit_of_evaluation": "case student / rule pair",
+  "description": "Deterministic, fully synthetic benchmark for the ten documented anomaly rules. Each case is an independent snapshot. APAAR IDs are reused across cases because snapshots are never combined; case_id values are unique across the dataset.",
+  "rules": [
+    {"id": "R01", "anomaly_type": "INVALID_APAAR_FORMAT", "name": "APAAR structural validity", "active_only": false},
+    {"id": "R02", "anomaly_type": "DUPLICATE_CROSS_COLLEGE", "name": "Cross-institution duplicate", "active_only": true},
+    {"id": "R03", "anomaly_type": "DUPLICATE_SAME_INSTITUTION", "name": "Same-institution duplicate", "active_only": true},
+    {"id": "R04", "anomaly_type": "DUPLICATE_ROLL_NUMBER", "name": "Duplicate institute roll number", "active_only": true},
+    {"id": "R05", "anomaly_type": "EXCESS_APPROVED_INTAKE", "name": "Sanctioned intake breach", "active_only": true},
+    {"id": "R06", "anomaly_type": "SUPERNUMERARY_BREACH", "name": "Supernumerary quota ceiling", "active_only": true},
+    {"id": "R07", "anomaly_type": "INCONSISTENT_CATEGORY", "name": "Documentary / quota consistency", "active_only": false},
+    {"id": "R08", "anomaly_type": "IMPOSSIBLE_DATE", "name": "Impossible dates", "active_only": false},
+    {"id": "R09", "anomaly_type": "MISSING_REQUIRED_FIELD", "name": "Missing mandatory fields", "active_only": false},
+    {"id": "R10", "anomaly_type": "UNSANCTIONED_PROGRAM", "name": "Unsanctioned programme", "active_only": false}
+  ],
+  "defaults": {
+    "institutions": [
+      {"institution_id": "INST-BENCH-A", "name": "Synthetic Institute A", "institution_type": "ENGINEERING", "state": "Karnataka", "city": "Bengaluru", "affiliation_university": "Synthetic University", "approval_year": 2012, "naac_grade": "A"},
+      {"institution_id": "INST-BENCH-B", "name": "Synthetic Institute B", "institution_type": "ENGINEERING", "state": "Tamil Nadu", "city": "Chennai", "affiliation_university": "Synthetic University", "approval_year": 2014, "naac_grade": "A"}
+    ],
+    "programs": [
+      {"program_id": "PROG-BENCH-A", "institution_id": "INST-BENCH-A", "program_name": "Synthetic B.Tech A", "program_level": "UG", "approved_intake": 60, "max_supernumerary_nri": 3, "max_supernumerary_fn_oci": 9, "max_supernumerary_tfw": 3, "max_pmsss": 6, "total_sanctioned": 81},
+      {"program_id": "PROG-BENCH-B", "institution_id": "INST-BENCH-B", "program_name": "Synthetic B.Tech B", "program_level": "UG", "approved_intake": 60, "max_supernumerary_nri": 3, "max_supernumerary_fn_oci": 9, "max_supernumerary_tfw": 3, "max_pmsss": 6, "total_sanctioned": 81},
+      {"program_id": "PROG-BENCH-C", "institution_id": "INST-BENCH-A", "program_name": "Synthetic B.Tech C", "program_level": "UG", "approved_intake": 60, "max_supernumerary_nri": 3, "max_supernumerary_fn_oci": 9, "max_supernumerary_tfw": 3, "max_pmsss": 6, "total_sanctioned": 81}
+    ],
+    "student": {
+      "student_name": "Synthetic Student",
+      "date_of_birth": "2004-03-12",
+      "gender": "MALE",
+      "institution_id": "INST-BENCH-A",
+      "program_id": "PROG-BENCH-A",
+      "academic_year": "2024-25",
+      "admission_quota": "MERIT",
+      "enrollment_date": "2024-08-01",
+      "nationality": "Indian",
+      "passport_number": null,
+      "visa_validity": null,
+      "country_of_origin": null,
+      "is_active": true
+    }
+  },
+  "cases": [
+    {
+      "id": "R01-POS-01", "rule": "R01", "label": "positive",
+      "description": "Short identifier that fails the 12-digit structure check.",
+      "students": [{"case_id": "S1", "apaar": "12345"}],
+      "expected": ["S1"]
+    },
+    {
+      "id": "R01-POS-02", "rule": "R01", "label": "positive",
+      "description": "Trivial repeated-digit placeholder identifier.",
+      "students": [{"case_id": "S1", "apaar": "111111111111"}],
+      "expected": ["S1"]
+    },
+    {
+      "id": "R01-NEG-01", "rule": "R01", "label": "negative",
+      "description": "Well-formed synthetic identifier.",
+      "students": [{"case_id": "S1", "apaar": "984210350001"}],
+      "expected": []
+    },
+    {
+      "id": "R01-BND-01", "rule": "R01", "label": "boundary",
+      "description": "Identifier written with grouping spaces; normalisation should accept it.",
+      "students": [{"case_id": "S1", "apaar": "9842 1035 0002"}],
+      "expected": []
+    },
+
+    {
+      "id": "R02-POS-01", "rule": "R02", "label": "positive",
+      "description": "One APAAR concurrently active at two institutions.",
+      "students": [
+        {"case_id": "S1", "apaar": "984210350010", "institution_id": "INST-BENCH-A", "program_id": "PROG-BENCH-A"},
+        {"case_id": "S2", "apaar": "984210350010", "institution_id": "INST-BENCH-B", "program_id": "PROG-BENCH-B"}
+      ],
+      "expected": ["S1", "S2"]
+    },
+    {
+      "id": "R02-NEG-01", "rule": "R02", "label": "negative",
+      "description": "Two distinct APAAR IDs at two institutions.",
+      "students": [
+        {"case_id": "S1", "apaar": "984210350011", "institution_id": "INST-BENCH-A", "program_id": "PROG-BENCH-A"},
+        {"case_id": "S2", "apaar": "984210350012", "institution_id": "INST-BENCH-B", "program_id": "PROG-BENCH-B"}
+      ],
+      "expected": []
+    },
+    {
+      "id": "R02-BND-01", "rule": "R02", "label": "boundary",
+      "description": "Second institution row is inactive, so there is no concurrent enrolment.",
+      "students": [
+        {"case_id": "S1", "apaar": "984210350013", "institution_id": "INST-BENCH-A", "program_id": "PROG-BENCH-A"},
+        {"case_id": "S2", "apaar": "984210350013", "institution_id": "INST-BENCH-B", "program_id": "PROG-BENCH-B", "is_active": false}
+      ],
+      "expected": []
+    },
+    {
+      "id": "R02-REV-01", "rule": "R02", "label": "review_only",
+      "description": "Concurrent rows where one seat is supernumerary: engine reports HIGH severity, but the scenario is not asserted as a confirmed violation.",
+      "students": [
+        {"case_id": "S1", "apaar": "984210350014", "institution_id": "INST-BENCH-A", "program_id": "PROG-BENCH-A", "admission_quota": "MERIT"},
+        {"case_id": "S2", "apaar": "984210350014", "institution_id": "INST-BENCH-B", "program_id": "PROG-BENCH-B", "admission_quota": "NRI", "nationality": "Indian"}
+      ],
+      "expected": []
+    },
+
+    {
+      "id": "R03-POS-01", "rule": "R03", "label": "positive",
+      "description": "One APAAR enrolled twice in the same institution across two programmes.",
+      "students": [
+        {"case_id": "S1", "apaar": "984210350020", "institution_id": "INST-BENCH-A", "program_id": "PROG-BENCH-A"},
+        {"case_id": "S2", "apaar": "984210350020", "institution_id": "INST-BENCH-A", "program_id": "PROG-BENCH-C"}
+      ],
+      "expected": ["S1", "S2"]
+    },
+    {
+      "id": "R03-POS-02", "rule": "R03", "label": "positive",
+      "description": "Same APAAR imported twice into one programme.",
+      "students": [
+        {"case_id": "S1", "apaar": "984210350021", "institution_id": "INST-BENCH-A", "program_id": "PROG-BENCH-A"},
+        {"case_id": "S2", "apaar": "984210350021", "institution_id": "INST-BENCH-A", "program_id": "PROG-BENCH-A"}
+      ],
+      "expected": ["S1", "S2"]
+    },
+    {
+      "id": "R03-NEG-01", "rule": "R03", "label": "negative",
+      "description": "Two distinct APAAR IDs in the same institution and programme.",
+      "students": [
+        {"case_id": "S1", "apaar": "984210350022", "institution_id": "INST-BENCH-A", "program_id": "PROG-BENCH-A"},
+        {"case_id": "S2", "apaar": "984210350023", "institution_id": "INST-BENCH-A", "program_id": "PROG-BENCH-A"}
+      ],
+      "expected": []
+    },
+    {
+      "id": "R03-BND-01", "rule": "R03", "label": "boundary",
+      "description": "Repeated APAAR inside one institution, but the second row is inactive.",
+      "students": [
+        {"case_id": "S1", "apaar": "984210350024", "institution_id": "INST-BENCH-A", "program_id": "PROG-BENCH-A"},
+        {"case_id": "S2", "apaar": "984210350024", "institution_id": "INST-BENCH-A", "program_id": "PROG-BENCH-A", "is_active": false}
+      ],
+      "expected": []
+    },
+
+    {
+      "id": "R04-POS-01", "rule": "R04", "label": "positive",
+      "description": "Two different students hold the same institute roll number.",
+      "students": [
+        {"case_id": "S1", "apaar": "984210350030", "student_institute_roll_no": "ROLL-SHARED"},
+        {"case_id": "S2", "apaar": "984210350031", "student_institute_roll_no": "ROLL-SHARED"}
+      ],
+      "expected": ["S1", "S2"]
+    },
+    {
+      "id": "R04-POS-02", "rule": "R04", "label": "boundary",
+      "description": "Roll numbers differing only by case are normalised and treated as duplicate.",
+      "students": [
+        {"case_id": "S1", "apaar": "984210350032", "student_institute_roll_no": "roll-case"},
+        {"case_id": "S2", "apaar": "984210350033", "student_institute_roll_no": "ROLL-CASE"}
+      ],
+      "expected": ["S1", "S2"]
+    },
+    {
+      "id": "R04-BND-01", "rule": "R04", "label": "boundary",
+      "description": "The same roll number at two different institutions is legitimate.",
+      "students": [
+        {"case_id": "S1", "apaar": "984210350034", "institution_id": "INST-BENCH-A", "program_id": "PROG-BENCH-A", "student_institute_roll_no": "ROLL-SAME"},
+        {"case_id": "S2", "apaar": "984210350035", "institution_id": "INST-BENCH-B", "program_id": "PROG-BENCH-B", "student_institute_roll_no": "ROLL-SAME"}
+      ],
+      "expected": []
+    },
+    {
+      "id": "R04-NEG-01", "rule": "R04", "label": "negative",
+      "description": "Distinct roll numbers within one institution.",
+      "students": [
+        {"case_id": "S1", "apaar": "984210350036"},
+        {"case_id": "S2", "apaar": "984210350037"}
+      ],
+      "expected": []
+    },
+
+    {
+      "id": "R05-POS-01", "rule": "R05", "label": "positive",
+      "description": "Three regular enrolments against a sanctioned intake of one; the two later rows overflow.",
+      "programs": [{"program_id": "PROG-BENCH-A", "institution_id": "INST-BENCH-A", "approved_intake": 1}],
+      "students": [
+        {"case_id": "S1", "apaar": "984210350040", "enrollment_date": "2024-08-01"},
+        {"case_id": "S2", "apaar": "984210350041", "enrollment_date": "2024-08-02"},
+        {"case_id": "S3", "apaar": "984210350042", "enrollment_date": "2024-08-03"}
+      ],
+      "expected": ["S2", "S3"]
+    },
+    {
+      "id": "R05-BND-01", "rule": "R05", "label": "boundary",
+      "description": "Exactly at the sanctioned intake.",
+      "programs": [{"program_id": "PROG-BENCH-A", "institution_id": "INST-BENCH-A", "approved_intake": 1}],
+      "students": [{"case_id": "S1", "apaar": "984210350043"}],
+      "expected": []
+    },
+    {
+      "id": "R05-BND-02", "rule": "R05", "label": "boundary",
+      "description": "Supernumerary enrolment does not consume the regular intake.",
+      "programs": [{"program_id": "PROG-BENCH-A", "institution_id": "INST-BENCH-A", "approved_intake": 1}],
+      "students": [
+        {"case_id": "S1", "apaar": "984210350044", "admission_quota": "MERIT"},
+        {"case_id": "S2", "apaar": "984210350045", "admission_quota": "NRI", "nationality": "Indian"}
+      ],
+      "expected": []
+    },
+    {
+      "id": "R05-NEG-01", "rule": "R05", "label": "negative",
+      "description": "Two regular enrolments well within the default intake.",
+      "students": [
+        {"case_id": "S1", "apaar": "984210350046"},
+        {"case_id": "S2", "apaar": "984210350047"}
+      ],
+      "expected": []
+    },
+
+    {
+      "id": "R06-POS-01", "rule": "R06", "label": "positive",
+      "description": "Three NRI enrolments against an NRI ceiling of one.",
+      "programs": [{"program_id": "PROG-BENCH-A", "institution_id": "INST-BENCH-A", "max_supernumerary_nri": 1}],
+      "students": [
+        {"case_id": "S1", "apaar": "984210350050", "admission_quota": "NRI", "nationality": "Indian"},
+        {"case_id": "S2", "apaar": "984210350051", "admission_quota": "NRI", "nationality": "Indian"},
+        {"case_id": "S3", "apaar": "984210350052", "admission_quota": "NRI", "nationality": "Indian"}
+      ],
+      "expected": ["S2", "S3"]
+    },
+    {
+      "id": "R06-POS-02", "rule": "R06", "label": "positive",
+      "description": "Two OCI enrolments against an OCI/FN ceiling of one.",
+      "programs": [{"program_id": "PROG-BENCH-A", "institution_id": "INST-BENCH-A", "max_supernumerary_fn_oci": 1}],
+      "students": [
+        {"case_id": "S1", "apaar": "984210350053", "admission_quota": "OCI", "nationality": "OCI"},
+        {"case_id": "S2", "apaar": "984210350054", "admission_quota": "OCI", "nationality": "OCI"}
+      ],
+      "expected": ["S2"]
+    },
+    {
+      "id": "R06-POS-03", "rule": "R06", "label": "positive",
+      "description": "Two TFW enrolments against a TFW ceiling of one.",
+      "programs": [{"program_id": "PROG-BENCH-A", "institution_id": "INST-BENCH-A", "max_supernumerary_tfw": 1}],
+      "students": [
+        {"case_id": "S1", "apaar": "984210350055", "admission_quota": "TFW", "nationality": "Indian"},
+        {"case_id": "S2", "apaar": "984210350056", "admission_quota": "TFW", "nationality": "Indian"}
+      ],
+      "expected": ["S2"]
+    },
+    {
+      "id": "R06-POS-04", "rule": "R06", "label": "positive",
+      "description": "Two PMSSS enrolments against a PMSSS ceiling of one.",
+      "programs": [{"program_id": "PROG-BENCH-A", "institution_id": "INST-BENCH-A", "max_pmsss": 1}],
+      "students": [
+        {"case_id": "S1", "apaar": "984210350057", "admission_quota": "PMSSS", "nationality": "Indian"},
+        {"case_id": "S2", "apaar": "984210350058", "admission_quota": "PMSSS", "nationality": "Indian"}
+      ],
+      "expected": ["S2"]
+    },
+    {
+      "id": "R06-BND-01", "rule": "R06", "label": "boundary",
+      "description": "Exactly at the NRI ceiling.",
+      "programs": [{"program_id": "PROG-BENCH-A", "institution_id": "INST-BENCH-A", "max_supernumerary_nri": 1}],
+      "students": [{"case_id": "S1", "apaar": "984210350059", "admission_quota": "NRI", "nationality": "Indian"}],
+      "expected": []
+    },
+    {
+      "id": "R06-NEG-01", "rule": "R06", "label": "negative",
+      "description": "Only regular-seat students; no supernumerary bucket is populated.",
+      "students": [
+        {"case_id": "S1", "apaar": "984210350060"},
+        {"case_id": "S2", "apaar": "984210350061"}
+      ],
+      "expected": []
+    },
+
+    {
+      "id": "R07-POS-01", "rule": "R07", "label": "positive",
+      "description": "Foreign-national seat declared against Indian nationality.",
+      "students": [{"case_id": "S1", "apaar": "984210350070", "admission_quota": "FN", "nationality": "Indian"}],
+      "expected": ["S1"]
+    },
+    {
+      "id": "R07-POS-02", "rule": "R07", "label": "positive",
+      "description": "Foreign-national seat with no passport, country of origin or visa validity.",
+      "students": [{"case_id": "S1", "apaar": "984210350071", "admission_quota": "FN", "nationality": "Canadian"}],
+      "expected": ["S1"]
+    },
+    {
+      "id": "R07-POS-03", "rule": "R07", "label": "positive",
+      "description": "NRI seat declared against a non-Indian nationality.",
+      "students": [{"case_id": "S1", "apaar": "984210350072", "admission_quota": "NRI", "nationality": "Canadian"}],
+      "expected": ["S1"]
+    },
+    {
+      "id": "R07-POS-04", "rule": "R07", "label": "positive",
+      "description": "Regular merit seat declared against a non-Indian nationality.",
+      "students": [{"case_id": "S1", "apaar": "984210350073", "admission_quota": "MERIT", "nationality": "Canadian"}],
+      "expected": ["S1"]
+    },
+    {
+      "id": "R07-NEG-01", "rule": "R07", "label": "negative",
+      "description": "Foreign-national seat with complete documentary evidence.",
+      "students": [{"case_id": "S1", "apaar": "984210350074", "admission_quota": "FN", "nationality": "Canadian", "passport_number": "SYN1234567", "country_of_origin": "Canada", "visa_validity": "2027-12-31"}],
+      "expected": []
+    },
+    {
+      "id": "R07-BND-01", "rule": "R07", "label": "boundary",
+      "description": "OCI seat with an OCI nationality declaration is coherent.",
+      "students": [{"case_id": "S1", "apaar": "984210350075", "admission_quota": "OCI", "nationality": "OCI"}],
+      "expected": []
+    },
+
+    {
+      "id": "R08-POS-01", "rule": "R08", "label": "positive",
+      "description": "Date of birth is not a real calendar date.",
+      "students": [{"case_id": "S1", "apaar": "984210350080", "date_of_birth": "2004-02-30"}],
+      "expected": ["S1"]
+    },
+    {
+      "id": "R08-POS-02", "rule": "R08", "label": "positive",
+      "description": "Date of birth is in the future.",
+      "students": [{"case_id": "S1", "apaar": "984210350081", "date_of_birth": "2099-01-01"}],
+      "expected": ["S1"]
+    },
+    {
+      "id": "R08-POS-03", "rule": "R08", "label": "positive",
+      "description": "Enrolment precedes date of birth.",
+      "students": [{"case_id": "S1", "apaar": "984210350082", "date_of_birth": "2004-03-12", "enrollment_date": "2001-01-01"}],
+      "expected": ["S1"]
+    },
+    {
+      "id": "R08-POS-04", "rule": "R08", "label": "positive",
+      "description": "Student was ten years old at enrolment.",
+      "students": [{"case_id": "S1", "apaar": "984210350083", "date_of_birth": "2010-01-01", "enrollment_date": "2020-08-01"}],
+      "expected": ["S1"]
+    },
+    {
+      "id": "R08-BND-01", "rule": "R08", "label": "boundary",
+      "description": "Student is exactly fifteen years old at enrolment.",
+      "students": [{"case_id": "S1", "apaar": "984210350084", "date_of_birth": "2009-08-01", "enrollment_date": "2024-08-01"}],
+      "expected": []
+    },
+    {
+      "id": "R08-BND-02", "rule": "R08", "label": "boundary",
+      "description": "Alternative dd-MM-yyyy date format is parsed rather than rejected.",
+      "students": [{"case_id": "S1", "apaar": "984210350085", "date_of_birth": "12-03-2004", "enrollment_date": "01-08-2024"}],
+      "expected": []
+    },
+    {
+      "id": "R08-NEG-01", "rule": "R08", "label": "negative",
+      "description": "Consistent, plausible dates.",
+      "students": [{"case_id": "S1", "apaar": "984210350086"}],
+      "expected": []
+    },
+
+    {
+      "id": "R09-POS-01", "rule": "R09", "label": "positive",
+      "description": "Student name is empty.",
+      "students": [{"case_id": "S1", "apaar": "984210350090", "student_name": ""}],
+      "expected": ["S1"]
+    },
+    {
+      "id": "R09-POS-02", "rule": "R09", "label": "positive",
+      "description": "Name, nationality and academic year are all empty.",
+      "students": [{"case_id": "S1", "apaar": "984210350091", "student_name": "", "nationality": "", "academic_year": ""}],
+      "expected": ["S1"]
+    },
+    {
+      "id": "R09-BND-01", "rule": "R09", "label": "boundary",
+      "description": "Whitespace-only name is treated as missing after trimming.",
+      "students": [{"case_id": "S1", "apaar": "984210350092", "student_name": "   "}],
+      "expected": ["S1"]
+    },
+    {
+      "id": "R09-NEG-01", "rule": "R09", "label": "negative",
+      "description": "All mandatory fields are present.",
+      "students": [{"case_id": "S1", "apaar": "984210350093"}],
+      "expected": []
+    },
+
+    {
+      "id": "R10-POS-01", "rule": "R10", "label": "positive",
+      "description": "Programme code is not sanctioned for any institution.",
+      "students": [{"case_id": "S1", "apaar": "984210350100", "program_id": "PROG-UNKNOWN"}],
+      "expected": ["S1"]
+    },
+    {
+      "id": "R10-POS-02", "rule": "R10", "label": "positive",
+      "description": "Programme code is sanctioned, but for a different institution.",
+      "students": [{"case_id": "S1", "apaar": "984210350101", "institution_id": "INST-BENCH-A", "program_id": "PROG-BENCH-B"}],
+      "expected": ["S1"]
+    },
+    {
+      "id": "R10-NEG-01", "rule": "R10", "label": "negative",
+      "description": "Programme is sanctioned for the student's institution.",
+      "students": [{"case_id": "S1", "apaar": "984210350102"}],
+      "expected": []
+    },
+    {
+      "id": "R10-BND-01", "rule": "R10", "label": "boundary",
+      "description": "Same programme code at its own institution is accepted.",
+      "students": [{"case_id": "S1", "apaar": "984210350103", "institution_id": "INST-BENCH-B", "program_id": "PROG-BENCH-B"}],
+      "expected": []
+    }
+  ]
+}

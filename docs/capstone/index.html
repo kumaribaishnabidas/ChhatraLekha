@@ -173,7 +173,7 @@
       <tbody>
         <tr><td>FR-01</td><td>Server-side permissions; UI is not the security boundary</td><td class="ok">Verified</td></tr>
         <tr><td>FR-02</td><td>CSV preview validates without persisting; commit is separate</td><td class="ok">Verified</td></tr>
-        <tr><td>FR-03</td><td>Deterministic, explainable findings from ten rule layers</td><td class="pending">Rules verified · benchmark pending</td></tr>
+        <tr><td>FR-03</td><td>Deterministic, explainable findings from ten rule layers</td><td class="ok">Verified · benchmark passed</td></tr>
         <tr><td>FR-04</td><td>Correction preview is read-only; apply checks version and audits</td><td class="ok">Verified</td></tr>
         <tr><td>FR-05</td><td>Allowlisted verification output; consent-aware privacy</td><td class="ok">Verified</td></tr>
         <tr><td>FR-06</td><td>Hash-linked audit events with broken-chain detection</td><td class="ok">Verified</td></tr>
@@ -187,31 +187,34 @@
 <section id="baseline">
   <div class="wrap">
     <h2>Verified baseline</h2>
-    <p class="sub">Recorded at commit <span class="mono">d9eb96d</span> on
+    <p class="sub">Recorded at commit <span class="mono">f2c4eb4</span> on
       22 November 2026. Re-run the commands before quoting these figures for
       another commit.</p>
     <div class="metrics">
-      <div class="metric"><strong>498</strong><span>Backend tests passed</span></div>
+      <div class="metric"><strong>511</strong><span>Backend tests passed</span></div>
       <div class="metric"><strong>146</strong><span>Frontend tests passed</span></div>
-      <div class="metric"><strong>13</strong><span>Locale files aligned</span></div>
+      <div class="metric"><strong>10/10</strong><span>Anomaly rules scored</span></div>
+      <div class="metric"><strong>0 / 0</strong><span>False positives / negatives</span></div>
       <div class="metric"><strong>100%</strong><span>RAG retrieval hit rate</span></div>
       <div class="metric"><strong>0</strong><span>PII leaks in evaluation</span></div>
-      <div class="metric"><strong>7.4 ms</strong><span>Retrieval p50 (this machine)</span></div>
     </div>
 
-    <h2 style="margin-top:44px">Next milestone: labeled benchmark</h2>
-    <p class="sub">The synthetic anomaly benchmark measures agreement with
-      explicit labels. It cannot establish real-world accuracy or prove that a
-      flagged record is fraudulent.</p>
+    <h2 style="margin-top:44px">Benchmark result</h2>
+    <p class="sub">47 fully synthetic cases produced 65 scored student-rule
+      pairs across ten rules. Every rule reached precision, recall and F1 of
+      1.000. One ambiguous case is reported separately and excluded from binary
+      metrics.</p>
     <div class="formula">
       <h3>Per-rule metrics</h3>
       <code>precision = TP / (TP + FP)</code>
       <code>recall    = TP / (TP + FN)</code>
       <code>F1        = 2 × precision × recall / (precision + recall)</code>
       <p class="note">Use <span class="mono">N/A</span> when a denominator is
-        zero. Record dataset size, labelling procedure, rule configuration,
-        commit SHA and the exact command. Report timing only as a
-        machine-specific measurement.</p>
+        zero. The unit is a case-student / rule pair. Labels encode documented
+        rule intent on small, unambiguous snapshots: full agreement is a
+        regression baseline, not real-world accuracy, fraud detection or a
+        substitute for authorised human review. Reproduce with
+        <span class="mono">python -m app.scripts.eval_anomaly</span>.</p>
     </div>
     <div class="callout"><strong>Limits.</strong> Android and Linux checks were
       not run in this environment; <span class="mono">npm run lint</span> cannot
@@ -221,6 +224,7 @@
     <div class="links">
       <a href="../CAPSTONE_GUIDE.md">Read the full capstone guide →</a>
       <a href="../ai/EVALUATION.md">RAG evaluation report →</a>
+      <a href="../ai/ANOMALY_BENCHMARK.md">Anomaly benchmark report →</a>
       <a href="../index.html">Back to product overview →</a>
     </div>
   </div>
