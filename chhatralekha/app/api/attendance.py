@@ -10,6 +10,7 @@ from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from pymongo.errors import DuplicateKeyError
 
 from app.api.deps import (
     Principal,
@@ -95,10 +96,12 @@ async def _is_teacher_assigned_to_target(
                 "$or": [
                     {"subject_id": subject_id},
                     {"course_id": subject_id},
-                    {"subject_id": None},
-                    {"subject_id": ""},
-                    {"course_id": None},
-                    {"course_id": ""},
+                    {
+                        "$and": [
+                            {"subject_id": {"$in": [None, ""]}},
+                            {"course_id": {"$in": [None, ""]}},
+                        ]
+                    },
                 ]
             }
         )
@@ -209,59 +212,180 @@ async def record_attendance_session(
 
     # Validate student enrolment and institution boundaries
     if student_ids:
-        alien_students = (
-            await db["students"]
-            .find(
-                {
-                    "$or": [
-                        {"_id": {"$in": student_ids}},
-                        {"student_id": {"$in": student_ids}},
-                        {"apaar_id": {"$in": student_ids}},
-                    ],
-                    "institution_id": {"$ne": inst_id},
-                },
-                projection={"_id": 1, "student_id": 1, "apaar_id": 1, "institution_id": 1},
-            )
-            .to_list(len(student_ids))
+        # A. Cross-tenant check: fail closed with 403 Forbidden
+        alien_enrolment = await db["student_enrolments"].find_one(
+            {
+                "$or": [
+                    {"student_id": {"$in": student_ids}},
+                    {"_id": {"$in": student_ids}},
+                ],
+                "institution_id": {"$ne": inst_id},
+            }
         )
-        if alien_students:
+        alien_student = await db["students"].find_one(
+            {
+                "$or": [
+                    {"_id": {"$in": student_ids}},
+                    {"student_id": {"$in": student_ids}},
+                    {"apaar_id": {"$in": student_ids}},
+                ],
+                "institution_id": {"$ne": inst_id},
+            }
+        )
+        if alien_enrolment or alien_student:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="One or more students belong to a different institution.",
             )
 
-        inst_student_count = await db["students"].count_documents({"institution_id": inst_id})
-        if inst_student_count > 0:
-            local_students = (
-                await db["students"]
-                .find(
-                    {
-                        "institution_id": inst_id,
-                        "$or": [
-                            {"_id": {"$in": student_ids}},
-                            {"student_id": {"$in": student_ids}},
-                            {"apaar_id": {"$in": student_ids}},
-                        ],
-                    },
-                    projection={"_id": 1, "student_id": 1, "apaar_id": 1},
-                )
-                .to_list(len(student_ids) + 10)
+        # B. Query active enrolments and legacy students within the institution
+        enrol_docs = (
+            await db["student_enrolments"]
+            .find(
+                {
+                    "institution_id": inst_id,
+                    "$or": [
+                        {"student_id": {"$in": student_ids}},
+                        {"_id": {"$in": student_ids}},
+                    ],
+                }
             )
+            .to_list(len(student_ids) * 2 + 10)
+        )
 
-            found_ids = set()
-            for s in local_students:
-                if s.get("_id"):
-                    found_ids.add(str(s["_id"]))
-                if s.get("student_id"):
-                    found_ids.add(s["student_id"])
-                if s.get("apaar_id"):
-                    found_ids.add(s["apaar_id"])
+        student_docs = (
+            await db["students"]
+            .find(
+                {
+                    "institution_id": inst_id,
+                    "$or": [
+                        {"_id": {"$in": student_ids}},
+                        {"student_id": {"$in": student_ids}},
+                        {"apaar_id": {"$in": student_ids}},
+                    ],
+                }
+            )
+            .to_list(len(student_ids) * 2 + 10)
+        )
 
-            missing = [sid for sid in student_ids if sid not in found_ids]
-            if missing:
+        enrol_by_id: dict[str, list[dict[str, Any]]] = {}
+        for ed in enrol_docs:
+            for key in (ed.get("student_id"), str(ed.get("_id"))):
+                if key:
+                    enrol_by_id.setdefault(key, []).append(ed)
+
+        stu_by_id: dict[str, list[dict[str, Any]]] = {}
+        for sd in student_docs:
+            for key in (sd.get("student_id"), sd.get("apaar_id"), str(sd.get("_id"))):
+                if key:
+                    stu_by_id.setdefault(key, []).append(sd)
+
+        req_ay = payload.academic_year_id or payload.academic_year
+
+        # Collect all valid target class identifiers/aliases
+        valid_class_targets = {payload.target_id}
+        if payload.target_label:
+            valid_class_targets.add(payload.target_label)
+
+        cls_doc = await db["classes"].find_one(
+            {
+                "institution_id": inst_id,
+                "$or": [
+                    {"_id": payload.target_id},
+                    {"class_id": payload.target_id},
+                    {"name": payload.target_id},
+                ],
+            }
+        )
+        if cls_doc:
+            if cls_doc.get("_id"):
+                valid_class_targets.add(str(cls_doc["_id"]))
+            if cls_doc.get("class_id"):
+                valid_class_targets.add(cls_doc["class_id"])
+            if cls_doc.get("name"):
+                valid_class_targets.add(cls_doc["name"])
+            grade = cls_doc.get("grade_level") or cls_doc.get("grade")
+            sec = cls_doc.get("section")
+            if grade and sec:
+                valid_class_targets.add(f"{grade}-{sec}")
+                valid_class_targets.add(f"{grade} {sec}")
+                valid_class_targets.add(f"{grade}{sec}")
+
+        # C. Strict per-student validation (Zero Fail-Open)
+        for sid in student_ids:
+            s_enrols = enrol_by_id.get(sid, [])
+            s_studs = stu_by_id.get(sid, [])
+
+            if not s_enrols and not s_studs:
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"The following student IDs are not enrolled in this institution: {', '.join(missing[:5])}",
+                    detail=f"Student '{sid}' is not enrolled in this institution.",
+                )
+
+            valid = False
+            rejection_reason = None
+
+            if s_enrols:
+                for enr in s_enrols:
+                    enr_cls = enr.get("class_id") or enr.get("section") or enr.get("program_id")
+                    if enr_cls not in valid_class_targets:
+                        rejection_reason = f"Student '{sid}' is enrolled in class '{enr_cls}', not target class '{payload.target_label or payload.target_id}'."
+                        continue
+
+                    status_str = str(enr.get("status", "")).upper()
+                    is_curr = enr.get("is_current")
+                    if status_str != "ACTIVE" or is_curr is False:
+                        rejection_reason = (
+                            f"Student '{sid}' enrolment is inactive, former, or expired."
+                        )
+                        continue
+
+                    if req_ay:
+                        enr_ay = enr.get("academic_year_id") or enr.get("academic_year")
+                        if enr_ay and enr_ay != req_ay:
+                            rejection_reason = f"Student '{sid}' enrolment academic year ('{enr_ay}') does not match session academic year ('{req_ay}')."
+                            continue
+
+                    valid = True
+                    break
+            elif s_studs:
+                for sd in s_studs:
+                    sd_cls = (
+                        sd.get("class_id")
+                        or sd.get("grade")
+                        or sd.get("current_class")
+                        or sd.get("grade_level")
+                        or sd.get("program_id")
+                    )
+                    if sd_cls not in valid_class_targets:
+                        rejection_reason = f"Student '{sid}' belongs to class '{sd_cls}', not target class '{payload.target_label or payload.target_id}'."
+                        continue
+
+                    status_str = str(
+                        sd.get("status") or sd.get("record_status") or "ACTIVE"
+                    ).upper()
+                    is_act = sd.get("is_active")
+                    if (
+                        status_str in {"INACTIVE", "FORMER", "EXPIRED", "WITHDRAWN", "GRADUATED"}
+                        or is_act is False
+                    ):
+                        rejection_reason = f"Student '{sid}' status is '{status_str}', not active."
+                        continue
+
+                    if req_ay:
+                        sd_ay = sd.get("academic_year_id") or sd.get("academic_year")
+                        if sd_ay and sd_ay != req_ay:
+                            rejection_reason = f"Student '{sid}' academic year ('{sd_ay}') does not match session academic year ('{req_ay}')."
+                            continue
+
+                    valid = True
+                    break
+
+            if not valid:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=rejection_reason
+                    or f"Student '{sid}' does not have a valid active enrolment for class '{payload.target_label or payload.target_id}'.",
                 )
 
     session_id = f"ATT-{secrets.token_hex(6)}"
@@ -331,7 +455,17 @@ async def record_attendance_session(
         for r in payload.records
     ]
 
-    await db["attendance_sessions"].insert_one(session_doc)
+    try:
+        await db["attendance_sessions"].insert_one(session_doc)
+    except DuplicateKeyError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Attendance session already submitted for {payload.target_label} on {payload.session_date}"
+                f"{f' (Period {payload.period_number})' if payload.period_number else ''}. "
+                "Use an authorized correction request to make adjustments to submitted attendance."
+            ),
+        ) from None
     if record_docs:
         await db["attendance_records"].insert_many(record_docs)
 
@@ -596,7 +730,7 @@ async def get_class_roster(
     if not raw_students:
         return []
 
-    # Dynamic calculation of recent attendance rate from historical records
+    # Dynamic calculation of recent attendance rate and session tracking from historical records
     stu_ids = [s["student_id"] for s in raw_students]
     past_records = (
         await db["attendance_records"]
@@ -606,14 +740,18 @@ async def get_class_roster(
                 "student_id": {"$in": stu_ids},
             }
         )
+        .sort("session_date", -1)
         .to_list(1000)
     )
 
     stats: dict[str, dict[str, int]] = {}
+    recent_sessions: dict[str, str] = {}
     for r in past_records:
         sid = r.get("student_id")
         if not sid:
             continue
+        if sid not in recent_sessions and r.get("session_id"):
+            recent_sessions[sid] = str(r["session_id"])
         if sid not in stats:
             stats[sid] = {"total": 0, "present": 0}
         stats[sid]["total"] += 1
@@ -636,6 +774,7 @@ async def get_class_roster(
                 class_id=s.get("class_id"),
                 section=s.get("section", "A"),
                 recent_attendance_rate=recent_rate,
+                recent_session_id=recent_sessions.get(sid),
             )
         )
     return roster
@@ -755,7 +894,7 @@ async def request_attendance_correction(
     """Submit an auditable correction request. Original attendance records are never silently modified."""
     inst_id = principal.require_tenant_context()
 
-    # Verify existing record
+    # Verify existing record within caller's institution
     rec = await db["attendance_records"].find_one(
         {
             "session_id": payload.session_id,
@@ -764,10 +903,42 @@ async def request_attendance_correction(
         }
     )
     if not rec:
+        alien_rec = await db["attendance_records"].find_one(
+            {
+                "session_id": payload.session_id,
+                "student_id": payload.student_id,
+            }
+        )
+        if alien_rec:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access to attendance record from another institution is forbidden.",
+            )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Student attendance record not found in the specified session.",
         )
+
+    # Enforce teacher authorization consistent with attendance-session recording
+    if principal.role == "teacher":
+        if not principal.institution_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Staff without an institution association cannot request corrections.",
+            )
+        assigned = await _is_teacher_assigned_to_target(
+            db,
+            principal,
+            target_id=rec.get("target_id", ""),
+            target_label=rec.get("target_label"),
+            subject_id=rec.get("subject_id"),
+            inst_id=inst_id,
+        )
+        if not assigned:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not assigned to the class or subject for this attendance record.",
+            )
 
     corr_id = f"CORR-{secrets.token_hex(6)}"
     now = datetime.now(timezone.utc)
@@ -1115,12 +1286,25 @@ async def get_attendance_report_summary(
     )
 
 
+_FORMULA_TRIGGERS = ("=", "+", "-", "@")
+_LEADING_STRIP_CHARS = " \t\r\n\v\f\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\ufeff\xa0"
+
+
 def _sanitize_csv_cell(val: Any) -> str:
-    """Neutralize formula-trigger characters (=, +, -, @) to prevent CSV Injection (CWE-1236)."""
+    """Neutralize formula-trigger characters (=, +, -, @) to prevent CSV Injection (CWE-1236).
+
+    Handles direct formula prefixes as well as payloads obscured by leading spaces, tabs,
+    carriage returns, line feeds, and ASCII/Unicode control or whitespace characters.
+    Prepends a single quote (') to force spreadsheet software (Excel, LibreOffice Calc,
+    Google Sheets) to treat the cell content strictly as literal text.
+    """
     if val is None:
         return ""
     s = str(val)
-    if s and s[0] in ("=", "+", "-", "@"):
+    if not s:
+        return ""
+    lstripped = s.lstrip(_LEADING_STRIP_CHARS)
+    if lstripped and lstripped[0] in _FORMULA_TRIGGERS:
         return f"'{s}"
     return s
 
@@ -1226,25 +1410,34 @@ async def get_my_attendance_summary(
             if stu:
                 inst_id = stu.get("institution_id")
     elif principal.role == "parent":
-        rel = await db["guardian_relationships"].find_one(
-            {
-                "parent_user_id": principal.subject,
-                "student_id": resolved_id,
-                "status": "VERIFIED",
-            }
-        )
+        rel_query: dict[str, Any] = {
+            "parent_user_id": principal.subject,
+            "student_id": resolved_id,
+            "status": "VERIFIED",
+        }
+        if inst_id:
+            rel_query["institution_id"] = inst_id
+        rel = await db["guardian_relationships"].find_one(rel_query)
         if not rel:
-            stu_doc = await db["students"].find_one(
-                {"$or": [{"apaar_id": resolved_id}, {"_id": resolved_id}]}
-            )
+            stu_doc_query: dict[str, Any] = {
+                "$or": [
+                    {"apaar_id": resolved_id},
+                    {"student_id": resolved_id},
+                    {"_id": resolved_id},
+                ]
+            }
+            if inst_id:
+                stu_doc_query["institution_id"] = inst_id
+            stu_doc = await db["students"].find_one(stu_doc_query)
             if stu_doc:
-                rel = await db["guardian_relationships"].find_one(
-                    {
-                        "parent_user_id": principal.subject,
-                        "student_id": stu_doc.get("apaar_id"),
-                        "status": "VERIFIED",
-                    }
-                )
+                fallback_rel_query: dict[str, Any] = {
+                    "parent_user_id": principal.subject,
+                    "student_id": stu_doc.get("apaar_id") or stu_doc.get("student_id"),
+                    "status": "VERIFIED",
+                }
+                if inst_id:
+                    fallback_rel_query["institution_id"] = inst_id
+                rel = await db["guardian_relationships"].find_one(fallback_rel_query)
         if not rel:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

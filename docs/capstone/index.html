@@ -165,7 +165,7 @@
 <section id="requirements" class="alt">
   <div class="wrap">
     <h2>Requirements at a glance</h2>
-    <p class="sub">Evidence was checked at commit <span class="mono">d9eb96d</span>.
+    <p class="sub">Evidence was checked at commit <span class="mono">acbae6a</span>.
       "Verified" means the covering backend/frontend suite passed here; it is
       not a formal audit. Full detail is in the capstone guide.</p>
     <table>
@@ -187,17 +187,27 @@
 <section id="baseline">
   <div class="wrap">
     <h2>Verified baseline</h2>
-    <p class="sub">Recorded at commit <span class="mono">f2c4eb4</span> on
+    <p class="sub">Recorded at commit <span class="mono">acbae6a</span> on
       22 November 2026. Re-run the commands before quoting these figures for
       another commit.</p>
     <div class="metrics">
-      <div class="metric"><strong>511</strong><span>Backend tests passed</span></div>
+      <div class="metric"><strong>513</strong><span>Backend tests passed</span></div>
       <div class="metric"><strong>146</strong><span>Frontend tests passed</span></div>
       <div class="metric"><strong>10/10</strong><span>Anomaly rules scored</span></div>
       <div class="metric"><strong>0 / 0</strong><span>False positives / negatives</span></div>
       <div class="metric"><strong>100%</strong><span>RAG retrieval hit rate</span></div>
-      <div class="metric"><strong>0</strong><span>PII leaks in evaluation</span></div>
+      <div class="metric"><strong>0</strong><span>Known dependency vulnerabilities</span></div>
     </div>
+
+    <h2 style="margin-top:36px">Final hardening pass</h2>
+    <p class="sub">The attendance module now fails closed on unenrolled students,
+      scopes corrections to the caller's institution, neutralises CSV formula
+      injection and reports real rather than synthetic analytics values. Two
+      database-index defects were found and fixed: a duplicated
+      <span class="mono">name</span> keyword silently prevented the unique
+      indexes from being created, and the record uniqueness rule needed a
+      partial filter so historical sessionless rows remain valid. A regression
+      test covers both.</p>
 
     <h2 style="margin-top:44px">Benchmark result</h2>
     <p class="sub">47 fully synthetic cases produced 65 scored student-rule
@@ -219,7 +229,11 @@
     <div class="callout"><strong>Limits.</strong> Android and Linux checks were
       not run in this environment; <span class="mono">npm run lint</span> cannot
       run because eslint is not installed. Frontend tests must be run
-      sequentially with the backend suite to avoid 5-second timeout flakiness.</div>
+      sequentially with the backend suite to avoid 5-second timeout flakiness.
+      The earlier "149 vulnerabilities" figure is historical: the Python
+      remediation was already committed, `pip-audit` on the pinned manifest and
+      `npm audit` on the lockfile both report zero. No dependency versions were
+      changed in this final pass.</div>
 
     <div class="links">
       <a href="../CAPSTONE_GUIDE.md">Read the full capstone guide →</a>

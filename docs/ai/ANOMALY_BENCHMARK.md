@@ -1,8 +1,8 @@
 # ChhatraLekha — Synthetic Anomaly Benchmark
 
-Generated: `2026-11-21T22:14:33+00:00`
+Generated: `2026-11-22T09:45:36+00:00`
 
-Detector source commit: `f2c4eb4`
+Detector source commit: `acbae6a3f694`
 
 This report measures **agreement with constructed labels** on fully synthetic snapshots. It is reproducible offline with `python -m app.scripts.eval_anomaly`. The detector is unchanged by this evaluation.
 
@@ -50,7 +50,7 @@ This report measures **agreement with constructed labels** on fully synthetic sn
 
 ## Timing (machine-specific)
 
-Each of the 47 case evaluations was timed once with `time.perf_counter()` in this run. p50 = 0.178 ms; p95 = 0.348 ms. These numbers describe this machine only and are not a portable performance guarantee.
+Each of the 47 case evaluations was timed once with `time.perf_counter()` in this run. p50 = 0.261 ms; p95 = 0.606 ms. These numbers describe this machine only and are not a portable performance guarantee.
 
 ## Method
 

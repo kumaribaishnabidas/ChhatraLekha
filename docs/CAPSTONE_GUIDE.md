@@ -1,9 +1,10 @@
 # ChhatraLekha — BTech Capstone Guide
 
-**Status:** Baseline verified at commit `f2c4eb48c1fa90bf4177b02a61bf4fea8346d6c2`
-(branch `feature/stage-0-9-attendance`, pushed to `origin`). Results below were
-recorded on 22 November 2026. Re-run the commands in §6 if you use another
-commit; do not carry these numbers forward as "current" without a fresh run.
+**Status:** Baseline verified at commit `acbae6a3f6940933d257d950c07ad4f2fb1bc674`
+(parent of this documentation update; branch `feature/stage-0-9-attendance`).
+Results below were recorded on 22 November 2026. Re-run the commands in §6 if
+you use another commit; do not carry these numbers forward as "current" without
+a fresh run.
 
 **Interactive companion:** [Workflow explainer website](capstone/index.html).
 
@@ -79,7 +80,7 @@ shell works offline or replaces the web application.
 
 ## 5. Requirements traceability
 
-Statuses reflect the cited evidence at commit `f2c4eb4`. "Verified" means the
+Statuses reflect the cited evidence at commit `acbae6a`. "Verified" means the
 backend/frontend suite covering that behaviour passed in this environment;
 it does not imply a formal audit.
 
@@ -94,24 +95,27 @@ it does not imply a formal audit.
 | FR-07 | Android shared core logic and local persistence | `android/core/`, `android/app/` | **Not verified here** — Gradle/device run pending |
 | FR-08 | Linux desktop origin allowlist and declared dependencies | `linux/desktop/` | **Not verified here** — recent edits untested |
 | NFR-01 | Synthetic data only; no secrets committed | Seed scripts, `.env.example`, docs | Documented; repository-wide secret scan not exhaustive |
-| NFR-02 | Results reproducible from a named commit and exact commands | §6 below; CI workflows | Satisfied for backend/frontend/benchmark at `f2c4eb4` |
+| NFR-02 | Results reproducible from a named commit and exact commands | §6 below; CI workflows | Satisfied for backend/frontend/benchmark at `acbae6a` |
 | NFR-03 | Limits reported without generalising synthetic results | §7, `docs/ai/EVALUATION.md`, `docs/ai/ANOMALY_BENCHMARK.md` | Satisfied with explicit limitations |
+| NFR-04 | Declared dependencies free of known vulnerabilities | `chhatralekha/requirements.txt`, `frontend/package.json`, `frontend/package-lock.json` | Verified: pip-audit and npm audit clean (see §6) |
 
 ## 6. Verified baseline and commands
 
 Run each command from the stated directory. Record failures and skips as well
 as passes. Environment: Windows, Python 3.14, Node via npm 10.
 
-| Command (working directory) | Result at `f2c4eb4` |
+| Command (working directory) | Result at `acbae6a` |
 | :--- | :--- |
-| `python -m pytest -q` (`chhatralekha/`) | **511 passed** |
+| `python -m pytest -q` (`chhatralekha/`) | **513 passed** (1 benign warning) |
 | `python -m ruff check app tests` (`chhatralekha/`) | All checks passed |
 | `python -m app.scripts.eval_rag --write` (`chhatralekha/`) | All RAG metrics green |
-| `python -m app.scripts.eval_anomaly --commit f2c4eb4 --write` (`chhatralekha/`) | 10 rules scored, 0 false positives, 0 false negatives |
+| `python -m app.scripts.eval_anomaly --commit acbae6a3f694 --write` (`chhatralekha/`) | 10 rules scored, 0 false positives, 0 false negatives |
+| `python -m pip_audit -r requirements.txt --disable-pip --no-deps` (`chhatralekha/`) | No known vulnerabilities found |
 | `npm test -- --run` (`frontend/`) | **146 passed** (20 files) |
-| `npm run build` (`frontend/`) | Built successfully |
+| `npm run build` (`frontend/`) | Built successfully (831 modules) |
 | `npm run i18n:check` (`frontend/`) | 13 locales, 441 keys each |
-| `npm run check:links` (`frontend/`) | Passed |
+| `npm run check:links` (`frontend/`) | Passed (37 routes, 0 static assets) |
+| `npm audit --json` (`frontend/`) | 0 vulnerabilities |
 | `./gradlew :core:test` (`android/`) | Not run in this environment |
 
 Notes affecting reproducibility:
@@ -123,6 +127,43 @@ Notes affecting reproducibility:
   re-run passed 146/146. Run suites sequentially for a clean baseline.
 - jsdom prints known "navigation not implemented" / XHR warnings from existing
   tests; they are console noise and do not fail the suite.
+- `python -m pip_audit` over the whole *installed* environment was not used as a
+  baseline: the interpreter has different versions from the pinned manifest
+  (for example `fastapi==0.111.0` and `starlette==0.37.2`). The auditable
+  artefact is the tracked `requirements.txt`, which reports no known
+  vulnerabilities. Install from that manifest before reproducing a backend run.
+
+### Attendance hardening and index fix (this update)
+
+The Stage 0.9.2 attendance hardening in `app/api/attendance.py`,
+`app/schemas/campus.py` and `frontend/src/pages/AttendancePage.jsx` covers
+strict active-enrolment checks, tenant-scoped correction authorisation, CSV
+formula-injection sanitisation, authentic (non-synthetic) analytics values and
+a `recent_session_id` exposed on the class roster.
+
+Two defects were found and fixed during the final sweep:
+
+1. `app/core/database.py` passed a `name` key both inside `**options` and as an
+   explicit `name=` argument to `create_index()`. The resulting `TypeError` was
+   swallowed by the startup handler, so the unique attendance indexes were
+   never actually created. The option dict is now filtered before expansion.
+2. Enabling those indexes exposed a second issue: the unique
+   `(session_id, student_id)` index rejected legitimate legacy rows with a null
+   session. A `partialFilterExpression` now limits uniqueness to rows with a
+   real `session_id`, preserving duplicate-session protection without breaking
+   historical records.
+
+`chhatralekha/tests/test_attendance_index_creation.py` is the regression test
+for both defects. The full backend suite rose from 511 to 513 passing tests.
+
+### Dependency audit status
+
+The earlier "149 vulnerabilities across 10 packages" report describes a
+historical GitHub Actions run. That remediation was committed as `bcd5302`
+(`security: remediate Python dependency vulnerabilities`) and is already part
+of this branch. Current verification: the pinned Python manifest is clean under
+`pip-audit`, and the frontend lockfile reports zero npm vulnerabilities. No
+dependency versions were changed during this final sweep.
 
 ### RAG evaluation snapshot
 
@@ -135,7 +176,7 @@ role isolation, 0 PII leaks, p50 7.364 ms / p95 29.211 ms (machine-specific).
 From [`docs/ai/ANOMALY_BENCHMARK.md`](ai/ANOMALY_BENCHMARK.md): 47 synthetic
 cases, 65 scored student-rule pairs, ten rules, 0 false positives, 0 false
 negatives, precision/recall/F1 = 1.000 for every rule. One review-only case is
-reported but excluded from binary metrics. p50 0.196 ms / p95 0.463 ms
+reported but excluded from binary metrics. p50 0.261 ms / p95 0.606 ms
 (machine-specific, one timed run per case).
 
 ## 7. Synthetic anomaly benchmark (completed)
@@ -171,7 +212,7 @@ denominator. Repeat with:
 
 ```
 cd chhatralekha
-python -m app.scripts.eval_anomaly --commit f2c4eb4 --write
+python -m app.scripts.eval_anomaly --commit acbae6a3f694 --write
 ```
 
 A curated test set measures agreement with its explicit labels. Full agreement

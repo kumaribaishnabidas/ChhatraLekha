@@ -319,10 +319,32 @@ class Mongo:
             (
                 "attendance_policies",
                 [("institution_id", 1)],
+                {"unique": True, "name": "uniq_attendance_policy_institution"},
             ),
             (
                 "attendance_sessions",
                 [("institution_id", 1), ("target_id", 1), ("session_date", 1), ("mode", 1)],
+                {
+                    "unique": True,
+                    "partialFilterExpression": {"mode": "DAILY"},
+                    "name": "uniq_attendance_session_daily",
+                },
+            ),
+            (
+                "attendance_sessions",
+                [
+                    ("institution_id", 1),
+                    ("target_id", 1),
+                    ("session_date", 1),
+                    ("mode", 1),
+                    ("period_number", 1),
+                    ("subject_id", 1),
+                ],
+                {
+                    "unique": True,
+                    "partialFilterExpression": {"mode": "PERIOD_WISE"},
+                    "name": "uniq_attendance_session_period",
+                },
             ),
             (
                 "attendance_sessions",
@@ -330,7 +352,17 @@ class Mongo:
             ),
             (
                 "attendance_records",
-                [("institution_id", 1), ("session_id", 1), ("student_id", 1)],
+                [("session_id", 1), ("student_id", 1)],
+                {
+                    "unique": True,
+                    # Only session-backed rows are deduplicated. Legacy or
+                    # sessionless rows carry a null session_id and may legitimately
+                    # contain several historical entries for the same student.
+                    "partialFilterExpression": {
+                        "session_id": {"$exists": True, "$ne": None}
+                    },
+                    "name": "uniq_attendance_record_student",
+                },
             ),
             (
                 "attendance_records",
@@ -350,13 +382,24 @@ class Mongo:
             ),
         ]
 
-        for collection_name, keys in specifications:
+        for spec in specifications:
+            if len(spec) == 3:
+                collection_name, keys, options = spec
+            else:
+                collection_name, keys = spec
+                options = {}
+            idx_name = options.get("name") or _index_name(keys)
+            index_options = {
+                key: value for key, value in options.items() if key != "name"
+            }
             try:
-                await db[collection_name].create_index(keys, name=_index_name(keys))
+                await db[collection_name].create_index(
+                    keys, name=idx_name, **index_options
+                )
             except Exception as exc:  # noqa: BLE001 - an index must never block start-up
                 logger.warning(
                     "Could not create the index %s on %s: %s",
-                    _index_name(keys),
+                    idx_name,
                     collection_name,
                     exc,
                 )
@@ -383,3 +426,70 @@ async def get_collection(name: str) -> Any:
     if not mongo.is_connected:
         await mongo.connect()
     return mongo.collection(name)
+
+
+async def detect_attendance_session_duplicates(db: Any) -> list[dict[str, Any]]:
+    """Detect duplicate attendance sessions that would block unique index creation."""
+    duplicates: list[dict[str, Any]] = []
+
+    # 1. Daily duplicate check: (institution_id, target_id, session_date) where mode == 'DAILY'
+    pipeline_daily = [
+        {"$match": {"mode": "DAILY"}},
+        {
+            "$group": {
+                "_id": {
+                    "institution_id": "$institution_id",
+                    "target_id": "$target_id",
+                    "session_date": "$session_date",
+                },
+                "count": {"$sum": 1},
+                "session_ids": {"$push": "$session_id"},
+            }
+        },
+        {"$match": {"count": {"$gt": 1}}},
+    ]
+    cursor_daily = db["attendance_sessions"].aggregate(pipeline_daily)
+    async for doc in cursor_daily:
+        duplicates.append({"mode": "DAILY", **doc})
+
+    # 2. Period-wise duplicate check: (institution_id, target_id, session_date, period_number, subject_id)
+    pipeline_period = [
+        {"$match": {"mode": "PERIOD_WISE"}},
+        {
+            "$group": {
+                "_id": {
+                    "institution_id": "$institution_id",
+                    "target_id": "$target_id",
+                    "session_date": "$session_date",
+                    "period_number": "$period_number",
+                    "subject_id": "$subject_id",
+                },
+                "count": {"$sum": 1},
+                "session_ids": {"$push": "$session_id"},
+            }
+        },
+        {"$match": {"count": {"$gt": 1}}},
+    ]
+    cursor_period = db["attendance_sessions"].aggregate(pipeline_period)
+    async for doc in cursor_period:
+        duplicates.append({"mode": "PERIOD_WISE", **doc})
+
+    return duplicates
+
+
+async def preflight_attendance_indexes(db: Any) -> dict[str, Any]:
+    """Inspect existing collections and detect conflicts before building unique indexes."""
+    duplicates = await detect_attendance_session_duplicates(db)
+    existing_indexes: list[str] = []
+    try:
+        idx_info = await db["attendance_sessions"].index_information()
+        existing_indexes = list(idx_info.keys())
+    except Exception:
+        pass
+
+    return {
+        "can_safely_index": len(duplicates) == 0,
+        "duplicate_count": len(duplicates),
+        "duplicates": duplicates,
+        "existing_indexes": existing_indexes,
+    }

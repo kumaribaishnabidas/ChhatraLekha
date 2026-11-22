@@ -42,6 +42,7 @@ export default function AttendancePage() {
   const [marks, setMarks] = useState({}) // student_id -> { status, remarks }
   const [submittingSession, setSubmittingSession] = useState(false)
   const [sessionSubmittedToday, setSessionSubmittedToday] = useState(false)
+  const [submittedSession, setSubmittedSession] = useState(null)
 
   // Student / Parent summary states
   const [mySummary, setMySummary] = useState(null)
@@ -134,6 +135,10 @@ export default function AttendancePage() {
 
   // Load roster when selectedClassId changes
   useEffect(() => {
+    // Invalidate stale session when cohort changes
+    setSubmittedSession(null)
+    setSessionSubmittedToday(false)
+
     if (!selectedClassId || !isStaffOrAdmin) {
       setRoster([])
       setMarks({})
@@ -204,7 +209,7 @@ export default function AttendancePage() {
     }))
 
     try {
-      await api.post('/attendance/sessions', {
+      const res = await api.post('/attendance/sessions', {
         session_date: sessionDate,
         mode: attendanceMode,
         period_number: attendanceMode === 'PERIOD_WISE' ? periodNumber : null,
@@ -216,6 +221,16 @@ export default function AttendancePage() {
         records,
       })
       setSessionSubmittedToday(true)
+      const sessionData = res.data || {}
+      const returnedSessionId = sessionData.session_id || sessionData.id
+      if (returnedSessionId) {
+        setSubmittedSession({
+          session_id: returnedSessionId,
+          class_id: selectedClassId,
+          session_date: sessionDate,
+          mode: attendanceMode,
+        })
+      }
       notify(
         `Attendance recorded successfully for ${targetLabel} on ${sessionDate}. Notifications dispatched.`,
       )
@@ -465,13 +480,18 @@ export default function AttendancePage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-muted mb-1">
+                <label htmlFor="attendance-date-input" className="block text-xs font-semibold text-muted mb-1">
                   Attendance Date
                 </label>
                 <input
+                  id="attendance-date-input"
                   type="date"
                   value={sessionDate}
-                  onChange={(e) => setSessionDate(e.target.value)}
+                  onChange={(e) => {
+                    setSessionDate(e.target.value)
+                    setSubmittedSession(null)
+                    setSessionSubmittedToday(false)
+                  }}
                   className="w-full px-3 py-2 text-xs border border-line rounded-md bg-surface text-navy dark:text-white"
                 />
               </div>
@@ -482,7 +502,11 @@ export default function AttendancePage() {
                 </label>
                 <select
                   value={attendanceMode}
-                  onChange={(e) => setAttendanceMode(e.target.value)}
+                  onChange={(e) => {
+                    setAttendanceMode(e.target.value)
+                    setSubmittedSession(null)
+                    setSessionSubmittedToday(false)
+                  }}
                   className="w-full px-3 py-2 text-xs border border-line rounded-md bg-surface text-navy dark:text-white"
                 >
                   <option value="DAILY">Daily (Single Roll Call)</option>
@@ -598,10 +622,19 @@ export default function AttendancePage() {
                             <button
                               type="button"
                               onClick={() => {
+                                const isCurrentSessionValid =
+                                  submittedSession &&
+                                  submittedSession.class_id === selectedClassId &&
+                                  submittedSession.session_date === sessionDate &&
+                                  submittedSession.mode === attendanceMode
+                                const resolvedSessionId =
+                                  (isCurrentSessionValid ? submittedSession.session_id : '') ||
+                                  stu.recent_session_id ||
+                                  ''
                                 setCorrectionTarget({
                                   student_id: stu.student_id,
                                   student_name: stu.student_name,
-                                  session_id: submittedSession?.session_id || stu.recent_session_id || '',
+                                  session_id: resolvedSessionId,
                                 })
                                 setShowCorrectionModal(true)
                               }}
@@ -641,23 +674,41 @@ export default function AttendancePage() {
             <div className="card p-4 rounded-md border border-line bg-surface flex flex-col gap-1">
               <span className="text-xs font-bold uppercase tracking-wider text-muted">Overall Attendance</span>
               <span className="text-2xl font-extrabold text-navy dark:text-bright-blue">
-                {reportSummary?.average_attendance_percentage || 92.4}%
+                {reportSummary?.average_attendance_percentage != null
+                  ? `${Number(reportSummary.average_attendance_percentage).toFixed(1)}%`
+                  : '--'}
               </span>
-              <span className="text-[11px] text-emerald-600 font-semibold">Above 75% target</span>
+              {reportSummary?.average_attendance_percentage != null ? (
+                <span
+                  className={`text-[11px] font-semibold ${
+                    Number(reportSummary.average_attendance_percentage) >= (policy?.minimum_attendance_percentage ?? 75.0)
+                      ? 'text-emerald-600'
+                      : 'text-crimson'
+                  }`}
+                >
+                  {Number(reportSummary.average_attendance_percentage) >= (policy?.minimum_attendance_percentage ?? 75.0)
+                    ? `Above ${policy?.minimum_attendance_percentage ?? 75}% target`
+                    : `Below ${policy?.minimum_attendance_percentage ?? 75}% target`}
+                </span>
+              ) : (
+                <span className="text-[11px] text-muted">Awaiting session records</span>
+              )}
             </div>
             <div className="card p-4 rounded-md border border-line bg-surface flex flex-col gap-1">
               <span className="text-xs font-bold uppercase tracking-wider text-muted">Total Sessions</span>
               <span className="text-2xl font-extrabold text-navy dark:text-bright-blue">
-                {reportSummary?.total_sessions || 64}
+                {reportSummary?.total_sessions != null ? reportSummary.total_sessions : '--'}
               </span>
               <span className="text-[11px] text-muted">Conducted sessions</span>
             </div>
             <div className="card p-4 rounded-md border border-line bg-surface flex flex-col gap-1">
               <span className="text-xs font-bold uppercase tracking-wider text-muted">Statutory Defaulters</span>
               <span className="text-2xl font-extrabold text-crimson">
-                {reportSummary?.defaulters_count || 3}
+                {reportSummary?.defaulters_count != null ? reportSummary.defaulters_count : '--'}
               </span>
-              <span className="text-[11px] text-muted">Students below 75%</span>
+              <span className="text-[11px] text-muted">
+                Students below {policy?.minimum_attendance_percentage ?? 75}%
+              </span>
             </div>
             <div className="card p-4 rounded-md border border-line bg-surface flex flex-col gap-1">
               <span className="text-xs font-bold uppercase tracking-wider text-muted">Pending Corrections</span>
@@ -1103,7 +1154,7 @@ export default function AttendancePage() {
                   id="correction-session-id"
                   type="text"
                   required
-                  placeholder="e.g. ATT-001 or active session ID"
+                  placeholder="e.g. ATT-2026-0310 or active session ID"
                   value={correctionTarget.session_id || ''}
                   onChange={(e) =>
                     setCorrectionTarget({
@@ -1113,6 +1164,11 @@ export default function AttendancePage() {
                   }
                   className="w-full px-3 py-2 border border-line rounded-md bg-surface text-navy dark:text-white"
                 />
+                {!correctionTarget.session_id && (
+                  <p className="text-[11px] text-amber-600 mt-1">
+                    No active session found for this cohort. Enter a valid session ID from attendance history.
+                  </p>
+                )}
               </div>
 
               <div>

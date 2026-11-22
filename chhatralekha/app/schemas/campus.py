@@ -443,6 +443,7 @@ class AttendanceRosterItem(BaseModel):
     class_id: Optional[str] = None
     section: Optional[str] = None
     recent_attendance_rate: Optional[float] = None
+    recent_session_id: Optional[str] = None
 
 
 class AttendanceCorrectionRequestIn(BaseModel):

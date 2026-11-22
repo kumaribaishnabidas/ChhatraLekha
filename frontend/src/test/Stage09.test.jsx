@@ -515,5 +515,149 @@ describe('Stage 0.9: Attendance Management System Frontend', () => {
       expect(screen.queryByText('Request Attendance Correction')).not.toBeInTheDocument()
     })
   })
+
+  it('Fix 1: captures session ID on submit, propagates to correction modal, and invalidates on class/date switch', async () => {
+    const originalPost = api.post
+    api.post = vi.fn((url, body) => {
+      if (url.includes('/attendance/sessions')) {
+        return Promise.resolve({
+          data: {
+            session_id: 'ATT-CAPTURED-999',
+            ...body,
+          },
+        })
+      }
+      return originalPost(url, body)
+    })
+
+    render(
+      <BrowserRouter>
+        <AttendancePage />
+      </BrowserRouter>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Aarav Patel')).toBeInTheDocument()
+    })
+
+    // 1. Submit session
+    const submitBtn = screen.getByRole('button', { name: /Submit Attendance Session/i })
+    fireEvent.click(submitBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Attendance recorded successfully/i)).toBeInTheDocument()
+    })
+
+    // 2. Open correction modal for first student
+    const correctionButtons = screen.getAllByRole('button', { name: 'Request Correction' })
+    fireEvent.click(correctionButtons[0])
+
+    await waitFor(() => {
+      expect(screen.getByText('Request Attendance Correction')).toBeInTheDocument()
+    })
+
+    // Propagated session ID is ATT-CAPTURED-999
+    const sessionInput = screen.getByLabelText(/Session ID/i)
+    expect(sessionInput.value).toBe('ATT-CAPTURED-999')
+
+    // Close modal
+    const cancelBtn = screen.getByRole('button', { name: 'Cancel' })
+    fireEvent.click(cancelBtn)
+
+    // 3. Switch date to invalidate stale session
+    const dateInput = screen.getByLabelText(/Attendance Date/i)
+    fireEvent.change(dateInput, { target: { value: '2026-03-25' } })
+
+    // Open correction modal again
+    const correctionButtonsAfter = screen.getAllByRole('button', { name: 'Request Correction' })
+    fireEvent.click(correctionButtonsAfter[0])
+
+    await waitFor(() => {
+      expect(screen.getByText('Request Attendance Correction')).toBeInTheDocument()
+    })
+
+    // Stale session ID must not be reused
+    const sessionInputAfter = screen.getByLabelText(/Session ID/i)
+    expect(sessionInputAfter.value).not.toBe('ATT-CAPTURED-999')
+    expect(sessionInputAfter.value).toBe('')
+
+    // 4. Missing session ID validation prevents submission
+    const form = sessionInputAfter.closest('form')
+    fireEvent.submit(form)
+
+    await waitFor(() => {
+      expect(screen.getByText('Session ID is required for attendance correction.')).toBeInTheDocument()
+    })
+
+    api.post = originalPost
+  })
+
+  it('Fix 6: displays genuine zeroes for attendance statistics without synthetic defaults', async () => {
+    const originalGet = api.get
+    api.get = vi.fn((url) => {
+      if (url.includes('/attendance/reports/summary')) {
+        return Promise.resolve({
+          data: {
+            institution_id: 'INST-0421',
+            total_sessions: 0,
+            average_attendance_percentage: 0.0,
+            class_summaries: [],
+            defaulters_count: 0,
+            daily_trends: [],
+          },
+        })
+      }
+      return originalGet(url)
+    })
+
+    render(
+      <BrowserRouter>
+        <AttendancePage />
+      </BrowserRouter>,
+    )
+
+    const analyticsTab = screen.getByRole('button', { name: /Overview & Analytics/i })
+    fireEvent.click(analyticsTab)
+
+    await waitFor(() => {
+      expect(screen.getByText('0.0%')).toBeInTheDocument()
+      expect(screen.getAllByText('0').length).toBeGreaterThanOrEqual(2)
+      // Verify synthetic numbers are gone
+      expect(screen.queryByText('92.4%')).not.toBeInTheDocument()
+      expect(screen.queryByText('64')).not.toBeInTheDocument()
+      expect(screen.queryByText('Above 75% target')).not.toBeInTheDocument()
+      expect(screen.getByText('Below 75% target')).toBeInTheDocument()
+    })
+
+    api.get = originalGet
+  })
+
+  it('Fix 6: displays clean unavailable state fallback when report data is null or fails', async () => {
+    const originalGet = api.get
+    api.get = vi.fn((url) => {
+      if (url.includes('/attendance/reports/summary')) {
+        return Promise.reject(new Error('Network error'))
+      }
+      return originalGet(url)
+    })
+
+    render(
+      <BrowserRouter>
+        <AttendancePage />
+      </BrowserRouter>,
+    )
+
+    const analyticsTab = screen.getByRole('button', { name: /Overview & Analytics/i })
+    fireEvent.click(analyticsTab)
+
+    await waitFor(() => {
+      expect(screen.getAllByText('--').length).toBeGreaterThanOrEqual(2)
+      expect(screen.queryByText('92.4%')).not.toBeInTheDocument()
+      expect(screen.queryByText('64')).not.toBeInTheDocument()
+      expect(screen.queryByText('Above 75% target')).not.toBeInTheDocument()
+    })
+
+    api.get = originalGet
+  })
 })
 

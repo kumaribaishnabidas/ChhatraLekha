@@ -128,6 +128,25 @@ async def test_record_attendance_session_tallies_and_records(async_client: Async
         ],
     }
 
+    # Seed active student enrolments for Grade 10 Section A
+    for sid, sname in [
+        ("STU-01", "Aarav Sharma"),
+        ("STU-02", "Diya Sen"),
+        ("STU-03", "Rohan Mehra"),
+        ("STU-04", "Zara Khan"),
+    ]:
+        await db["student_enrolments"].insert_one(
+            {
+                "institution_id": inst_id,
+                "student_id": sid,
+                "student_name": sname,
+                "class_id": "CLS-GRADE10-A",
+                "academic_year_id": "AY-2025-26",
+                "status": "ACTIVE",
+                "is_current": True,
+            }
+        )
+
     res = await async_client.post(
         "/api/attendance/sessions", json=payload, headers=auth(token_admin)
     )
@@ -174,6 +193,18 @@ async def test_duplicate_attendance_submission_rejected(async_client: AsyncClien
             {"student_id": "STU-D1", "student_name": "Student One", "status": "PRESENT"},
         ],
     }
+
+    # Seed active student enrolment
+    await db["student_enrolments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "student_id": "STU-D1",
+            "student_name": "Student One",
+            "class_id": "CLS-GRADE9-B",
+            "status": "ACTIVE",
+            "is_current": True,
+        }
+    )
 
     # First submission succeeds
     res1 = await async_client.post(
@@ -224,6 +255,28 @@ async def test_teacher_assignment_authorization(async_client: AsyncClient):
         }
     )
 
+    # Seed active enrolments for both classes
+    await db["student_enrolments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "student_id": "STU-A1",
+            "student_name": "Alice",
+            "class_id": "CLS-10A",
+            "status": "ACTIVE",
+            "is_current": True,
+        }
+    )
+    await db["student_enrolments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "student_id": "STU-B1",
+            "student_name": "Bob",
+            "class_id": "CLS-12B",
+            "status": "ACTIVE",
+            "is_current": True,
+        }
+    )
+
     # Submitting for assigned class CLS-10A succeeds
     res_ok = await async_client.post(
         "/api/attendance/sessions",
@@ -265,6 +318,18 @@ async def test_absence_creates_attendance_notification(async_client: AsyncClient
 
     token_admin = await create_test_user(
         db, user_id="USR-ADM-NOTIF", role="school_admin", institution_id=inst_id
+    )
+
+    # Seed active enrolment for student
+    await db["student_enrolments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "student_id": student_id,
+            "student_name": "Rahul Verma",
+            "class_id": "CLS-8A",
+            "status": "ACTIVE",
+            "is_current": True,
+        }
     )
 
     res = await async_client.post(
@@ -365,6 +430,26 @@ async def test_attendance_correction_lifecycle_preserves_audit_trail(async_clien
         db, user_id="TEA-CORR-01", role="teacher", institution_id=inst_id
     )
 
+    # Seed active enrolment and teacher assignment
+    await db["student_enrolments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "student_id": student_id,
+            "student_name": "Meera Joshi",
+            "class_id": "CLS-CORR-1",
+            "status": "ACTIVE",
+            "is_current": True,
+        }
+    )
+    await db["teacher_assignments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "teacher_id": "TEA-CORR-01",
+            "target_id": "CLS-CORR-1",
+            "class_id": "CLS-CORR-1",
+        }
+    )
+
     # 1. Record session where student is marked ABSENT
     sess_res = await async_client.post(
         "/api/attendance/sessions",
@@ -450,6 +535,18 @@ async def test_attendance_correction_rejection(async_client: AsyncClient):
         db, user_id="USR-ADM-REJ", role="school_admin", institution_id=inst_id
     )
 
+    # Seed active enrolment
+    await db["student_enrolments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "student_id": student_id,
+            "student_name": "Karan Roy",
+            "class_id": "CLS-REJ-1",
+            "status": "ACTIVE",
+            "is_current": True,
+        }
+    )
+
     sess_res = await async_client.post(
         "/api/attendance/sessions",
         json={
@@ -506,6 +603,19 @@ async def test_attendance_reports_and_csv_export(async_client: AsyncClient):
     token_admin = await create_test_user(
         db, user_id="USR-ADM-REP", role="school_admin", institution_id=inst_id
     )
+
+    # Seed active student enrolments for Class 10A
+    for sid, sname in [("S1", "Student 1"), ("S2", "Student 2")]:
+        await db["student_enrolments"].insert_one(
+            {
+                "institution_id": inst_id,
+                "student_id": sid,
+                "student_name": sname,
+                "class_id": "CLS-REP-1",
+                "status": "ACTIVE",
+                "is_current": True,
+            }
+        )
 
     # Seed 2 sessions
     await async_client.post(
@@ -624,6 +734,18 @@ async def test_teacher_assigned_via_target_id_accepted(async_client: AsyncClient
         }
     )
 
+    # Seed active student enrolment
+    await db["student_enrolments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "student_id": "STU-T1",
+            "student_name": "Student T1",
+            "class_id": "CLS-TGT-10",
+            "status": "ACTIVE",
+            "is_current": True,
+        }
+    )
+
     res = await async_client.post(
         "/api/attendance/sessions",
         json={
@@ -677,6 +799,18 @@ async def test_period_wise_requires_period_and_allows_different_periods(async_cl
     inst_id = "INST-ATT-PERIOD"
     token_admin = await create_test_user(
         db, user_id="USR-ADM-PER", role="school_admin", institution_id=inst_id
+    )
+
+    # Seed active student enrolment for Class Per 1
+    await db["student_enrolments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "student_id": "STU-P1",
+            "student_name": "Student P",
+            "class_id": "CLS-PER-1",
+            "status": "ACTIVE",
+            "is_current": True,
+        }
     )
 
     # 1. Period-wise without period_number is rejected (422)
@@ -1134,3 +1268,587 @@ async def test_batch_attendance_rejects_unenrolled_or_alien_students(async_clien
     )
     assert res_clean.status_code == 200
     assert res_clean.json()["total_students"] == 1
+
+
+# -----------------------------------------------------------------------------
+# Stage 0.9.2: Attendance Security and Functional Hardening Regression Tests
+# -----------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_fix_1_roster_exposes_recent_session_id(async_client: AsyncClient):
+    """Fix 1: Roster endpoint attaches student's most recent session_id for correction propagation."""
+    db = mongo.db()
+    inst_id = "INST-FIX1-ROST"
+    class_id = "CLS-FIX1-10A"
+    token_admin = await create_test_user(
+        db, user_id="USR-ADM-FIX1", role="school_admin", institution_id=inst_id
+    )
+
+    # Seed student enrolment
+    await db["student_enrolments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "student_id": "STU-F1-01",
+            "student_name": "Rohan Gupta",
+            "class_id": class_id,
+            "status": "ACTIVE",
+            "is_current": True,
+        }
+    )
+
+    # Seed past attendance records
+    await db["attendance_records"].insert_many(
+        [
+            {
+                "institution_id": inst_id,
+                "session_id": "ATT-OLDER-SESS",
+                "student_id": "STU-F1-01",
+                "session_date": "2026-03-01",
+                "status": "PRESENT",
+            },
+            {
+                "institution_id": inst_id,
+                "session_id": "ATT-RECENT-SESS",
+                "student_id": "STU-F1-01",
+                "session_date": "2026-03-15",
+                "status": "ABSENT",
+            },
+        ]
+    )
+
+    res = await async_client.get(
+        f"/api/attendance/roster?class_id={class_id}", headers=auth(token_admin)
+    )
+    assert res.status_code == 200
+    roster = res.json()
+    assert len(roster) == 1
+    item = roster[0]
+    assert item["student_id"] == "STU-F1-01"
+    assert item["recent_session_id"] == "ATT-RECENT-SESS"
+
+
+@pytest.mark.asyncio
+async def test_fix_2_strict_enrolment_validation_matrix(async_client: AsyncClient):
+    """Fix 2: Zero fail-open, class matching, active status, and academic year enforcement."""
+    db = mongo.db()
+    inst_id = "INST-FIX2-ENR"
+    alien_inst = "INST-FIX2-ALIEN"
+    class_id = "CLS-FIX2-A"
+    other_class = "CLS-FIX2-B"
+    token_admin = await create_test_user(
+        db, user_id="USR-ADM-FIX2", role="school_admin", institution_id=inst_id
+    )
+
+    # 1. Valid active enrolment in correct class
+    await db["student_enrolments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "student_id": "STU-VALID-01",
+            "student_name": "Active Student",
+            "class_id": class_id,
+            "academic_year_id": "AY-2026-27",
+            "status": "ACTIVE",
+            "is_current": True,
+        }
+    )
+    # 2. Student from another institution
+    await db["student_enrolments"].insert_one(
+        {
+            "institution_id": alien_inst,
+            "student_id": "STU-ALIEN-01",
+            "student_name": "Alien Student",
+            "class_id": class_id,
+            "academic_year_id": "AY-2026-27",
+            "status": "ACTIVE",
+            "is_current": True,
+        }
+    )
+    # 3. Student enrolled in another class
+    await db["student_enrolments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "student_id": "STU-OTHER-CLS",
+            "student_name": "Other Class Student",
+            "class_id": other_class,
+            "academic_year_id": "AY-2026-27",
+            "status": "ACTIVE",
+            "is_current": True,
+        }
+    )
+    # 4. Inactive enrolment
+    await db["student_enrolments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "student_id": "STU-INACTIVE-01",
+            "student_name": "Inactive Student",
+            "class_id": class_id,
+            "academic_year_id": "AY-2026-27",
+            "status": "INACTIVE",
+            "is_current": True,
+        }
+    )
+    # 5. Former/expired enrolment (is_current=False)
+    await db["student_enrolments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "student_id": "STU-EXPIRED-01",
+            "student_name": "Expired Student",
+            "class_id": class_id,
+            "academic_year_id": "AY-2026-27",
+            "status": "ACTIVE",
+            "is_current": False,
+        }
+    )
+    # 6. Academic year mismatch
+    await db["student_enrolments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "student_id": "STU-AY-MISMATCH",
+            "student_name": "Past Year Student",
+            "class_id": class_id,
+            "academic_year_id": "AY-2025-26",
+            "status": "ACTIVE",
+            "is_current": True,
+        }
+    )
+
+    base_payload = {
+        "session_date": "2026-04-01",
+        "mode": "DAILY",
+        "target_type": "CLASS",
+        "target_id": class_id,
+        "target_label": "Class Fix2 A",
+        "academic_year_id": "AY-2026-27",
+    }
+
+    # Case A: Valid active enrolment in correct class succeeds (200)
+    res_valid = await async_client.post(
+        "/api/attendance/sessions",
+        json={
+            **base_payload,
+            "records": [
+                {
+                    "student_id": "STU-VALID-01",
+                    "student_name": "Active Student",
+                    "status": "PRESENT",
+                }
+            ],
+        },
+        headers=auth(token_admin),
+    )
+    assert res_valid.status_code == 200
+
+    # Case B: Student from another institution rejected with 403 Forbidden
+    res_alien = await async_client.post(
+        "/api/attendance/sessions",
+        json={
+            **base_payload,
+            "session_date": "2026-04-02",
+            "records": [
+                {"student_id": "STU-ALIEN-01", "student_name": "Alien Student", "status": "PRESENT"}
+            ],
+        },
+        headers=auth(token_admin),
+    )
+    assert res_alien.status_code == 403
+    assert "belong to a different institution" in res_alien.json()["detail"].lower()
+
+    # Case C: Student from another class rejected with 422 Unprocessable Entity
+    res_diff_class = await async_client.post(
+        "/api/attendance/sessions",
+        json={
+            **base_payload,
+            "session_date": "2026-04-03",
+            "records": [
+                {
+                    "student_id": "STU-OTHER-CLS",
+                    "student_name": "Other Class Student",
+                    "status": "PRESENT",
+                }
+            ],
+        },
+        headers=auth(token_admin),
+    )
+    assert res_diff_class.status_code == 422
+    assert "not target class" in res_diff_class.json()["detail"].lower()
+
+    # Case D: Inactive enrolment rejected with 422 Unprocessable Entity
+    res_inactive = await async_client.post(
+        "/api/attendance/sessions",
+        json={
+            **base_payload,
+            "session_date": "2026-04-04",
+            "records": [
+                {
+                    "student_id": "STU-INACTIVE-01",
+                    "student_name": "Inactive Student",
+                    "status": "PRESENT",
+                }
+            ],
+        },
+        headers=auth(token_admin),
+    )
+    assert res_inactive.status_code == 422
+    assert "inactive, former, or expired" in res_inactive.json()["detail"].lower()
+
+    # Case E: Former or expired enrolment (is_current=False) rejected with 422 Unprocessable Entity
+    res_expired = await async_client.post(
+        "/api/attendance/sessions",
+        json={
+            **base_payload,
+            "session_date": "2026-04-05",
+            "records": [
+                {
+                    "student_id": "STU-EXPIRED-01",
+                    "student_name": "Expired Student",
+                    "status": "PRESENT",
+                }
+            ],
+        },
+        headers=auth(token_admin),
+    )
+    assert res_expired.status_code == 422
+    assert "inactive, former, or expired" in res_expired.json()["detail"].lower()
+
+    # Case F: Missing enrolment rejected with 422 Unprocessable Entity
+    res_missing = await async_client.post(
+        "/api/attendance/sessions",
+        json={
+            **base_payload,
+            "session_date": "2026-04-06",
+            "records": [
+                {
+                    "student_id": "STU-GHOST-999",
+                    "student_name": "Ghost Student",
+                    "status": "PRESENT",
+                }
+            ],
+        },
+        headers=auth(token_admin),
+    )
+    assert res_missing.status_code == 422
+    assert "not enrolled in this institution" in res_missing.json()["detail"].lower()
+
+    # Case G: Academic year mismatch rejected with 422 Unprocessable Entity
+    res_ay_mismatch = await async_client.post(
+        "/api/attendance/sessions",
+        json={
+            **base_payload,
+            "session_date": "2026-04-07",
+            "records": [
+                {
+                    "student_id": "STU-AY-MISMATCH",
+                    "student_name": "Past Year Student",
+                    "status": "PRESENT",
+                }
+            ],
+        },
+        headers=auth(token_admin),
+    )
+    assert res_ay_mismatch.status_code == 422
+    assert "academic year" in res_ay_mismatch.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_fix_2_empty_collection_never_fails_open(async_client: AsyncClient):
+    """Fix 2: Zero fail-open: An institution with zero enrolled students rejects arbitrary student IDs."""
+    db = mongo.db()
+    inst_empty = "INST-EMPTY-COLLECTION-99"
+    token_admin = await create_test_user(
+        db, user_id="USR-ADM-EMPTY", role="school_admin", institution_id=inst_empty
+    )
+
+    # Verify collection has zero enrolments
+    assert await db["student_enrolments"].count_documents({"institution_id": inst_empty}) == 0
+    assert await db["students"].count_documents({"institution_id": inst_empty}) == 0
+
+    res = await async_client.post(
+        "/api/attendance/sessions",
+        json={
+            "session_date": "2026-04-08",
+            "mode": "DAILY",
+            "target_type": "CLASS",
+            "target_id": "CLS-NONEXISTENT",
+            "target_label": "Nonexistent Class",
+            "records": [
+                {"student_id": "STU-ARBITRARY", "student_name": "Arbitrary", "status": "PRESENT"}
+            ],
+        },
+        headers=auth(token_admin),
+    )
+    assert res.status_code == 422
+    assert "not enrolled in this institution" in res.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_fix_3_comprehensive_csv_sanitization(async_client: AsyncClient):
+    """Fix 3: Stronger CSV sanitization neutralizes whitespace/control-char prefixed formulas across all columns."""
+    from app.api.attendance import _sanitize_csv_cell
+
+    # Direct formula triggers
+    assert _sanitize_csv_cell("=cmd") == "'=cmd"
+    assert _sanitize_csv_cell("+1+1") == "'+1+1"
+    assert _sanitize_csv_cell("-2") == "'-2"
+    assert _sanitize_csv_cell("@SUM(A1)") == "'@SUM(A1)"
+
+    # Obscured with spaces
+    assert _sanitize_csv_cell("   =cmd|' /C calc'!A0") == "'   =cmd|' /C calc'!A0"
+    assert _sanitize_csv_cell("  +1+1") == "'  +1+1"
+
+    # Obscured with tabs, newlines, carriage returns
+    assert _sanitize_csv_cell("\t=1+1") == "'\t=1+1"
+    assert _sanitize_csv_cell("\r\n@SUM(1,2)") == "'\r\n@SUM(1,2)"
+    assert _sanitize_csv_cell("\n-1337") == "'\n-1337"
+
+    # Obscured with Unicode BOM and non-breaking space
+    assert _sanitize_csv_cell("\ufeff=1+2") == "'\ufeff=1+2"
+    assert _sanitize_csv_cell("\xa0+cmd") == "'\xa0+cmd"
+
+    # Ordinary text, dates, numbers preserved unchanged
+    assert _sanitize_csv_cell("Normal Text") == "Normal Text"
+    assert _sanitize_csv_cell("2026-03-24") == "2026-03-24"
+    assert _sanitize_csv_cell("Grade 10 A") == "Grade 10 A"
+    assert _sanitize_csv_cell("") == ""
+    assert _sanitize_csv_cell(None) == ""
+    assert _sanitize_csv_cell("   ") == "   "
+
+    # Integrated CSV export test with malicious columns
+    db = mongo.db()
+    inst_id = "INST-CSV-STRONG"
+    token_admin = await create_test_user(
+        db, user_id="USR-ADM-CSV-S", role="school_admin", institution_id=inst_id
+    )
+
+    await db["attendance_records"].insert_one(
+        {
+            "institution_id": inst_id,
+            "session_id": "ATT-CSV-SEC-01",
+            "session_date": "2026-04-10",
+            "target_id": "CLS-CSV-SEC",
+            "target_label": "   =cmd|' /C calc'!A0",
+            "subject_id": "SUB-CSV",
+            "subject_name": "\t+SUM(A1:A10)",
+            "student_id": "\r\n-1337-INJECT",
+            "student_name": '\ufeff@HYPERLINK("http://evil.com","Click")',
+            "status": "PRESENT",
+            "remarks": "   =1+1",
+            "recorded_by": "\xa0+ADMIN",
+        }
+    )
+
+    res = await async_client.get("/api/attendance/reports/export-csv", headers=auth(token_admin))
+    assert res.status_code == 200
+    reader = csv.reader(io.StringIO(res.text))
+    rows = list(reader)
+    assert len(rows) == 2
+    row = rows[1]
+
+    assert row[1] == "'   =cmd|' /C calc'!A0"
+    assert row[2] == "'\t+SUM(A1:A10)"
+    assert row[3] == "'\r\n-1337-INJECT"
+    assert row[4] == '\'\ufeff@HYPERLINK("http://evil.com","Click")'
+    assert row[6] == "'   =1+1"
+    assert row[7] == "'\xa0+ADMIN"
+
+
+@pytest.mark.asyncio
+async def test_fix_4_teacher_correction_authorization_matrix(async_client: AsyncClient):
+    """Fix 4: Teacher authorization for correction requests enforces class and subject assignment."""
+    db = mongo.db()
+    inst_id = "INST-FIX4-AUTH"
+    alien_inst = "INST-FIX4-ALIEN"
+    assigned_teacher = "TEA-ASSIGNED-01"
+    unassigned_teacher = "TEA-UNASSIGNED-02"
+    alien_teacher = "TEA-ALIEN-03"
+
+    token_assigned = await create_test_user(
+        db, user_id=assigned_teacher, role="teacher", institution_id=inst_id
+    )
+    token_unassigned = await create_test_user(
+        db, user_id=unassigned_teacher, role="teacher", institution_id=inst_id
+    )
+    token_alien = await create_test_user(
+        db, user_id=alien_teacher, role="teacher", institution_id=alien_inst
+    )
+    token_admin = await create_test_user(
+        db, user_id="USR-ADM-FIX4", role="school_admin", institution_id=inst_id
+    )
+
+    # Seed teacher assignment for assigned_teacher to CLS-MATH-10
+    await db["teacher_assignments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "teacher_id": assigned_teacher,
+            "target_id": "CLS-MATH-10",
+            "class_id": "CLS-MATH-10",
+            "subject_id": "SUB-MATH",
+        }
+    )
+
+    # Seed attendance record
+    session_id = "ATT-SESS-FIX4-01"
+    student_id = "STU-FIX4-01"
+    await db["attendance_records"].insert_one(
+        {
+            "institution_id": inst_id,
+            "session_id": session_id,
+            "student_id": student_id,
+            "student_name": "Aditi Sharma",
+            "target_id": "CLS-MATH-10",
+            "subject_id": "SUB-MATH",
+            "session_date": "2026-04-12",
+            "status": "ABSENT",
+        }
+    )
+
+    # 1. Assigned teacher can request correction (200)
+    res_ok = await async_client.post(
+        "/api/attendance/corrections",
+        json={
+            "session_id": session_id,
+            "student_id": student_id,
+            "requested_status": "PRESENT",
+            "reason": "Student was present during roll call.",
+        },
+        headers=auth(token_assigned),
+    )
+    assert res_ok.status_code == 200
+    assert res_ok.json()["status"] == "PENDING"
+
+    # 2. Unassigned teacher cannot request correction (403 Forbidden)
+    res_unassigned = await async_client.post(
+        "/api/attendance/corrections",
+        json={
+            "session_id": session_id,
+            "student_id": student_id,
+            "requested_status": "PRESENT",
+            "reason": "Unassigned teacher attempt.",
+        },
+        headers=auth(token_unassigned),
+    )
+    assert res_unassigned.status_code == 403
+    assert "not assigned" in res_unassigned.json()["detail"].lower()
+
+    # 3. Teacher from another institution cannot request correction (403 Forbidden)
+    res_alien = await async_client.post(
+        "/api/attendance/corrections",
+        json={
+            "session_id": session_id,
+            "student_id": student_id,
+            "requested_status": "PRESENT",
+            "reason": "Cross-institution teacher attempt.",
+        },
+        headers=auth(token_alien),
+    )
+    assert res_alien.status_code == 403
+    assert "another institution" in res_alien.json()["detail"].lower()
+
+    # 4. Subject mismatch: teacher assigned to physics cannot request correction for math class
+    token_physics_teacher = await create_test_user(
+        db, user_id="TEA-PHYS-01", role="teacher", institution_id=inst_id
+    )
+    await db["teacher_assignments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "teacher_id": "TEA-PHYS-01",
+            "target_id": "CLS-MATH-10",
+            "class_id": "CLS-MATH-10",
+            "subject_id": "SUB-PHYSICS",
+        }
+    )
+    res_subj_mismatch = await async_client.post(
+        "/api/attendance/corrections",
+        json={
+            "session_id": session_id,
+            "student_id": student_id,
+            "requested_status": "PRESENT",
+            "reason": "Physics teacher attempt on math record.",
+        },
+        headers=auth(token_physics_teacher),
+    )
+    assert res_subj_mismatch.status_code == 403
+    assert "not assigned" in res_subj_mismatch.json()["detail"].lower()
+
+    # 5. Authorized administrator can request correction without teacher assignment (200)
+    res_admin = await async_client.post(
+        "/api/attendance/corrections",
+        json={
+            "session_id": session_id,
+            "student_id": student_id,
+            "requested_status": "EXCUSED",
+            "reason": "Principal approved medical dispensation.",
+        },
+        headers=auth(token_admin),
+    )
+    assert res_admin.status_code == 200
+    assert res_admin.json()["status"] == "PENDING"
+
+
+@pytest.mark.asyncio
+async def test_fix_5_database_level_duplicate_prevention_and_preflight(async_client: AsyncClient):
+    """Fix 5: Database-level uniqueness constraints and migration preflight diagnostics."""
+    from app.core.database import detect_attendance_session_duplicates, preflight_attendance_indexes
+
+    db = mongo.db()
+    inst_id = "INST-FIX5-UNIQ"
+    token_admin = await create_test_user(
+        db, user_id="USR-ADM-FIX5", role="school_admin", institution_id=inst_id
+    )
+
+    # Verify preflight runs safely on current DB
+    preflight = await preflight_attendance_indexes(db)
+    assert "can_safely_index" in preflight
+    assert "duplicates" in preflight
+
+    # Seed active enrolment
+    await db["student_enrolments"].insert_one(
+        {
+            "institution_id": inst_id,
+            "student_id": "STU-UNIQ-01",
+            "student_name": "Unique Student",
+            "class_id": "CLS-UNIQ-1",
+            "status": "ACTIVE",
+            "is_current": True,
+        }
+    )
+
+    # 1. First DAILY submission succeeds
+    res1 = await async_client.post(
+        "/api/attendance/sessions",
+        json={
+            "session_date": "2026-04-15",
+            "mode": "DAILY",
+            "target_type": "CLASS",
+            "target_id": "CLS-UNIQ-1",
+            "target_label": "Class Uniq 1",
+            "records": [
+                {"student_id": "STU-UNIQ-01", "student_name": "Unique Student", "status": "PRESENT"}
+            ],
+        },
+        headers=auth(token_admin),
+    )
+    assert res1.status_code == 200
+
+    # 2. Duplicate DAILY submission rejected with 409 Conflict
+    res2 = await async_client.post(
+        "/api/attendance/sessions",
+        json={
+            "session_date": "2026-04-15",
+            "mode": "DAILY",
+            "target_type": "CLASS",
+            "target_id": "CLS-UNIQ-1",
+            "target_label": "Class Uniq 1",
+            "records": [
+                {"student_id": "STU-UNIQ-01", "student_name": "Unique Student", "status": "PRESENT"}
+            ],
+        },
+        headers=auth(token_admin),
+    )
+    assert res2.status_code == 409
+    assert "already submitted" in res2.json()["detail"].lower()
+
+    # 3. Duplicate detection reports zero duplicates when DB is clean
+    duplicates = await detect_attendance_session_duplicates(db)
+    assert isinstance(duplicates, list)
+    assert len(duplicates) == 0
