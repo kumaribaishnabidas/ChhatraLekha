@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import GoogleSignInButton from '../components/common/GoogleSignInButton'
 import LanguageSwitcher from '../components/common/LanguageSwitcher'
 import ThemeToggle from '../components/common/ThemeToggle'
+import StudentAcademicSelectionWizard from '../components/common/StudentAcademicSelectionWizard'
 import { useAuth } from '../hooks/useAuth'
 import { api, errorMessage } from '../services/api'
 
@@ -30,6 +31,7 @@ export default function LoginPage() {
   const [notice, setNotice] = useState('')
   const [googleEnabled, setGoogleEnabled] = useState(false)
   const [demoSigningIn, setDemoSigningIn] = useState(null)
+  const [showStudentWizard, setShowStudentWizard] = useState(false)
 
   useEffect(() => {
     // If redirected from registration or session expiration
@@ -94,6 +96,10 @@ export default function LoginPage() {
   }
 
   const handleQuickDemo = async (persona) => {
+    if (persona.role === 'student') {
+      setShowStudentWizard(true)
+      return
+    }
     setError('')
     setNotice('')
     setDemoSigningIn(persona.role)
@@ -356,6 +362,15 @@ export default function LoginPage() {
           </div>
         </div>
       </section>
+
+      <StudentAcademicSelectionWizard
+        isOpen={showStudentWizard}
+        onClose={() => setShowStudentWizard(false)}
+        onSuccess={() => {
+          setShowStudentWizard(false)
+          navigate('/me', { replace: true })
+        }}
+      />
     </div>
   )
 }

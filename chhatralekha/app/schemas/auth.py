@@ -14,9 +14,58 @@ class LoginRequest(BaseModel):
 
 
 class DemoLoginRequest(BaseModel):
-    """Role presented to ``POST /api/auth/demo-login`` for one-click demo sessions."""
+    """Role and optional academic context presented to ``POST /api/auth/demo-login``."""
 
     role: str = Field(..., description="Demo role: student, parent, teacher, school_admin, college_admin, university_admin.")
+    education_type: str | None = Field(None, description="Optional education category: 'school' or 'college'.")
+    institution_id: str | None = Field(None, description="Selected institution identifier.")
+    class_name: str | None = Field(None, description="Selected school class level, e.g. 'Class 10'.")
+    section: str | None = Field(None, description="Selected school section, e.g. 'A'.")
+    program_id: str | None = Field(None, description="Selected college degree programme, e.g. 'BTECH_CSE'.")
+    semester: str | None = Field(None, description="Selected college semester, e.g. 'Semester 5'.")
+    department: str | None = Field(None, description="Optional college department or specialization branch.")
+
+
+class DemoSchoolClass(BaseModel):
+    class_name: str
+    sections: list[str] = Field(default_factory=lambda: ["A"])
+    has_demo_student: bool = True
+
+
+class DemoSchoolInstitution(BaseModel):
+    institution_id: str
+    name: str
+    type: str = "SCHOOL"
+    city: str
+    state: str
+    board: str = "CBSE"
+    classes: list[DemoSchoolClass] = Field(default_factory=list)
+
+
+class DemoCollegeCourse(BaseModel):
+    program_id: str
+    program_name: str
+    level: str = "UG"
+    semesters: list[str] = Field(default_factory=list)
+    department: str | None = None
+    branches: list[str] = Field(default_factory=list)
+
+
+class DemoCollegeInstitution(BaseModel):
+    institution_id: str
+    name: str
+    type: str = "COLLEGE"
+    city: str
+    state: str
+    affiliation: str = ""
+    courses: list[DemoCollegeCourse] = Field(default_factory=list)
+
+
+class DemoAcademicContextOut(BaseModel):
+    """Available institutions, classes, and programmes for demo academic onboarding."""
+
+    schools: list[DemoSchoolInstitution]
+    colleges: list[DemoCollegeInstitution]
 
 
 class RefreshRequest(BaseModel):

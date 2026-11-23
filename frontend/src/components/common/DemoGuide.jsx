@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { api } from '../../services/api'
-import { Badge } from './index'
+import { Badge, StudentAcademicSelectionWizard } from './index'
 
 export const DEMO_PERSONAS = [
   {
@@ -68,8 +68,13 @@ export default function DemoGuide() {
   const navigate = useNavigate()
   const [switching, setSwitching] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
+  const [showStudentWizard, setShowStudentWizard] = useState(false)
 
   const handleSwitch = async (persona) => {
+    if (persona.key === 'student' || persona.role_key === 'student') {
+      setShowStudentWizard(true)
+      return
+    }
     try {
       setSwitching(true)
       // First attempt dedicated instant demo session endpoint
@@ -162,6 +167,15 @@ export default function DemoGuide() {
           Hide
         </button>
       </div>
+
+      <StudentAcademicSelectionWizard
+        isOpen={showStudentWizard}
+        onClose={() => setShowStudentWizard(false)}
+        onSuccess={() => {
+          setShowStudentWizard(false)
+          navigate('/me', { replace: true })
+        }}
+      />
     </aside>
   )
 }

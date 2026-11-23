@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     #: The public origin of the web frontend, used for CORS and for the
     #: links printed on a QR badge.
     frontend_origin: str = "http://localhost:5173"
+    #: Explicit toggle for API documentation (/docs, /redoc, /openapi.json).
+    #: When None, docs are enabled in dev/test and disabled in production.
+    enable_docs: bool | None = None
+    docs_enabled: bool | None = None
 
     # ------------------------------------------------------------- database
     mongodb_url: str = ""
@@ -172,6 +176,21 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.environment.lower() in {"prod", "production"}
+
+    @property
+    def is_docs_enabled(self) -> bool:
+        """Whether API documentation (/docs, /redoc, /openapi.json) is enabled.
+
+        By default, documentation is enabled in development/test and disabled
+        in production. Setting ENABLE_DOCS=true (or DOCS_ENABLED=true) enables it
+        explicitly (e.g. on an internal staging instance); setting it to false
+        disables it even in development.
+        """
+        if self.enable_docs is not None:
+            return self.enable_docs
+        if self.docs_enabled is not None:
+            return self.docs_enabled
+        return not self.is_production
 
     def assert_production_safe(self) -> None:
         """Refuse to start in production with development settings.

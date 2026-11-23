@@ -28,6 +28,10 @@ services:
         value: "3.12.7"
       - key: ENVIRONMENT
         value: production
+      # API documentation (/docs, /redoc, /openapi.json) is disabled by default in production.
+      # Leave false for public production deployments, or set true for internal staging.
+      - key: ENABLE_DOCS
+        value: "false"
       # The Atlas connection string. Set it in the Render dashboard.
       - key: MONGODB_URL
         sync: false

@@ -37,10 +37,11 @@ FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Open the MongoDB connection on start-up and close it on shutdown."""
-    settings.assert_production_safe()
+    active_settings: Settings = getattr(app.state, "settings", settings)
+    active_settings.assert_production_safe()
     await mongo.connect()
     logger.info(
-        "ChhatraLekha is ready (MongoDB database '%s')", settings.mongodb_database
+        "ChhatraLekha is ready (MongoDB database '%s')", active_settings.mongodb_database
     )
     logger.info(
         "Correction mode: %s",
@@ -52,7 +53,7 @@ async def lifespan(app: FastAPI):
     # The in-memory database is a demo facility. It starts empty, so it is
     # seeded here - but only when it was explicitly asked for, and never in
     # production. Seeding a real database is always a manual step.
-    if mongo.is_in_memory and not settings.is_production:
+    if mongo.is_in_memory and not active_settings.is_production:
         empty = await mongo.db()["students"].count_documents({}) == 0
         if empty:
             from app.scripts.seed import seed
@@ -85,128 +86,136 @@ async def lifespan(app: FastAPI):
     await mongo.disconnect()
 
 
-if settings.is_production:
-    _docs_url = None
-    _redoc_url = None
-    _openapi_url = None
-else:
-    _docs_url = "/docs"
-    _redoc_url = "/redoc"
-    _openapi_url = "/openapi.json"
+def create_app(app_settings: Settings | None = None) -> FastAPI:
+    """Create and configure the FastAPI application instance."""
+    active_settings = app_settings or get_settings()
 
-app = FastAPI(
-    title="ChhatraLekha - APAAR ID Platform",
-    description=(
-        "Student data management, automated validation, anomaly detection, "
-        "signed credential verification, consent management and regulatory "
-        "reporting for AICTE-approved institutions."
-    ),
-    version="2.0.0",
-    lifespan=lifespan,
-    docs_url=_docs_url,
-    redoc_url=_redoc_url,
-    openapi_url=_openapi_url,
-)
+    if active_settings.is_docs_enabled:
+        _docs_url = "/docs"
+        _redoc_url = "/redoc"
+        _openapi_url = "/openapi.json"
+    else:
+        _docs_url = None
+        _redoc_url = None
+        _openapi_url = None
 
-@app.middleware("http")
-async def add_security_headers(request: Request, call_next):
-    request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
-    request.state.request_id = request_id
-    response = await call_next(request)
-    response.headers["X-Request-ID"] = request_id
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    response.headers["Permissions-Policy"] = "camera=(self), microphone=(self)"
-    if settings.is_production:
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    return response
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-)
-
-
-for router in ALL_ROUTERS:
-    app.include_router(router, prefix=settings.api_prefix)
-
-
-# ------------------------------------------------------------------ health
-
-
-@app.get("/api/health", tags=["system"], summary="Liveness and readiness")
-async def health() -> dict:
-    """Report the health of the service and its database connection."""
-    database = "down"
-    error = ""
-    try:
-        if not mongo.is_connected:
-            await mongo.connect()
-        await mongo.db().command("ping")
-        database = "up"
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Database health check failed: %s", exc)
-        error = str(exc)
-
-    in_memory = mongo.is_in_memory
-    return {
-        "status": "ok" if database == "up" else "degraded",
-        "app": settings.app_name,
-        "environment": settings.environment,
-        "database": database,
-        "database_engine": "mongodb",
-        "in_memory_demo_data": in_memory,
-        "notice": (
-            "In-memory demo data - not persisted. This is a demo and test facility "
-            "only."
-            if in_memory
-            else ""
+    application = FastAPI(
+        title="ChhatraLekha - APAAR ID Platform",
+        description=(
+            "Student data management, automated validation, anomaly detection, "
+            "signed credential verification, consent management and regulatory "
+            "reporting for AICTE-approved institutions."
         ),
-        "error": error,
-        "version": app.version,
-    }
+        version="2.0.0",
+        lifespan=lifespan,
+        docs_url=_docs_url,
+        redoc_url=_redoc_url,
+        openapi_url=_openapi_url,
+    )
+    application.state.settings = active_settings
 
+    @application.middleware("http")
+    async def add_security_headers(request: Request, call_next):
+        request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
+        request.state.request_id = request_id
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(self), microphone=(self)"
+        if active_settings.is_production:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
 
-@app.get("/health", include_in_schema=False)
-async def health_alias() -> dict:
-    """The health check used by the Render deployment."""
-    return await health()
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=active_settings.cors_origins,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["*"],
+    )
 
+    for router in ALL_ROUTERS:
+        application.include_router(router, prefix=active_settings.api_prefix)
 
-# ------------------------------------------------------- the React frontend
+    @application.get("/api/health", tags=["system"], summary="Liveness and readiness")
+    async def health() -> dict:
+        """Report the health of the service and its database connection."""
+        database = "down"
+        error = ""
+        try:
+            if not mongo.is_connected:
+                await mongo.connect()
+            await mongo.db().command("ping")
+            database = "up"
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Database health check failed: %s", exc)
+            error = str(exc)
 
-if FRONTEND_DIST.is_dir():
-    assets = FRONTEND_DIST / "assets"
-    if assets.is_dir():
-        app.mount("/assets", StaticFiles(directory=str(assets)), name="assets")
+        in_memory = mongo.is_in_memory
+        return {
+            "status": "ok" if database == "up" else "degraded",
+            "app": active_settings.app_name,
+            "environment": active_settings.environment,
+            "database": database,
+            "database_engine": "mongodb",
+            "in_memory_demo_data": in_memory,
+            "notice": (
+                "In-memory demo data - not persisted. This is a demo and test facility "
+                "only."
+                if in_memory
+                else ""
+            ),
+            "error": error,
+            "version": application.version,
+        }
 
-    @app.get("/{full_path:path}", include_in_schema=False)
-    async def spa(full_path: str, request: Request):
-        """Serve the built React application (single-page fallback)."""
-        if full_path.startswith("api/"):
-            return JSONResponse({"detail": "Not found"}, status_code=404)
-        candidate = FRONTEND_DIST / full_path
-        if full_path and candidate.is_file():
-            return FileResponse(candidate)
-        return FileResponse(FRONTEND_DIST / "index.html")
+    @application.get("/health", include_in_schema=False)
+    async def health_alias() -> dict:
+        """The health check used by the Render deployment."""
+        return await health()
 
-else:
+    # --------------------------------------------------- the React frontend
 
-    @app.get("/", include_in_schema=False)
-    async def frontend_missing():
-        """Explain how to build the React frontend when it is not present."""
-        return JSONResponse(
-            {
+    if FRONTEND_DIST.is_dir():
+        assets = FRONTEND_DIST / "assets"
+        if assets.is_dir():
+            application.mount("/assets", StaticFiles(directory=str(assets)), name="assets")
+
+        @application.get("/{full_path:path}", include_in_schema=False)
+        async def spa(full_path: str, request: Request):
+            """Serve the built React application (single-page fallback)."""
+            normalized = full_path.strip().rstrip("/")
+            if normalized.startswith("api/"):
+                return JSONResponse({"detail": "Not found"}, status_code=404)
+            if not active_settings.is_docs_enabled and normalized in {"docs", "redoc", "openapi.json"}:
+                return JSONResponse({"detail": "Not found"}, status_code=404)
+            candidate = FRONTEND_DIST / full_path
+            if full_path and candidate.is_file():
+                return FileResponse(candidate)
+            return FileResponse(FRONTEND_DIST / "index.html")
+
+    else:
+
+        @application.get("/", include_in_schema=False)
+        async def frontend_missing():
+            """Explain how to build the React frontend when it is not present."""
+            body = {
                 "detail": (
                     "The React frontend has not been built. Run 'npm install && "
                     "npm run build' in the 'frontend' directory, or use the Vite "
                     "dev server with 'npm run dev'."
                 ),
-                "api": "/docs",
-            },
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        )
+            }
+            if active_settings.is_docs_enabled:
+                body["api"] = "/docs"
+            return JSONResponse(
+                body,
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+    return application
+
+
+app = create_app(settings)

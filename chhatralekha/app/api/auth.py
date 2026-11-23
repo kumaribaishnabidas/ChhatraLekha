@@ -39,6 +39,7 @@ from app.repositories.audit import AuditRepository
 from app.repositories.sessions import SessionRepository
 from app.repositories.users import UserRepository
 from app.schemas.auth import (
+    DemoAcademicContextOut,
     DemoLoginRequest,
     LoginRequest,
     LogoutRequest,
@@ -511,6 +512,12 @@ DEMO_PERSONA_CATALOG = {
         "role": "teacher",
         "institution_id": "INST-0421",
     },
+    "faculty": {
+        "email": "teacher.demo@example.com",
+        "full_name": "Prof. Rajesh Kumar (Faculty)",
+        "role": "teacher",
+        "institution_id": "INST-0421",
+    },
     "school_admin": {
         "email": "schooladmin.demo@example.com",
         "full_name": "Principal Meera Nair (School Administrator)",
@@ -529,6 +536,12 @@ DEMO_PERSONA_CATALOG = {
         "role": "aicte_admin",
         "institution_id": None,
     },
+    "directorate": {
+        "email": "directorate.demo@example.com",
+        "full_name": "Dr. Ananya Iyer (Directorate Administrator)",
+        "role": "aicte_admin",
+        "institution_id": None,
+    },
 }
 
 
@@ -539,6 +552,187 @@ DISALLOWED_DEMO_ROLES = {
     "district_admin",
     "regulator_admin",
 }
+
+DEMO_ACADEMIC_SCHOOLS = [
+    {
+        "institution_id": "SCH-DEL-001",
+        "name": "Delhi Public School (R.K. Puram)",
+        "type": "SCHOOL",
+        "city": "New Delhi",
+        "state": "Delhi",
+        "board": "CBSE",
+        "classes": [
+            {"class_name": "Class 9", "sections": ["A", "B"], "has_demo_student": True},
+            {"class_name": "Class 10", "sections": ["A", "B"], "has_demo_student": True},
+            {"class_name": "Class 11", "sections": ["Science-A", "Commerce-A"], "has_demo_student": True},
+            {"class_name": "Class 12", "sections": ["Science-A", "Commerce-A"], "has_demo_student": True},
+        ],
+    },
+    {
+        "institution_id": "SCH-DAV-101",
+        "name": "DAV Public School (Chandrasekharpur)",
+        "type": "SCHOOL",
+        "city": "Bhubaneswar",
+        "state": "Odisha",
+        "board": "CBSE",
+        "classes": [
+            {"class_name": "Class 8", "sections": ["A"], "has_demo_student": True},
+            {"class_name": "Class 10", "sections": ["A", "B"], "has_demo_student": True},
+            {"class_name": "Class 12", "sections": ["Science-A"], "has_demo_student": True},
+        ],
+    },
+    {
+        "institution_id": "SCH-KV-002",
+        "name": "Kendriya Vidyalaya (IIT Powai)",
+        "type": "SCHOOL",
+        "city": "Mumbai",
+        "state": "Maharashtra",
+        "board": "CBSE",
+        "classes": [
+            {"class_name": "Class 6", "sections": ["A"], "has_demo_student": True},
+            {"class_name": "Class 8", "sections": ["A"], "has_demo_student": True},
+            {"class_name": "Class 9", "sections": ["A", "B"], "has_demo_student": True},
+            {"class_name": "Class 10", "sections": ["A", "B"], "has_demo_student": True},
+        ],
+    },
+    {
+        "institution_id": "SCH-PRM-003",
+        "name": "Kendriya Vidyalaya Primary Wing (IIT Powai)",
+        "type": "SCHOOL",
+        "city": "Mumbai",
+        "state": "Maharashtra",
+        "board": "CBSE",
+        "classes": [
+            {"class_name": "Class 1", "sections": ["A", "B"], "has_demo_student": True},
+            {"class_name": "Class 2", "sections": ["A", "B"], "has_demo_student": True},
+            {"class_name": "Class 3", "sections": ["A", "B"], "has_demo_student": True},
+            {"class_name": "Class 4", "sections": ["A", "B"], "has_demo_student": True},
+            {"class_name": "Class 5", "sections": ["A", "B"], "has_demo_student": True},
+        ],
+    },
+]
+
+DEMO_ACADEMIC_COLLEGES = [
+    {
+        "institution_id": "INST-0421",
+        "name": "Vidya Vikas Institute of Technology",
+        "type": "ENGINEERING",
+        "city": "Bengaluru",
+        "state": "Karnataka",
+        "affiliation": "Visvesvaraya Technological University",
+        "courses": [
+            {
+                "program_id": "BTECH_CSE",
+                "program_name": "B.Tech Computer Science & Engineering",
+                "level": "UG",
+                "semesters": ["Semester 1", "Semester 3", "Semester 5", "Semester 7"],
+            },
+            {
+                "program_id": "BTECH_AIML",
+                "program_name": "B.Tech Artificial Intelligence & Machine Learning",
+                "level": "UG",
+                "semesters": ["Semester 1", "Semester 3", "Semester 5"],
+            },
+            {
+                "program_id": "BTECH_ECE",
+                "program_name": "B.Tech Electronics & Communication",
+                "level": "UG",
+                "semesters": ["Semester 1", "Semester 3", "Semester 5", "Semester 7"],
+            },
+            {
+                "program_id": "BTECH_MECH",
+                "program_name": "B.Tech Mechanical Engineering",
+                "level": "UG",
+                "semesters": ["Semester 1", "Semester 3", "Semester 5"],
+            },
+            {
+                "program_id": "MCA",
+                "program_name": "Master of Computer Applications",
+                "level": "PG",
+                "semesters": ["Semester 1", "Semester 3"],
+            },
+        ],
+    },
+    {
+        "institution_id": "INST-0422",
+        "name": "Bharatiya Vidya Mandir College of Engineering",
+        "type": "ENGINEERING",
+        "city": "Pune",
+        "state": "Maharashtra",
+        "affiliation": "Savitribai Phule Pune University",
+        "courses": [
+            {
+                "program_id": "BTECH_CSE",
+                "program_name": "B.Tech Computer Science & Engineering",
+                "level": "UG",
+                "semesters": ["Semester 1", "Semester 3", "Semester 5", "Semester 7"],
+            },
+            {
+                "program_id": "BTECH_CIVIL",
+                "program_name": "B.Tech Civil Engineering",
+                "level": "UG",
+                "semesters": ["Semester 1", "Semester 3", "Semester 5"],
+            },
+        ],
+    },
+    {
+        "institution_id": "INST-0424",
+        "name": "Karnataka Institute of Management Studies",
+        "type": "MANAGEMENT",
+        "city": "Mysuru",
+        "state": "Karnataka",
+        "affiliation": "University of Mysore",
+        "courses": [
+            {
+                "program_id": "MBA",
+                "program_name": "Master of Business Administration",
+                "level": "PG",
+                "semesters": ["Semester 1", "Semester 3"],
+            },
+            {
+                "program_id": "BBA",
+                "program_name": "Bachelor of Business Administration",
+                "level": "UG",
+                "semesters": ["Semester 1", "Semester 3", "Semester 5"],
+            },
+        ],
+    },
+    {
+        "institution_id": "INST-0425",
+        "name": "Gujarat Polytechnic of Engineering",
+        "type": "POLYTECHNIC",
+        "city": "Ahmedabad",
+        "state": "Gujarat",
+        "affiliation": "Gujarat Technological University",
+        "courses": [
+            {
+                "program_id": "DIPLOMA_CSE",
+                "program_name": "Diploma in Computer Science & Engineering",
+                "level": "DIPLOMA",
+                "semesters": ["Semester 1", "Semester 3", "Semester 5"],
+            },
+            {
+                "program_id": "DIPLOMA_MECH",
+                "program_name": "Diploma in Mechanical Engineering",
+                "level": "DIPLOMA",
+                "semesters": ["Semester 1", "Semester 3", "Semester 5"],
+            },
+        ],
+    },
+]
+
+
+@router.get(
+    "/demo-academic-context",
+    response_model=DemoAcademicContextOut,
+    summary="Available institutions and academic contexts for student demo onboarding",
+)
+async def get_demo_academic_context() -> DemoAcademicContextOut:
+    """Public endpoint providing available school and college demo options for student onboarding."""
+    return DemoAcademicContextOut(
+        schools=DEMO_ACADEMIC_SCHOOLS,
+        colleges=DEMO_ACADEMIC_COLLEGES,
+    )
 
 
 @router.post("/demo-login", response_model=TokenPair, summary="One-click demo persona session")
@@ -551,7 +745,7 @@ async def demo_login(
     """Create a temporary restricted demo session for the selected persona.
 
     Disabled in production environments to fail closed and prevent unauthorized
-    administrative access.
+    administrative access. Supports academic context onboarding for students.
     """
     runtime_settings = get_settings()
     if runtime_settings.is_production:
@@ -577,25 +771,163 @@ async def demo_login(
     users = UserRepository(db["users"], db["api_keys"], db["revoked_credentials"])
     audit = AuditRepository(db["audit_events"])
 
-    user = await users.by_email(persona["email"])
+    user_full_name = persona["full_name"]
+    user_email = persona["email"]
+    institution_id = persona.get("institution_id")
+    apaar_id = persona.get("apaar_id")
+    demo_user_id = f"DEMO-{key.upper()}-01"
+
+    # Contextual Student Onboarding: Match or create a genuine matching student profile
+    if key == "student" and payload.education_type:
+        ed_type = payload.education_type.strip().lower()
+
+        if ed_type == "school":
+            school_inst = next((s for s in DEMO_ACADEMIC_SCHOOLS if s["institution_id"] == payload.institution_id), None)
+            if not school_inst:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"School institution '{payload.institution_id}' is not available in demo options.",
+                )
+
+            cls_info = next((c for c in school_inst["classes"] if c["class_name"].lower() == (payload.class_name or "").lower()), None)
+            if not cls_info:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Class '{payload.class_name}' is not offered by {school_inst['name']}.",
+                )
+
+            inst_digits = "".join(filter(str.isdigit, school_inst["institution_id"])) or "001"
+            class_digits = "".join(filter(str.isdigit, cls_info["class_name"])) or "10"
+            apaar_id = f"9911{inst_digits.zfill(4)}{class_digits.zfill(2)}01"[:12]
+            institution_id = school_inst["institution_id"]
+            user_full_name = f"Aarav Sharma (Student - {cls_info['class_name']})"
+            user_email = f"student.{school_inst['institution_id'].lower()}.{class_digits}@example.com"
+            demo_user_id = f"DEMO-STUDENT-{apaar_id}"
+
+            # Ensure student record matches the exact school and class
+            await db["students"].update_one(
+                {"apaar_id": apaar_id},
+                {
+                    "$set": {
+                        "apaar_id": apaar_id,
+                        "student_name": f"Aarav Sharma",
+                        "institution_id": institution_id,
+                        "student_institute_roll_no": f"SCH-ROLL-{class_digits}-01",
+                        "grade_level": cls_info["class_name"],
+                        "class_name": cls_info["class_name"],
+                        "section": payload.section or cls_info["sections"][0],
+                        "program_id": f"GRADE-{class_digits}",
+                        "academic_year": "2025-26",
+                        "admission_quota": "REGULAR_MERIT",
+                        "attendance_percentage": 94.2,
+                        "cumulative_cgpa": 9.1,
+                        "guardian_name": "Sunita Sharma",
+                        "guardian_relationship": "Mother / Legal Guardian",
+                        "is_minor": int(class_digits) < 12 if class_digits.isdigit() else True,
+                        "is_demo": True,
+                        "record_status": "ACTIVE",
+                        "achievements": [
+                            f"Class Representative - {cls_info['class_name']}",
+                            "Academic Excellence Award 2024-25",
+                            "Inter-School Science Olympiad - Gold Medalist",
+                        ],
+                    }
+                },
+                upsert=True,
+            )
+
+        elif ed_type == "college":
+            college_inst = next((c for c in DEMO_ACADEMIC_COLLEGES if c["institution_id"] == payload.institution_id), None)
+            if not college_inst:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"College institution '{payload.institution_id}' is not available in demo options.",
+                )
+
+            course_info = next((p for p in college_inst["courses"] if p["program_id"] == payload.program_id), None)
+            if not course_info:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Programme '{payload.program_id}' is not offered by {college_inst['name']}.",
+                )
+
+            sem = payload.semester or course_info["semesters"][0]
+            if sem not in course_info["semesters"]:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Semester '{sem}' is not offered in programme '{course_info['program_name']}'.",
+                )
+
+            inst_digits = "".join(filter(str.isdigit, college_inst["institution_id"])) or "421"
+            sem_digits = "".join(filter(str.isdigit, sem)) or "5"
+            apaar_id = f"9922{inst_digits.zfill(4)}{sem_digits.zfill(2)}01"[:12]
+            institution_id = college_inst["institution_id"]
+            user_full_name = f"Aarav Sharma (Student - {course_info['program_id']})"
+            user_email = f"student.{college_inst['institution_id'].lower()}.{course_info['program_id'].lower()}@example.com"
+            demo_user_id = f"DEMO-STUDENT-{apaar_id}"
+
+            # Ensure student record matches the exact college, course, and semester
+            await db["students"].update_one(
+                {"apaar_id": apaar_id},
+                {
+                    "$set": {
+                        "apaar_id": apaar_id,
+                        "student_name": f"Aarav Sharma",
+                        "institution_id": institution_id,
+                        "program_id": course_info["program_id"],
+                        "student_institute_roll_no": f"COL-{course_info['program_id'][:5]}-{sem_digits}-01",
+                        "current_semester": sem,
+                        "academic_year": "2024-25",
+                        "admission_quota": "REGULAR_MERIT",
+                        "attendance_percentage": 91.5,
+                        "cumulative_cgpa": 8.72,
+                        "guardian_name": "Sunita Sharma",
+                        "guardian_relationship": "Mother / Legal Guardian",
+                        "is_minor": False,
+                        "is_demo": True,
+                        "record_status": "ACTIVE",
+                        "achievements": [
+                            f"First Class with Distinction ({sem})",
+                            "Dean's Honour Roll - Academic Year 2024-25",
+                            "Winner, State Inter-College Tech Symposium 2024",
+                        ],
+                    }
+                },
+                upsert=True,
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid education type '{payload.education_type}'. Allowed: 'school' or 'college'.",
+            )
+
+    user = await users.by_email(user_email)
     if user is None:
-        # Create ephemeral demo user if not yet seeded
-        demo_user_id = f"DEMO-{key.upper()}-01"
         user_doc = {
             "user_id": demo_user_id,
-            "email": persona["email"],
-            "full_name": persona["full_name"],
+            "email": user_email,
+            "full_name": user_full_name,
             "role": persona["role"],
-            "institution_id": persona.get("institution_id"),
-            "apaar_id": persona.get("apaar_id"),
+            "institution_id": institution_id,
+            "apaar_id": apaar_id,
             "is_active": True,
             "is_demo": True,
         }
         await db["users"].replace_one({"user_id": demo_user_id}, user_doc, upsert=True)
         user = user_doc
+    else:
+        # Update session context if student logged in with academic context
+        if apaar_id:
+            await db["users"].update_one(
+                {"_id": user["_id"]},
+                {"$set": {"apaar_id": apaar_id, "institution_id": institution_id, "full_name": user_full_name}},
+            )
+            user["apaar_id"] = apaar_id
+            user["institution_id"] = institution_id
+            user["full_name"] = user_full_name
 
-    # Ensure demo student has their own linked record in students collection
-    if persona.get("apaar_id") and persona.get("role") == "student":
+    # Default fallback demo student if none existed
+    if persona.get("apaar_id") and persona.get("role") == "student" and not payload.education_type:
         existing_student = await db["students"].find_one({"apaar_id": persona["apaar_id"]})
         if not existing_student:
             await db["students"].insert_one({
@@ -625,7 +957,7 @@ async def demo_login(
         actor_role=user["role"],
         action="DEMO_LOGIN",
         subject=user["user_id"],
-        details=f"Demo visitor selected persona '{key}' ({persona['full_name']}).",
+        details=f"Demo visitor selected persona '{key}' ({user_full_name}). Context: {payload.education_type or 'Default'}",
         category="DEMO",
         ip_address=client_ip(request),
     )
@@ -648,7 +980,7 @@ async def demo_login(
         expires_in=runtime_settings.access_token_expire_minutes * 60,
         role=user["role"],
         user_id=user["user_id"],
-        display_name=user.get("full_name") or persona["full_name"],
+        display_name=user.get("full_name") or user_full_name,
         institution_id=user.get("institution_id"),
         apaar_id=user.get("apaar_id"),
     )

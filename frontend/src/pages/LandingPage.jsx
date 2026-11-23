@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useAuth } from '../hooks/useAuth'
 import { api } from '../services/api'
-import { Button, Card, Badge } from '../components/common'
+import { Button, Card, Badge, StudentAcademicSelectionWizard } from '../components/common'
 
 const DEMO_ROLES = [
   {
@@ -246,6 +246,7 @@ export default function LandingPage() {
 
   // State
   const [demoModalOpen, setDemoModalOpen] = useState(false)
+  const [showStudentWizard, setShowStudentWizard] = useState(false)
   const [loggingInRole, setLoggingInRole] = useState(null)
   const [activePhoneTab, setActivePhoneTab] = useState('student')
   const [activeBenefitTab, setActiveBenefitTab] = useState('students')
@@ -253,6 +254,11 @@ export default function LandingPage() {
   const [previewPortalTab, setPreviewPortalTab] = useState('portal')
 
   const handleDemoLogin = async (roleKey, target) => {
+    if (roleKey === 'student') {
+      setDemoModalOpen(false)
+      setShowStudentWizard(true)
+      return
+    }
     try {
       setLoggingInRole(roleKey)
       const res = await api.post('/auth/demo-login', { role: roleKey }).catch(async () => {
@@ -345,7 +351,7 @@ export default function LandingPage() {
                 <span>Explore Demo</span>
               </button>
 
-              <Link to="/verify/t/demo" className="no-underline">
+              <Link to="/verify" className="no-underline">
                 <Button variant="secondary">
                   Verify a credential
                 </Button>
@@ -1072,6 +1078,15 @@ export default function LandingPage() {
           </div>
         </div>
       )}
+
+      <StudentAcademicSelectionWizard
+        isOpen={showStudentWizard}
+        onClose={() => setShowStudentWizard(false)}
+        onSuccess={() => {
+          setShowStudentWizard(false)
+          navigate('/me', { replace: true })
+        }}
+      />
     </div>
   )
 }

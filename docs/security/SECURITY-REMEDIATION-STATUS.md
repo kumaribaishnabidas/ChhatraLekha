@@ -22,6 +22,8 @@
 | **SEC-TENANT-01** | **High** | Tenant Isolation | `app/api/academic.py`, `announcements.py`, `reports.py`, `attendance.py`, `teacher.py`, `transfers.py` | Fail-open queries on null/missing tenant context and unsafe default fallbacks | **RESOLVED** | Stage 0.4 |
 | **SEC-AUTH-02** | **Low** | Authentication | `app/api/auth.py` | Documented `POST /api/auth/logout` endpoint not implemented | **RESOLVED** | Stage 0.10 |
 | **SEC-AUTH-03** | **Low** | Authentication | `app/core/security.py`, `app/repositories/sessions.py` | Stateless refresh tokens without database persistence or rotation | **RESOLVED** | Stage 0.10 |
+| **SEC-DOCS-01** | **Medium** | Information Exposure | `app/core/config.py`, `app/main.py` | Public FastAPI documentation (/docs, /redoc, /openapi.json) accessible in production | **RESOLVED** | Stage 0.11 |
+| **SEC-ONB-01** | **Low** | Access & Identity | `app/api/auth.py`, `app/schemas/auth.py` | Client-submitted demo academic context manipulation and missing server validation | **RESOLVED** | Stage 0.11 |
 
 ---
 
@@ -67,6 +69,13 @@
 - **Refresh-Token Reuse Detection:** Presenting an already rotated refresh token triggers immediate family-wide revocation and logs a critical security audit event (`REFRESH_TOKEN_REUSE_DETECTED`).
 - **Server-Side Logout:** `POST /api/auth/logout` allows callers to terminate their current device session or all active user sessions with caller authentication and cross-user revocation defense.
 - **Safe Legacy Migration:** Seamlessly upgrades pre-existing tokens on initial refresh without invalidating active production sessions.
+
+### 2.7 Public API Documentation & Contextual Onboarding Security (Stage 0.11)
+- **Production Documentation Lockdown (SEC-DOCS-01):** Public access to `/docs`, `/redoc`, and `/openapi.json` is strictly disabled by default in production (`environment in {"prod", "production"}`), returning HTTP 404.
+- **SPA Interception Guard:** Catch-all frontend router (`/{full_path:path}`) explicitly denies `/docs`, `/redoc`, and `/openapi.json` with JSON 404, preventing information leakage or SPA HTML fallthrough.
+- **Frontend 503 Guard:** The `frontend_missing` 503 response omits `"api": "/docs"` in production deployments.
+- **Safe Staging Override:** Support explicit enablement via `ENABLE_DOCS=true` or `DOCS_ENABLED=true` for private, authenticated staging instances.
+- **Server-Side Academic Context Validation (SEC-ONB-01):** Demo student onboarding requires rigorous server validation: classes must be supported by the school's approved grade level; courses and semesters must be approved for the college; cross-institution context manipulation is rejected with HTTP 404/400. All demo sessions generate synthetic, isolated student data marked `is_demo: true`.
 
 ---
 

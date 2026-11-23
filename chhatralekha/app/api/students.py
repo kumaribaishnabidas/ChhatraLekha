@@ -62,6 +62,9 @@ settings = get_settings()
 
 def _to_out(student: Doc) -> StudentOut:
     """Build the response model from a stored document."""
+    quota = student.get("admission_quota")
+    if quota == "MERIT" or not quota:
+        quota = "REGULAR_MERIT"
     return StudentOut(
         record_id=str(student.get("_id", "")),
         apaar_id=student.get("apaar_id", ""),
@@ -71,7 +74,7 @@ def _to_out(student: Doc) -> StudentOut:
         institution_id=student.get("institution_id", ""),
         program_id=student.get("program_id", ""),
         academic_year=student.get("academic_year", ""),
-        admission_quota=student.get("admission_quota", "MERIT"),
+        admission_quota=quota,
         enrollment_date=student.get("enrollment_date", ""),
         student_institute_roll_no=student.get("student_institute_roll_no", ""),
         nationality=student.get("nationality", ""),
@@ -204,6 +207,11 @@ async def list_students(
 
 
 @router.get(
+    "/me",
+    response_model=StudentOut,
+    summary="Alias for /me/profile to fetch the signed-in student's enrolment record",
+)
+@router.get(
     "/me/profile",
     response_model=StudentOut,
     summary="Fetch the signed-in student's enrolment record",
@@ -214,7 +222,9 @@ async def get_my_profile(
 ) -> StudentOut:
     """Fetch the authenticated student's enrolment record."""
     student = None
-    if principal.display_name:
+    if principal.apaar_id:
+        student = await db["students"].find_one({"apaar_id": principal.apaar_id})
+    if student is None and principal.display_name:
         student = await db["students"].find_one({"student_name": principal.display_name})
     if student is None and principal.email:
         first = principal.email.split("@")[0]

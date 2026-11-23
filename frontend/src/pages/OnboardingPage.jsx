@@ -745,27 +745,97 @@ export default function OnboardingPage() {
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-heading uppercase tracking-wider mb-1">
-                      Course / Programme Name
+                      {selectedInstitution?.category === 'SCHOOL' || selectedInstitution?.institution_type === 'SCHOOL'
+                        ? 'Stream / Subject Track'
+                        : 'Course / Programme Name'}
                     </label>
                     <input
                       type="text"
+                      list="course-suggestions"
                       value={studentCourse}
                       onChange={(e) => setStudentCourse(e.target.value)}
-                      placeholder="e.g., B.Tech Computer Science"
+                      placeholder={
+                        selectedInstitution?.category === 'SCHOOL' || selectedInstitution?.institution_type === 'SCHOOL'
+                          ? 'e.g., General / Science / Commerce'
+                          : 'e.g., B.Tech Computer Science'
+                      }
                       className="w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-heading shadow-xs focus:border-brand focus:outline-none"
                     />
+                    <datalist id="course-suggestions">
+                      {selectedInstitution?.category === 'SCHOOL' || selectedInstitution?.institution_type === 'SCHOOL' ? (
+                        <>
+                          <option value="General Curriculum" />
+                          <option value="Science (PCM)" />
+                          <option value="Science (PCB)" />
+                          <option value="Commerce with Mathematics" />
+                          <option value="Commerce" />
+                          <option value="Humanities / Arts" />
+                        </>
+                      ) : (
+                        <>
+                          <option value="B.Tech Computer Science & Engineering" />
+                          <option value="B.Tech Artificial Intelligence & Machine Learning" />
+                          <option value="B.Tech Electronics & Communication" />
+                          <option value="B.Tech Mechanical Engineering" />
+                          <option value="B.Tech Civil Engineering" />
+                          <option value="BCA - Bachelor of Computer Applications" />
+                          <option value="MCA - Master of Computer Applications" />
+                          <option value="B.Sc Computer Science" />
+                          <option value="B.Com (Honours)" />
+                          <option value="BBA - Business Administration" />
+                          <option value="MBA - Master of Business Administration" />
+                          <option value="Diploma in Engineering" />
+                        </>
+                      )}
+                    </datalist>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-heading uppercase tracking-wider mb-1">
-                      Class / Grade / Year
+                      {selectedInstitution?.category === 'SCHOOL' || selectedInstitution?.institution_type === 'SCHOOL'
+                        ? 'Class / Grade Level'
+                        : 'Class / Semester / Year'}
                     </label>
                     <input
                       type="text"
+                      list="class-suggestions"
                       value={studentClass}
                       onChange={(e) => setStudentClass(e.target.value)}
-                      placeholder="e.g., 3rd Year / Semester 5"
+                      placeholder={
+                        selectedInstitution?.category === 'SCHOOL' || selectedInstitution?.institution_type === 'SCHOOL'
+                          ? 'e.g., Class 10'
+                          : 'e.g., Semester 5 / 3rd Year'
+                      }
                       className="w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-heading shadow-xs focus:border-brand focus:outline-none"
                     />
+                    <datalist id="class-suggestions">
+                      {selectedInstitution?.category === 'SCHOOL' || selectedInstitution?.institution_type === 'SCHOOL' ? (
+                        <>
+                          <option value="Class 1" />
+                          <option value="Class 2" />
+                          <option value="Class 3" />
+                          <option value="Class 4" />
+                          <option value="Class 5" />
+                          <option value="Class 6" />
+                          <option value="Class 7" />
+                          <option value="Class 8" />
+                          <option value="Class 9" />
+                          <option value="Class 10" />
+                          <option value="Class 11" />
+                          <option value="Class 12" />
+                        </>
+                      ) : (
+                        <>
+                          <option value="Semester 1 (1st Year)" />
+                          <option value="Semester 2 (1st Year)" />
+                          <option value="Semester 3 (2nd Year)" />
+                          <option value="Semester 4 (2nd Year)" />
+                          <option value="Semester 5 (3rd Year)" />
+                          <option value="Semester 6 (3rd Year)" />
+                          <option value="Semester 7 (4th Year)" />
+                          <option value="Semester 8 (4th Year)" />
+                        </>
+                      )}
+                    </datalist>
                   </div>
                 </div>
 

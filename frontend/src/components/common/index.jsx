@@ -303,3 +303,4 @@ export function Tabs({ tabs = [], activeTab, onChange, className = '' }) {
 }
 
 export { default as CopyButton, sanitizeCopyPayload } from './CopyButton'
+export { default as StudentAcademicSelectionWizard } from './StudentAcademicSelectionWizard'

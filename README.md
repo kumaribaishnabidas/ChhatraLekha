@@ -40,6 +40,34 @@ tamper-evidently, take attendance, publish examinations, and connect parents sec
 
 ---
 
+## Mandatory Project Documents Gate
+
+Before launching the application, implementing a feature, redesigning the UI, modifying the architecture, or running AI agents, developers and coding agents must read and follow the **four mandatory project documents** in the repository root:
+
+| Document | Purpose & Scope | Key Contents |
+|---|---|---|
+| **[`PRODUCT_REQUIREMENTS.md`](PRODUCT_REQUIREMENTS.md)** | **WHAT** the platform is and must do | Product vision, target personas, `PRD-F-xxx` functional requirements, NFRs, workflows, roadmap |
+| **[`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md)** | **HOW** the platform looks and behaves | Brand palette, CSS variables, 22-language Noto font stacks, components, layout standards, `DesignLint` invariants |
+| **[`ARCHITECTURE.md`](ARCHITECTURE.md)** | **HOW** the system is built and connects | Modular monolith, 24 FastAPI routers, MongoDB collections, Ed25519 verification, tenant isolation, ADRs |
+| **[`AI_AGENTS.md`](AI_AGENTS.md)** | **HOW** coding agents & AI operate safely | 10-step pre-flight check, zero PII, repository safety, human approval boundaries, audit reports |
+
+To verify the integrity of the mandatory documents gate at any time, run:
+```bash
+python scripts/verify_mandatory_docs.py
+```
+
+### Institute ERP Portal Integration Blueprints
+
+The comprehensive architectural, security, and implementation blueprints for expanding ChhatraLekha into a unified institute ERP portal are documented in [`docs/erp/`](docs/erp/):
+
+* **[`INSTITUTE-ERP-RECONNAISSANCE-REPORT.md`](docs/erp/INSTITUTE-ERP-RECONNAISSANCE-REPORT.md)**: Subsystem inventory, branch readiness, and baseline gap analysis.
+* **[`INSTITUTE-ERP-PORTAL-FEATURE-MAPPING.md`](docs/erp/INSTITUTE-ERP-PORTAL-FEATURE-MAPPING.md)**: Mapping of all 11 ERP functional modules against existing implementations.
+* **[`INSTITUTE-ERP-INTEGRATION-ARCHITECTURE.md`](docs/erp/INSTITUTE-ERP-INTEGRATION-ARCHITECTURE.md)**: Multi-tenant architecture, domain service boundaries, and data flows.
+* **[`INSTITUTE-ERP-SECURITY-AND-RISK-ASSESSMENT.md`](docs/erp/INSTITUTE-ERP-SECURITY-AND-RISK-ASSESSMENT.md)**: DPDP Act 2023 compliance, RBAC matrix, and threat mitigations.
+* **[`INSTITUTE-ERP-INTEGRATION-IMPLEMENTATION-PLAN.md`](docs/erp/INSTITUTE-ERP-INTEGRATION-IMPLEMENTATION-PLAN.md)**: 5-stage phased implementation plan and acceptance criteria.
+
+---
+
 ## Branding
 
 | | |
@@ -64,6 +92,10 @@ Source assets live in [`docs/assets/brand/`](docs/assets/brand/).
 ```
 ChhatraLekha/
 ├── README.md                 ← you are here
+├── PRODUCT_REQUIREMENTS.md   ← WHAT the platform does (Mandatory Document 1)
+├── DESIGN_SYSTEM.md          ← HOW the platform looks and behaves (Mandatory Document 2)
+├── ARCHITECTURE.md           ← HOW the system is built and connects (Mandatory Document 3)
+├── AI_AGENTS.md              ← HOW AI agents operate safely (Mandatory Document 4)
 ├── .gitignore
 ├── .gitattributes
 ├── .github/workflows/        ← CI: pytest + vitest + container build
